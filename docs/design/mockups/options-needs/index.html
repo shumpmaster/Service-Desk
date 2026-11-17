@@ -1,0 +1,58 @@
+<title>What an Event Needs</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<style>/* Layout: the question, then v16 as it is and three live phones side by side; they wrap to two, then one, column. Tokens follow the Desk Element Library (v8). */
+:root { --ground:#f2f3f7; --surface:#ffffff; --text-1:#1c1d21; --text-2:#6b6d71; --separator:#e7e9ed; --now-word:#0868bc;
+  --sans:-apple-system,BlinkMacSystemFont,"SF Pro Text","Inter","Segoe UI",Roboto,sans-serif; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --ground:#000000; --surface:#1c1c1e; --text-1:#f2f2f7; --text-2:#98989f; --separator:#38383a; --now-word:#9fd0ff; color-scheme:dark } }
+:root[data-theme="dark"] { --ground:#000000; --surface:#1c1c1e; --text-1:#f2f2f7; --text-2:#98989f; --separator:#38383a; --now-word:#9fd0ff; color-scheme:dark }
+body { background:var(--ground); color:var(--text-1); font:400 17px/1.4 var(--sans);
+  padding-left:max(16px, env(safe-area-inset-left, 0px)); padding-right:max(16px, env(safe-area-inset-right, 0px)); padding-block:24px 48px; }
+main { max-width:1680px; margin:0 auto; display:flex; flex-direction:column; gap:32px; }
+h1 { font:700 27px/1.15 var(--sans); margin:0; text-wrap:balance; }
+p { margin:0; max-width:70ch; }
+a { color:var(--now-word); }
+.lede { display:flex; flex-direction:column; gap:10px; } .lede p { color:var(--text-2); font-size:15px; }
+.lede blockquote { margin:0; padding:10px 14px; border-radius:12px; background:var(--surface); font-size:15px; max-width:70ch; }
+.phones { display:grid; grid-template-columns:repeat(4, minmax(0, 395px)); gap:20px; align-items:start; }
+.opt { display:flex; flex-direction:column; gap:10px; min-width:0; }
+.tag { font:600 13px/1 var(--sans); letter-spacing:.06em; text-transform:uppercase; color:var(--text-2); }
+.tag.rec { color:var(--now-word); }
+h2 { font:600 19px/1.25 var(--sans); margin:0; text-wrap:balance; }
+.opt ul { margin:0; padding-left:20px; display:flex; flex-direction:column; gap:4px; font-size:15px; color:var(--text-2); min-height:9.5em; }
+.phone { width:100%; max-width:395px; height:760px; border:1px solid var(--separator); border-radius:24px; overflow:hidden; background:var(--surface); }
+.phone iframe { width:393px; max-width:100%; height:100%; border:0; display:block; }
+.open { font-size:14px; }
+@media (max-width: 1720px) { .phones { grid-template-columns:repeat(2, minmax(0, 395px)); } }
+@media (max-width: 860px) { .phones { grid-template-columns:minmax(0, 1fr); } .opt ul { min-height:0; } }
+</style>
+<main>
+  <div class="lede">
+    <h1>C1 and C2, mixed</h1>
+    <p>Your answer on the three forms of C (kept at <a href="forms.html">forms.html</a>; the first round at <a href="first.html">first.html</a>):</p>
+    <blockquote>"I think we mix c1 and c2. I like the look of c1, I like the checklist feel of c2. And speaking of C2 that reference is for the plan? The plan should naturally have crossover with what we are working on here right?"</blockquote>
+    <p>Yes: C2 borrowed the card of the agent's plan, the actions a step takes between two events. And they do cross over. Here, one thing Spec revised, round 4 needs is the plan's blocked action 5.5, "Move the experiments to the new spec". So the mix shows the crossover both ways: that requirement looks like the action it is, and the action in the plan says "Needed by Spec revised, round 4". Tap either to go to the other.</p>
+    <p>Requirements and the three planned events at the top of S-011 are still examples. The third phone opens on S-011: scroll inside it, and scroll further down for the plan.</p>
+  </div>
+  <div class="phones">
+    <section class="opt">
+      <span class="tag">As it was</span><h2>C1: the look</h2>
+      <ul><li>Each requirement as a smaller event row: icon, corner mark, kind, tag and title, hung from the event.</li></ul>
+      <div class="phone"><iframe src="needs-C1.html" title="C1, live" loading="lazy"></iframe></div>
+      <a class="open" href="needs-C1.html" target="_blank" rel="noopener">Open full screen</a>
+    </section>
+    <section class="opt">
+      <span class="tag">As it was</span><h2>C2: the checklist</h2>
+      <ul><li>The plan's card: a check column, "0 of 2 done", the state under each line.</li></ul>
+      <div class="phone"><iframe src="needs-C2.html" title="C2, live" loading="lazy"></iframe></div>
+      <a class="open" href="needs-C2.html" target="_blank" rel="noopener">Open full screen</a>
+    </section>
+    <section class="opt">
+      <span class="tag rec">Your mix</span><h2>C1's rows with C2's checks</h2>
+      <ul><li>C1's rows and thin line, with the plan's check column on the left: a grey check done, an hourglass on you, a red warning blocked, an empty ring planned. "Needs first · 0 of 3 done" heads it.</li>
+        <li>The state sits in the check column, so the small icons lose their corner marks. "Then unlocks" rows lead with an arrow.</li>
+        <li>The crossover: the blocked requirement reads "Action 2.7.2.5.5", and that action in the plan carries "Needed by Spec revised, round 4".</li></ul>
+      <div class="phone"><iframe src="needs-M.html" title="The mix, live" loading="lazy"></iframe></div>
+      <a class="open" href="needs-M.html" target="_blank" rel="noopener">Open full screen</a>
+    </section>
+  </div>
+</main>

@@ -1,0 +1,28 @@
+/* round 5, answer 12: what the bubble shows (options-bubble) */
+.n4-bub { padding: 8px 12px 8px; }
+.n5 { display: flex; flex-direction: column; gap: 2px; font-size: 14px; line-height: 19px; }
+.n5-trail { display: flex; flex-wrap: wrap; align-items: center; gap: 2px 6px; font-size: 12px; line-height: 17px; color: var(--text-2); padding-bottom: 6px; margin-bottom: 2px; border-bottom: 1px solid var(--rule); }
+.n5-trail button { all: unset; cursor: pointer; color: var(--now-word); } .n5-trail b { color: var(--ink); font-weight: 600; }
+.n5-hd { display: flex; font-weight: 600; color: var(--ink); padding: 2px 0 4px; } .n5-hd span { margin-left: auto; font-weight: 400; color: var(--text-2); font-size: 13px; }
+.n5-it { all: unset; box-sizing: border-box; display: flex; align-items: center; gap: 8px; width: 100%; padding: 6px 0; color: var(--ink); }
+.n5-it + .n5-it { border-top: 1px solid var(--rule-2); }
+button.n5-it { cursor: pointer; }
+.n5-it .w { flex: 1; min-width: 0; }
+.n5-it .s { font-size: 12px; color: var(--text-2); white-space: nowrap; }
+.n5-it.wait .s { color: var(--status-wait-tag); font-weight: 600; } .n5-it.bad .s { color: var(--status-bad-tag); font-weight: 600; }
+.n5-it > svg { width: 12px; height: 12px; color: var(--text-2); transform: rotate(-90deg); flex: none; }
+.n5-mk { flex: none; width: 16px; height: 16px; display: grid; place-items: center; color: var(--ink); }
+.n5-mk svg { width: 14px; height: 14px; } .n5-mk.wait { color: var(--status-wait-tag); } .n5-mk.bad { color: var(--problem); }
+.n5-mk.pend::before { content: ""; width: 10px; height: 10px; border-radius: 5px; box-shadow: inset 0 0 0 1.5px var(--ink-5); }
+.n5-it:focus-visible, .n5-trail button:focus-visible { outline: 2px solid var(--now-word); outline-offset: 2px; border-radius: 6px; }
+.n5-then { margin-top: 4px; padding-top: 6px; border-top: 1px solid var(--rule); font-size: 13px; color: var(--text-2); } .n5-then b { color: var(--ink-2); font-weight: 600; }
+.n5-grp { padding: 2px 0 4px; } .n5-grp + .n5-grp { border-top: 1px solid var(--rule); }
+.n5-gh { font: 600 12px/16px var(--font-ui); letter-spacing: .04em; text-transform: uppercase; color: var(--text-2); padding: 6px 0 2px; } .n5-gh span { font-weight: 400; }
+.n5-grp.wait .n5-gh { color: var(--status-wait-tag); } .n5-grp.bad .n5-gh { color: var(--status-bad-tag); }
+.n5-grp .n5-it .s { display: none; }
+.n5-flow { display: flex; flex-direction: column; align-items: stretch; gap: 4px; }
+.n5-col { display: flex; flex-direction: column; padding: 2px 10px; border-radius: 10px; background: var(--fill); }
+.n5-col .n5-it .s { display: none; } .n5-col .n5-it.un { color: var(--ink-2); }
+.n5-arr { display: flex; align-items: center; gap: 6px; padding-left: 14px; font-size: 12px; color: var(--text-2); }
+.n5-arr svg { width: 13px; height: 13px; transform: rotate(90deg) scaleY(-1); }
+.n5-me { padding: 7px 12px; border-radius: 10px; font-weight: 600; color: var(--ink); box-shadow: inset 0 0 0 1.5px var(--now-word); }

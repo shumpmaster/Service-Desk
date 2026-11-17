@@ -1,0 +1,645 @@
+<title>Timeline Motion Map</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+/* Layout: one phone-width column, as the locked basis; key, then what needs you, then the two-line timeline by day. */
+:root {
+  --ground: #f6f6f3; --surface: #ffffff; --ink: #1a1a18; --ink-2: #4a4a45; --ink-3: #6b6b65; --ink-4: #8a8a83;
+  --rule: #e1e1dc; --rule-2: #efefeb; --pill-line: #cfcfca; --branch-line: #c9c9c4; --join: #a9a9a3; --main-line: #1a1a18;
+  --done: #2f8a4e; --running: #b7791f; --failed: #c2341b; --you: #1d4ed8; --idle: #8a8a83; --step: #3d3d39;
+  --done-t: #256b3d; --running-t: #7a4f0d; --failed-t: #a12a15; --you-t: #1d4ed8; --idle-t: #55554f;
+  --you-ring: #c9d7fa; --you-wash: #eef3fe; --warn-wash: #fdf3e2; --stop-wash: #fbe9e5;
+  --font-ui: Inter, system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --ground: #141413; --surface: #1d1d1b; --ink: #ecece7; --ink-2: #c4c4bd; --ink-3: #a3a39c; --ink-4: #85857e;
+  --rule: #33332f; --rule-2: #2a2a27; --pill-line: #45453f; --branch-line: #4d4d47; --join: #6a6a63; --main-line: #ecece7;
+  --done: #3da862; --running: #d4952e; --failed: #e2553a; --you: #5b8cff; --idle: #77776f; --step: #5a5a54;
+  --done-t: #6cc98d; --running-t: #e8b35c; --failed-t: #f08a73; --you-t: #8fb0ff; --idle-t: #a3a39c;
+  --you-ring: #263c73; --you-wash: #17213a; --warn-wash: #2e2414; --stop-wash: #33191394; color-scheme: dark; } }
+:root[data-theme="dark"] {
+  --ground: #141413; --surface: #1d1d1b; --ink: #ecece7; --ink-2: #c4c4bd; --ink-3: #a3a39c; --ink-4: #85857e;
+  --rule: #33332f; --rule-2: #2a2a27; --pill-line: #45453f; --branch-line: #4d4d47; --join: #6a6a63; --main-line: #ecece7;
+  --done: #3da862; --running: #d4952e; --failed: #e2553a; --you: #5b8cff; --idle: #77776f; --step: #5a5a54;
+  --done-t: #6cc98d; --running-t: #e8b35c; --failed-t: #f08a73; --you-t: #8fb0ff; --idle-t: #a3a39c;
+  --you-ring: #263c73; --you-wash: #17213a; --warn-wash: #2e2414; --stop-wash: #33191394; color-scheme: dark; }
+
+body { background: var(--ground); color: var(--ink); font-family: var(--font-ui); }
+.page { max-width: 440px; margin: 0 auto; padding-block: 24px 48px; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); display: flex; flex-direction: column; gap: 14px; }
+a { color: var(--you-t); }
+button { font-family: var(--font-ui); }
+button:focus-visible, a:focus-visible { outline: 2px solid var(--you); outline-offset: 2px; }
+.mono { font-family: var(--font-mono); }
+.card { background: var(--surface); border: 1px solid var(--rule); border-radius: 12px; }
+.label { font-size: 11px; font-weight: 600; color: var(--ink-3); text-transform: uppercase; letter-spacing: .6px; }
+.toggle { min-height: 32px; padding: 0 10px; border-radius: 8px; border: 1px solid var(--pill-line); background: var(--surface); font-size: 12px; font-weight: 500; color: var(--ink); cursor: pointer; }
+
+/* header */
+.top { display: flex; flex-direction: column; gap: 4px; }
+.repo { font-size: 13px; color: var(--ink-3); }
+h1 { margin: 0; font-size: 30px; font-weight: 700; letter-spacing: -.4px; text-wrap: balance; }
+.asof { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; font-size: 12px; color: var(--ink-3); }
+.asof b { color: var(--ink); font-weight: 600; }
+.live { display: inline-flex; align-items: center; gap: 6px; font-weight: 600; }
+.live i { width: 8px; height: 8px; border-radius: 4px; background: var(--done); }
+.live.late i { background: var(--running); } .live.stopped i { background: var(--failed); }
+.live { color: var(--done-t); } .live.late { color: var(--running-t); } .live.stopped { color: var(--failed-t); }
+
+.banner { border-radius: 10px; padding: 12px 14px; font-size: 13px; line-height: 1.45; display: flex; flex-direction: column; gap: 4px; }
+.banner.late { background: var(--warn-wash); color: var(--running-t); }
+.banner.stopped { background: var(--stop-wash); color: var(--failed-t); }
+.banner strong { font-size: 14px; }
+.banner span { color: var(--ink-2); }
+
+.demo { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; font-size: 11px; color: var(--ink-4); }
+.demo button { min-height: 28px; padding: 0 9px; border-radius: 14px; border: 1px dashed var(--pill-line); background: transparent; color: var(--ink-3); font-size: 11px; cursor: pointer; }
+.demo button[aria-pressed="true"] { border-style: solid; color: var(--ink); background: var(--surface); }
+
+/* key */
+.key { padding: 14px; display: flex; flex-direction: column; gap: 10px; }
+.key-head { display: flex; align-items: center; justify-content: space-between; }
+.key-head span { font-size: 14px; font-weight: 600; }
+.kgrid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px 6px; }
+.k { display: flex; flex-direction: column; align-items: center; gap: 4px; font-size: 11px; color: var(--ink-2); text-align: center; }
+.sgrid { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 6px; }
+.s { display: flex; flex-direction: column; align-items: center; gap: 4px; font-size: 10px; color: var(--ink-2); text-align: center; line-height: 1.2; }
+.s i { display: block; width: 18px; height: 18px; border-radius: 9px; }
+.keytext { font-size: 12px; color: var(--ink-2); line-height: 1.5; }
+.lines { display: flex; flex-wrap: wrap; gap: 6px 16px; font-size: 12px; color: var(--ink-2); }
+.lines span { display: inline-flex; align-items: center; gap: 6px; }
+.lines .m { width: 3px; height: 16px; background: var(--main-line); }
+.lines .b { height: 16px; border-left: 2px dashed var(--join); }
+.newrow { font-size: 10px; font-weight: 600; color: var(--ink-4); letter-spacing: .4px; }
+
+.ico { width: 28px; height: 28px; border-radius: 14px; display: flex; align-items: center; justify-content: center; color: #fff; flex: none; background: var(--step); }
+.ico.sq { border-radius: 7px; }
+.ico svg { width: 14px; height: 14px; }
+
+/* pills */
+.bar { display: flex; gap: 8px; overflow-x: auto; padding: 2px 0 6px; }
+.pill { display: inline-flex; align-items: center; gap: 6px; min-height: 34px; padding: 0 11px; border-radius: 17px; border: 1px solid var(--pill-line); background: var(--surface); font: 500 12px var(--font-mono); color: var(--ink); cursor: pointer; white-space: nowrap; }
+.pill[aria-pressed="true"] { background: var(--ink); color: var(--ground); border-color: var(--ink); }
+.pill .n { font-family: var(--font-ui); font-size: 11px; font-weight: 700; color: var(--you-t); }
+.pill[aria-pressed="true"] .n { color: var(--ground); }
+.pill.sm { min-height: 26px; padding: 0 9px; font-size: 11px; }
+.proj { font: 600 11px var(--font-ui); color: var(--ink-3); }
+
+/* needs you */
+.needs { display: flex; flex-direction: column; gap: 10px; }
+.needs-head { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; }
+.needs-head h2 { margin: 0; font-size: 17px; font-weight: 700; }
+.needs-head span { font-size: 12px; color: var(--ink-3); }
+.ask { background: var(--you-wash); border: 1px solid var(--you-ring); border-radius: 12px; padding: 12px 14px; display: flex; gap: 12px; }
+.ask .ico { background: var(--you); box-shadow: 0 0 0 4px var(--you-ring); }
+.ctx { margin-top: 8px; border-top: 1px solid var(--rule); padding-top: 8px; display: flex; flex-direction: column; gap: 4px; font-size: 12px; color: var(--ink-3); }
+.ctx div { display: flex; align-items: center; gap: 6px; }
+.ctx i { width: 8px; height: 8px; border-radius: 4px; flex: none; }
+
+/* timeline */
+.lanehead { display: flex; font-size: 10px; color: var(--ink-3); font-weight: 600; letter-spacing: .4px; }
+.lanehead .t { width: 44px; } .lanehead .m { width: 38px; }
+.row { display: flex; align-items: stretch; }
+.time { width: 44px; flex: none; padding-top: 13px; font-size: 11px; color: var(--ink-4); font-variant-numeric: tabular-nums; }
+.lanes { position: relative; width: 70px; flex: none; }
+.ml { position: absolute; left: 13px; top: 0; bottom: 0; width: 3px; background: var(--main-line); border-radius: 2px; }
+.bl { position: absolute; left: 49px; top: 0; bottom: 0; border-left: 2px dashed var(--branch-line); }
+.joinbar { position: absolute; top: 22px; left: 15px; width: 36px; height: 3px; background: var(--join); }
+.node { position: absolute; top: 10px; width: 30px; height: 30px; border-radius: 15px; border: 3px solid var(--ground); box-sizing: border-box; display: flex; align-items: center; justify-content: center; color: #fff; }
+.node.sq { border-radius: 9px; }
+.node svg { width: 13px; height: 13px; }
+.body { flex: 1; min-width: 0; padding: 10px 0 18px; display: flex; flex-direction: column; gap: 4px; }
+.dayrow .body { padding: 12px 0 8px; }
+.ev-head { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 8px; min-height: 24px; padding-top: 4px; }
+.kind { font-size: 15px; font-weight: 700; letter-spacing: .2px; }
+.state { font-size: 12px; font-weight: 600; }
+.vars { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+.who { font-size: 11px; font-weight: 600; color: var(--ink-2); }
+.title { font-size: 14px; font-weight: 600; line-height: 1.35; }
+.meta { font-size: 12px; color: var(--ink-3); line-height: 1.4; }
+.trail { display: flex; flex-wrap: wrap; gap: 4px 10px; font-size: 11px; color: var(--ink-4); }
+.trail .ms { color: var(--ink-2); font-weight: 600; }
+.trail .nr { font-style: italic; }
+.run { margin-top: 6px; }
+.jobs { margin-top: 8px; padding: 4px 12px 6px; }
+.jobs .cap { padding: 6px 0; font-size: 11px; color: var(--ink-3); }
+.job { display: flex; align-items: center; gap: 8px; padding: 7px 0; border-top: 1px solid var(--rule-2); font-size: 12px; }
+.job i { width: 10px; height: 10px; border-radius: 5px; flex: none; }
+.job span:first-of-type { flex: 1; }
+.btn { display: inline-flex; align-items: center; justify-content: center; gap: 6px; min-height: 40px; padding: 0 14px; border-radius: 10px; font-weight: 600; font-size: 13px; border: 1px solid var(--you); background: var(--you); color: #fff; text-decoration: none; align-self: flex-start; margin-top: 6px; }
+.empty { font-size: 13px; color: var(--ink-3); padding: 12px 0; }
+.foot { font-size: 11px; color: var(--ink-4); line-height: 1.5; border-top: 1px solid var(--rule); padding-top: 12px; }
+@media (prefers-reduced-motion: no-preference) { .row { transition: opacity .15s; } }
+
+/* motion map */
+.mm { padding: 14px; display: flex; flex-direction: column; gap: 10px; border-color: var(--you-ring); }
+.mm-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.mm-head strong { font-size: 14px; }
+.mm-list { display: grid; grid-template-columns: 1fr; gap: 6px; margin: 0; padding: 0; list-style: none; }
+.mm-list li { display: flex; align-items: center; gap: 8px; font-size: 12px; color: var(--ink-2); }
+.mm-list li span { flex: 1; min-width: 0; }
+.mm-list li em { font-style: normal; color: var(--ink-4); }
+.mk { width: 22px; height: 22px; border-radius: 11px; border: none; background: var(--you); color: #fff; font: 700 11px var(--font-ui); cursor: pointer; flex: none; display: inline-flex; align-items: center; justify-content: center; }
+.mk:disabled, .mm button:disabled { opacity: .45; cursor: default; }
+.mk.inline { margin-left: 6px; vertical-align: middle; }
+.marks { display: inline-flex; gap: 4px; margin-left: 6px; vertical-align: middle; }
+.now { font-size: 12px; line-height: 1.45; color: var(--ink-2); background: var(--you-wash); border-radius: 8px; padding: 8px 10px; min-height: 18px; }
+.flash { animation: flash 1.6s ease-out; }
+@keyframes flash { 0% { background: var(--you-wash); } 100% { background: transparent; } }
+.ringpulse { animation: ringpulse 1.1s ease-out 2; }
+@keyframes ringpulse { 0% { box-shadow: 0 0 0 0 var(--you-ring); } 100% { box-shadow: 0 0 0 10px transparent; } }
+.dotpulse { animation: dotpulse .6s ease-in-out infinite alternate; }
+@keyframes dotpulse { from { transform: scale(.8); opacity: .6; } to { transform: scale(1.15); opacity: 1; } }
+.strip { position: absolute; top: 0; bottom: 0; right: 0; width: 136px; display: flex; }
+.strip div { flex: 1; display: flex; align-items: center; justify-content: center; text-align: center; font-size: 11px; font-weight: 700; color: #fff; padding: 0 4px; }
+.summary { font-size: 12px; color: var(--ink-3); }
+.summary b { color: var(--ink); }
+.bl.hl { border-left: 2px solid var(--ink); }
+.dim { opacity: .55; filter: grayscale(.35); transition: opacity .4s, filter .4s; }
+.toast { font-size: 11px; color: var(--ink-3); padding-top: 6px; }
+@media (prefers-reduced-motion: reduce) { .flash, .ringpulse, .dotpulse { animation: none; } }
+</style>
+
+<div class="page">
+  <header class="top">
+    <div class="repo mono">all projects</div>
+    <h1>Timeline</h1>
+    <div class="asof" id="asof"></div><div><span class="marks"><button class="mk" type="button" data-play="6" aria-label="Play motion 6">6</button></span></div>
+  </header>
+
+  <section class="card mm" aria-label="Motion map">
+    <div class="mm-head"><strong>Where the motion goes</strong><span><button class="toggle" type="button" id="mm-all">Play all</button> <button class="toggle" type="button" id="mm-reset">Reset</button></span></div>
+    <ol class="mm-list" id="mm-list"></ol>
+    <div class="now" id="mm-now" aria-live="polite">Tap a number, here or on the page, to play that motion where it would happen.</div>
+  </section>
+  <div id="banner"></div>
+
+  <div class="demo" role="group" aria-label="Mockup only: preview the feed's states">
+    <span>Mockup: preview the feed as</span>
+    <button type="button" id="st-live" data-feed="live">live</button>
+    <button type="button" id="st-late" data-feed="late">late</button>
+    <button type="button" id="st-stopped" data-feed="stopped">stopped</button>
+  </div>
+
+  <section class="card key" aria-label="Key">
+    <div class="key-head"><span>Key</span><button class="toggle" type="button" id="keytoggle">Hide</button></div>
+    <div id="keybody" style="display:flex;flex-direction:column;gap:10px">
+      <div class="label">Shape = what it is</div>
+      <div class="kgrid" id="kinds"></div>
+      <div class="newrow">AND THE MODEL'S OWN STEPS, IN SQUARES</div>
+      <div class="kgrid" id="steps"></div>
+      <div class="label">Colour = its state</div>
+      <div class="sgrid" id="states"></div>
+      <div class="label">Name = who did it</div>
+      <div class="keytext">builder · check author · spec writer · reviewer · orchestrator · chief of staff · Actions (the automation) · you</div>
+      <div class="label">Line = where</div>
+      <div class="lines"><span><i class="m"></i>main</span><span><i class="b"></i>a branch (tap a pill to follow one)</span></div>
+      <div class="label">Record = who wrote it down</div>
+      <div class="keytext">GitHub itself · the Orchestrator · an agent. A record an agent wrote about its own work is weaker evidence than GitHub's.</div>
+    </div>
+  </section>
+
+  <section aria-label="Projects">
+    <div class="label" style="margin-bottom:6px">Projects<span class="marks"><button class="mk" type="button" data-play="8" aria-label="Play motion 8">8</button></span></div>
+    <div class="bar" id="projects"></div>
+  </section>
+
+  <section class="needs" aria-label="Needs you">
+    <div class="needs-head"><h2>Needs you<span class="marks"><button class="mk" type="button" data-play="3" aria-label="Play motion 3">3</button><button class="mk" type="button" data-play="4" aria-label="Play motion 4">4</button><button class="mk" type="button" data-play="5" aria-label="Play motion 5">5</button></span></h2><span id="needcount"></span></div>
+    <div id="asks" class="needs"></div>
+  </section>
+
+  <section aria-label="Branches">
+    <div class="label" style="margin-bottom:6px">Branches<span class="marks"><button class="mk" type="button" data-play="7" aria-label="Play motion 7">7</button></span></div>
+    <div class="bar" id="branches"></div>
+  </section>
+
+  <section aria-label="Everything, newest first">
+    <div class="lanehead"><span class="t"></span><span class="m">MAIN</span><span>BRANCH</span><span class="marks"><button class="mk" type="button" data-play="1" aria-label="Play motion 1">1</button><button class="mk" type="button" data-play="2" aria-label="Play motion 2">2</button></span></div>
+    <div id="events"></div>
+  </section>
+
+  <p class="foot">A mockup for the timeline work's Design step, drawn from the desk's real records across Service-Desk, the operating model and Model-Lab, as of 14 November 2026 at 11:55 UTC. The events were picked by hand to show each kind and state; the built timeline shows every recorded event. The motions replay what the records show happened after 11:55: PR #444 merged at 12:04, PR #445 opened at 12:06 and its checks passed by 12:12. Times are UTC. Buttons open the real page on GitHub, where you finish the step yourself.</p>
+</div>
+
+<script>
+(function () {
+  var ICONS = {
+    branch: '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><circle cx="4" cy="3" r="1.6"/><circle cx="4" cy="13" r="1.6"/><circle cx="12" cy="5" r="1.6"/><path d="M4 4.6v6.8M12 6.6c0 3-8 2-8 4.8"/></svg>',
+    commit: '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><circle cx="8" cy="8" r="2.8"/><path d="M1 8h4.2M10.8 8H15"/></svg>',
+    pr: '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="4" cy="3.5" r="1.6"/><circle cx="4" cy="12.5" r="1.6"/><circle cx="12" cy="12.5" r="1.6"/><path d="M4 5.1v5.8M12 10.9V6a2 2 0 0 0-2-2H7.5M9 2.5L7.5 4 9 5.5"/></svg>',
+    check: '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" aria-hidden="true"><path d="M5 3.2v9.6L12.8 8z"/></svg>',
+    review: '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M1.2 8S3.8 3.5 8 3.5 14.8 8 14.8 8 12.2 12.5 8 12.5 1.2 8 1.2 8z"/><circle cx="8" cy="8" r="2"/></svg>',
+    merge: '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><circle cx="4" cy="3" r="1.6"/><circle cx="4" cy="13" r="1.6"/><circle cx="12" cy="9" r="1.6"/><path d="M4 4.6v6.8M4.6 4.4c1 3 4 4.6 5.8 4.6"/></svg>',
+    deploy: '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 10.5V2M4.8 5.2L8 2l3.2 3.2M2.5 10v3.5h11V10"/></svg>',
+    gate: '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3.5 14.5V2M3.5 2.5h8.5l-2 3 2 3H3.5"/></svg>',
+    decision: '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 3h12v8H7l-3 2.5V11H2z"/><path d="M5.5 7l1.8 1.6L10.5 5.5"/></svg>',
+    research: '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><circle cx="7" cy="7" r="4.2"/><path d="M10.2 10.2L14 14"/></svg>',
+    stop: '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5.5 1.8h5l3.7 3.7v5l-3.7 3.7h-5l-3.7-3.7v-5z"/><path d="M5.5 8h5"/></svg>'
+  };
+  var KINDS = [['branch','Branch'],['commit','Commit'],['pr','Pull request'],['check','Check'],['review','Review'],['merge','Merge'],['deploy','Deploy']];
+  var STEPS = [['gate','Gate'],['decision','Decision'],['research','Research'],['stop','Stop']];
+  var STEPSET = { gate: 1, decision: 1, research: 1, stop: 1 };
+  var KL = { branch:'Branch', commit:'Commit', pr:'Pull request', check:'Check', review:'Review', merge:'Merge', deploy:'Deploy', gate:'Gate', decision:'Decision', research:'Research', stop:'Stop' };
+  var SL = { done:'Done', running:'Running', failed:'Failed', you:'Waiting on you', idle:'Not started' };
+  var STATES = [['done','Done / passed'],['running','Running'],['failed','Failed'],['you','Waiting on you'],['idle','Not started']];
+  var GH = 'https://github.com/shumpmaster/';
+
+  var PROJECTS = [
+    { id: 'sd', name: 'Service-Desk' },
+    { id: 'om', name: 'operating model' },
+    { id: 'ml', name: 'Model-Lab' },
+    { id: 'pf', name: 'portfolio' }
+  ];
+
+  // What waits on the owner now, each with what surrounds it (records as of 11:55 UTC, 14 Nov).
+  var ASKS = [
+    { p: 'sd', k: 'pr', br: 'claude/chief-of-staff-p005-la55js', who: 'chief of staff → you', rec: 'GitHub',
+      title: 'Merge PR #444: the spec-number fix, the reviewer’s pack, and the stop card’s answer',
+      meta: 'Ready since 11:52 · waiting 3 min', feeds: ['M6', 'M7', 'M8', 'M4'],
+      ctx: [['done', '05:12 Review passed, no blocking findings'], ['done', '11:52 you approved it'], ['running', '11:53 checks running again on the new commit']],
+      action: 'Open PR #444 on GitHub', href: GH + 'Service-Desk/pull/444' },
+    { p: 'sd', k: 'gate', br: 'main', who: 'orchestrator → you', rec: 'Orchestrator',
+      title: 'The home-screen widget failed its readiness check: resubmit or stop?',
+      meta: 'Waiting since 4 Nov, 20:53 · 9 days', feeds: null,
+      ctx: [['failed', '4 Nov 20:52 readiness check failed, round 1'], ['idle', 'nothing moves until you answer; waiting is never counted as stalled']],
+      action: 'Open the card on GitHub', href: GH + 'Service-Desk/blob/main/queue/P-004-dor-fail-1.md' }
+  ];
+
+  // The timeline, newest first. lane m = main, b = a branch; join = a bar between the lines.
+  var RAW = [
+    { day: 'Today, 14 Nov' },
+    { t: '11:52', p: 'sd', lane: 'b', br: 'claude/chief-of-staff-p005-la55js', k: 'review', s: 'done', who: 'you', rec: 'an agent (the chief of staff wrote it down)',
+      title: 'You approved PR #444', meta: 'after the reviewer’s pass', feeds: ['M6', 'M7', 'M8', 'M4'] },
+    { t: '05:12', p: 'sd', lane: 'b', br: 'claude/chief-of-staff-p005-la55js', k: 'review', s: 'done', who: 'reviewer', rec: 'an agent',
+      title: 'Review passed: PR #444', meta: 'no blocking findings · its trial run gave the next spec the free number S-011', feeds: ['M6', 'M7', 'M8'] },
+    { t: '05:07', p: 'sd', lane: 'b', br: 'claude/chief-of-staff-p005-la55js', k: 'check', s: 'failed', who: 'Actions', rec: 'GitHub',
+      title: 'Checks failed: governance on PR #444', meta: 'two verdicts a governance change needs were not yet recorded', feeds: ['M6', 'M7', 'M8', 'M4'],
+      wf: 'governance.yml', jobs: [['done', 'pr-body', '8s'], ['done', 'build', '4m 20s'], ['failed', 'governance', '2m 59s'], ['done', 'owner-signal', '8s']] },
+    { t: '05:04', p: 'sd', lane: 'b', br: 'claude/chief-of-staff-p005-la55js', k: 'pr', s: 'done', who: 'chief of staff', rec: 'GitHub',
+      title: 'Opened PR #444: your answers, the 3.7.3 tools, the pack fix', meta: '6 commits · governance files, so it needs the reviewer and you', feeds: ['M6', 'M7', 'M8', 'M4'] },
+    { t: '04:58', p: 'sd', lane: 'b', br: 'claude/chief-of-staff-p005-la55js', k: 'decision', s: 'done', who: 'you', rec: 'an agent (the chief of staff wrote it down)',
+      title: 'You answered stop card 4: write a new spec', meta: 'rounds reset, not a strike · with your six answers for the spec writer', feeds: ['M6', 'M7', 'M8'] },
+    { t: '04:56', p: 'sd', lane: 'm', br: 'claude/chief-of-staff-p005-la55js', join: true, k: 'merge', s: 'done', who: 'you', rec: 'GitHub',
+      title: 'Merged PR #443 into main', meta: 'the stop card’s notes and two questions for you', feeds: ['M6', 'M7', 'M8'] },
+    { t: '04:56', p: 'om', lane: 'm', br: 'claude/chief-of-staff-p005-la55js', join: true, k: 'merge', s: 'done', who: 'you', rec: 'GitHub',
+      title: 'Merged PR #59 into main', meta: 'lessons: the spec-number row done, the reviewer’s pack row added', feeds: null },
+    { t: '02:55', p: 'om', lane: 'm', br: 'claude/chief-of-staff-p005-la55js', join: true, k: 'merge', s: 'done', who: 'you', rec: 'GitHub',
+      title: 'Merged PR #58: a new spec number counts every spec', meta: 'released as version 3.7.3', feeds: null },
+    { t: '02:24', p: 'om', lane: 'b', br: 'claude/chief-of-staff-p005-la55js', k: 'check', s: 'done', who: 'Actions', rec: 'GitHub',
+      title: 'Checks passed: 3 of 3 on PR #58', meta: '15 m 38 s',
+      wf: 'governance.yml', jobs: [['done', 'pr-body', '12s'], ['done', 'governance', '15m 38s'], ['done', 'owner-signal', '8s']] },
+    { t: '01:06', p: 'ml', lane: 'm', br: 'claude/chief-of-staff-handoff-mt30qq', join: true, k: 'merge', s: 'done', who: 'you', rec: 'GitHub',
+      title: 'Merged PR #118 into main', meta: 'a Chief of Staff handoff', feeds: null },
+    { t: '01:05', p: 'sd', lane: 'b', br: 'item/P-005', k: 'stop', s: 'done', who: 'orchestrator', rec: 'the Orchestrator',
+      title: 'The timeline’s spec stopped: three plan reviews failed', meta: 'waited on you until 04:58 · answered', feeds: ['M6', 'M7', 'M8'] },
+    { t: '01:05', p: 'sd', lane: 'b', br: 'item/P-005', k: 'review', s: 'done', who: 'triage', rec: 'an agent',
+      title: 'Triage found the cause: the reviewer never got the experiment files', meta: 'plus three real defects in the spec', feeds: ['M6', 'M7', 'M8'] },
+    { day: 'Yesterday, 13 Nov' },
+    { t: '23:51', p: 'sd', lane: 'b', br: 'item/P-005', k: 'review', s: 'failed', who: 'reviewer (plan)', rec: 'an agent',
+      title: 'Plan review failed, round 3', meta: 'could not check the criteria that cite the experiment files', feeds: ['M6', 'M7', 'M8'] },
+    { t: '23:45', p: 'sd', lane: 'b', br: 'item/P-005', k: 'commit', s: 'done', who: 'spec writer', rec: 'GitHub',
+      title: 'Spec S-010 revised for its next review', meta: 'M9 and M10 moved to a second spec', feeds: ['M6', 'M7', 'M8'] },
+    { t: '21:44', p: 'sd', lane: 'b', br: 'item/P-005', k: 'review', s: 'failed', who: 'reviewer (plan)', rec: 'an agent',
+      title: 'Plan review failed, round 2', meta: 'six blocking findings', feeds: ['M6', 'M7', 'M8'] },
+    { t: '21:32', p: 'sd', lane: 'b', br: 'item/P-005', k: 'commit', s: 'done', who: 'spec writer', rec: 'GitHub',
+      title: 'First draft of spec S-010 and two experiment plans', meta: '45 scenarios · 11 hand-overs', feeds: ['M6', 'M7', 'M8'] },
+    { t: '16:10', p: 'sd', lane: 'm', br: 'main', k: 'gate', s: 'done', who: 'you', rec: 'an agent (the chief of staff wrote it down)',
+      title: 'Design gate passed: proceed', meta: 'the timeline work moved into Design', feeds: ['M6', 'M7', 'M8'] },
+    { t: '15:09', p: 'sd', lane: 'm', br: 'main', k: 'commit', s: 'done', who: 'you', rec: 'GitHub',
+      title: 'You gave the timeline’s spec the free number S-010', meta: 'the one-line correction, made by your own hand', feeds: null },
+    { t: '06:03', p: 'sd', lane: 'm', br: 'main', k: 'research', s: 'done', who: 'source checker', rec: 'an agent',
+      title: 'Research Q-028 passed its source check', meta: 'how long GitHub keeps run results', feeds: ['M7'] }
+  ];
+
+  var state = { feed: 'live', proj: null, branch: null, open: {}, key: true };
+
+  function el(tag, cls, html) { var e = document.createElement(tag); if (cls) e.className = cls; if (html != null) e.innerHTML = html; return e; }
+  function esc(s) { return String(s).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
+  function projName(id) { for (var i = 0; i < PROJECTS.length; i++) if (PROJECTS[i].id === id) return PROJECTS[i].name; return id; }
+  function icon(k, cls) { var sq = STEPSET[k] ? ' sq' : ''; return '<div class="' + (cls || 'ico') + sq + '">' + ICONS[k] + '</div>'; }
+  function feedsLine(f) {
+    if (f == null) return '<span class="nr">feeds: not recorded</span>';
+    return '<span>feeds <span class="ms">' + f.join(' · ') + '</span></span>';
+  }
+
+  function renderKey() {
+    var k = document.getElementById('kinds'), s = document.getElementById('steps'), st = document.getElementById('states');
+    k.innerHTML = KINDS.map(function (x) { return '<div class="k">' + icon(x[0]) + '<span>' + x[1] + '</span></div>'; }).join('');
+    s.innerHTML = STEPS.map(function (x) { return '<div class="k">' + icon(x[0]) + '<span>' + x[1] + '</span></div>'; }).join('');
+    st.innerHTML = STATES.map(function (x) { return '<div class="s"><i style="background:var(--' + x[0] + ')"></i>' + x[1] + '</div>'; }).join('');
+  }
+
+  function renderHeader() {
+    var f = state.feed, a = document.getElementById('asof'), b = document.getElementById('banner');
+    var dot = { live: ['live', 'Live'], late: ['late', 'Late'], stopped: ['stopped', 'Stopped'] }[f];
+    var age = { live: 'data read 1 min ago', late: 'data read 6 min ago', stopped: 'last data 13 min ago' }[f];
+    a.innerHTML = '<span class="live ' + dot[0] + '"><i></i>' + dot[1] + '</span><span>As of <b>11:55 UTC</b></span><span>· ' + age + '</span>';
+    b.innerHTML = '';
+    if (f === 'late') b.appendChild(el('div', 'banner late', '<strong>Late: the last read was 6 minutes ago.</strong><span>The desk reads every 2 minutes. What you see is from 11:49 and may have changed.</span>'));
+    if (f === 'stopped') b.appendChild(el('div', 'banner stopped', '<strong>Stopped since 11:42 UTC.</strong><span>The outside check has not heard from the desk for 13 minutes, so nothing below is new. Waiting items may already be done.</span>'));
+    ['live', 'late', 'stopped'].forEach(function (x) { document.getElementById('st-' + x).setAttribute('aria-pressed', String(f === x)); });
+  }
+
+  function renderProjects() {
+    var bar = document.getElementById('projects'); bar.innerHTML = '';
+    var all = [{ id: null, name: 'All' }].concat(PROJECTS);
+    all.forEach(function (p) {
+      var n = ASKS.filter(function (a) { return p.id === null || a.p === p.id; }).length;
+      var btn = el('button', 'pill', esc(p.name) + (n ? ' <span class="n">' + n + ' for you</span>' : ''));
+      btn.type = 'button'; btn.id = 'proj-' + (p.id || 'all');
+      btn.setAttribute('aria-pressed', String(state.proj === p.id));
+      btn.onclick = function () { state.proj = p.id; state.branch = null; render(); };
+      bar.appendChild(btn);
+    });
+  }
+
+  function renderAsks() {
+    var box = document.getElementById('asks'); box.innerHTML = '';
+    var list = ASKS.filter(function (a) { return !state.proj || a.p === state.proj; });
+    document.getElementById('needcount').textContent = list.length === 1 ? '1 waiting' : list.length + ' waiting';
+    if (!list.length) { box.appendChild(el('div', 'empty', 'Nothing waits on you in this project.')); return; }
+    list.forEach(function (a) {
+      var card = el('div', 'ask'); card.dataset.ask = String(ASKS.indexOf(a));
+      card.innerHTML = icon(a.k) +
+        '<div class="body" style="padding:0">' +
+          '<div class="ev-head"><span class="kind">' + KL[a.k] + '</span><span class="state" style="color:var(--you-t)">' + SL.you + '</span></div>' +
+          '<div class="vars"><span class="proj">' + esc(projName(a.p)) + '</span><span class="pill sm">' + esc(a.br) + '</span><span class="who">by ' + esc(a.who) + '</span></div>' +
+          '<div class="title" style="color:var(--you-t)">' + esc(a.title) + '</div>' +
+          '<div class="meta">' + esc(a.meta) + '</div>' +
+          '<div class="trail">' + feedsLine(a.feeds) + '<span>record: ' + esc(a.rec) + '</span></div>' +
+          '<div class="ctx"><div class="label" style="font-size:10px">Around it</div>' +
+            a.ctx.map(function (c) { return '<div><i style="background:var(--' + c[0] + ')"></i><span>' + esc(c[1]) + '</span></div>'; }).join('') +
+          '</div>' +
+          '<a class="btn" href="' + a.href + '" target="_blank" rel="noopener">' + esc(a.action) + ' ↗</a>' +
+        '</div>';
+      box.appendChild(card);
+    });
+  }
+
+  function visible() {
+    return RAW.filter(function (r) { return r.day || ((!state.proj || r.p === state.proj) && (!state.branch || r.br === state.branch)); });
+  }
+
+  function renderBranches() {
+    var bar = document.getElementById('branches'); bar.innerHTML = '';
+    var seen = [];
+    RAW.forEach(function (r) { if (!r.day && (!state.proj || r.p === state.proj) && r.br !== 'main' && seen.indexOf(r.br) < 0) seen.push(r.br); });
+    [null].concat(seen).forEach(function (b) {
+      var btn = el('button', 'pill', esc(b || 'All'));
+      btn.type = 'button'; btn.setAttribute('aria-pressed', String(state.branch === b));
+      btn.onclick = function () { state.branch = b; renderEvents(); renderBranches(); };
+      bar.appendChild(btn);
+    });
+  }
+
+  function renderEvents() {
+    var box = document.getElementById('events'); box.innerHTML = '';
+    var rows = visible(), pendingDay = null, shown = 0;
+    rows.forEach(function (r) {
+      if (r.day) { pendingDay = r.day; return; }
+      if (pendingDay) {
+        var d = el('div', 'row dayrow');
+        d.innerHTML = '<div class="time"></div><div class="lanes"><div class="ml"></div><div class="bl"></div></div><div class="body label">' + esc(pendingDay) + '</div>';
+        box.appendChild(d); pendingDay = null;
+      }
+      shown++;
+      var i = RAW.indexOf(r), isOpen = !!state.open[i];
+      var left = r.lane === 'm' ? 1 : 37;
+      var row = el('div', 'row'); row.dataset.i = i; row.dataset.br = r.br; row.dataset.p = r.p; row.dataset.lane = r.lane;
+      var html = '<div class="time mono">' + r.t + '</div><div class="lanes"><div class="ml"></div><div class="bl"></div>' +
+        (r.join ? '<div class="joinbar"></div>' : '') +
+        '<div class="node' + (STEPSET[r.k] ? ' sq' : '') + '" style="left:' + left + 'px;background:var(--' + r.s + ')">' + ICONS[r.k] + '</div></div>' +
+        '<div class="body"><div class="ev-head"><span class="kind">' + KL[r.k] + '</span><span class="state" style="color:var(--' + r.s + '-t)">' + SL[r.s] + '</span></div>' +
+        '<div class="vars"><span class="proj">' + esc(projName(r.p)) + '</span>' + (r.br !== 'main' ? '<button type="button" class="pill sm" data-br="' + esc(r.br) + '">' + esc(r.br) + '</button>' : '') + '<span class="who">by ' + esc(r.who) + '</span></div>' +
+        '<div class="title" style="color:' + (r.s === 'failed' ? 'var(--failed-t)' : 'var(--ink)') + '">' + esc(r.title) + '</div>' +
+        '<div class="meta">' + esc(r.meta) + '</div>' +
+        '<div class="trail">' + feedsLine(r.feeds) + '<span>record: ' + esc(r.rec) + '</span></div>';
+      if (r.jobs) {
+        html += '<div class="run"><button type="button" class="toggle" data-run="' + i + '">' + (isOpen ? 'Hide the run' : 'Show the run') + '</button>' +
+          (isOpen ? '<div class="card jobs"><div class="cap">Actions workflow <span class="mono">' + r.wf + '</span> · its jobs</div>' +
+            r.jobs.map(function (j) { return '<div class="job"><i style="background:var(--' + j[0] + ')"></i><span>' + esc(j[1]) + '</span><span class="mono" style="font-size:11px;color:var(--ink-4)">' + j[2] + '</span></div>'; }).join('') + '</div>' : '') +
+          '</div>';
+      }
+      html += '</div>';
+      row.innerHTML = html;
+      box.appendChild(row);
+    });
+    if (!shown) box.appendChild(el('div', 'empty', 'No recorded events here in the last two days.'));
+    box.querySelectorAll('[data-br]').forEach(function (b) { b.onclick = function () { state.branch = b.getAttribute('data-br'); renderEvents(); renderBranches(); }; });
+    box.querySelectorAll('[data-run]').forEach(function (b) { b.onclick = function () { var n = b.getAttribute('data-run'); state.open[n] = !state.open[n]; renderEvents(); }; });
+  }
+
+  function render() { renderHeader(); renderProjects(); renderAsks(); renderBranches(); renderEvents(); }
+
+  document.querySelectorAll('[data-feed]').forEach(function (b) { b.onclick = function () { state.feed = b.getAttribute('data-feed'); renderHeader(); }; });
+  document.getElementById('keytoggle').onclick = function () {
+    state.key = !state.key;
+    document.getElementById('keybody').hidden = !state.key;
+    this.textContent = state.key ? 'Hide' : 'Show';
+  };
+  renderKey(); render();
+  window.TL = { render: render, renderEvents: renderEvents, renderBranches: renderBranches, state: state, ICONS: ICONS, STEPSET: STEPSET, esc: esc };
+})();
+</script>
+<script>
+(function () {
+  var TL = window.TL, ICONS = TL.ICONS, esc = TL.esc;
+  var REDUCED = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  var BR = 'claude/chief-of-staff-p005-la55js';
+  var MOTIONS = [
+    [1, 'A new record arrives', 'It slides in at the top of today, with a short wash so your eye finds it. Nothing else on the page moves. (GitHub Actions, Vercel)'],
+    [2, 'A run fills in', 'The check’s jobs tick from grey to amber to green one by one, then the event’s colour and word change together, with the time it changed. (GitHub Actions run graph)'],
+    [3, 'Something new needs you', 'A new card slides into Needs you and its blue ring pulses twice, then stays still. Your phone gets the notice at the same moment. (Linear inbox, Live Activities)'],
+    [4, 'You finish it on GitHub', 'When the record shows you did it, the card says so, folds away, and the same step appears in the timeline as done. Nothing is marked done until the record says so.'],
+    [5, 'Swipe a card', 'Swiping shows two actions: open it on GitHub, or move it down your own list. Moving it never hides it or marks it done. (Superhuman, Things)'],
+    [6, 'The data goes late, then stops', 'The as-of line counts up. Late eases in an amber banner; a stopped feed turns it red and dims the timeline so nothing looks fresher than it is. (Flighty)'],
+    [7, 'Follow one branch', 'Tapping a branch folds away everything else and draws its line solid, so you read one piece of work from start to now. (GitKraken)'],
+    [8, 'Focus one project', 'The other projects fold into one line each, with their count and whether anything waits on you, and open again with a tap.']
+  ];
+  var busy = false;
+  function D(ms) { return REDUCED ? 0 : ms; }
+  function wait(ms) { return new Promise(function (r) { setTimeout(r, D(ms)); }); }
+  function anim(el, frames, ms, easing) {
+    if (REDUCED || !el.animate) return Promise.resolve();
+    return new Promise(function (r) { var a = el.animate(frames, { duration: ms, easing: easing || 'ease-out', fill: 'none' }); a.onfinish = r; a.oncancel = r; });
+  }
+  function grow(el) {
+    var h = el.scrollHeight; el.style.overflow = 'hidden';
+    return anim(el, [{ height: '0px', opacity: 0, transform: 'translateY(-8px)' }, { height: h + 'px', opacity: 1, transform: 'none' }], 450).then(function () { el.style.overflow = ''; });
+  }
+  function shrink(el) {
+    var h = el.offsetHeight; el.style.overflow = 'hidden';
+    return anim(el, [{ height: h + 'px', opacity: 1 }, { height: '0px', opacity: 0 }], 380, 'ease-in').then(function () { el.style.display = 'none'; });
+  }
+  function flash(el) { el.classList.remove('flash'); void el.offsetWidth; el.classList.add('flash'); }
+  function say(n) { var m = MOTIONS[n - 1]; document.getElementById('mm-now').innerHTML = '<b>' + n + ' · ' + esc(m[1]) + '.</b> ' + esc(m[2]); }
+  function firstDay() { return document.querySelector('#events .dayrow'); }
+
+  function eventRow(o) {
+    var row = document.createElement('div'); row.className = 'row'; row.dataset.br = o.br; row.dataset.p = o.p;
+    row.innerHTML = '<div class="time mono">' + o.t + '</div><div class="lanes"><div class="ml"></div><div class="bl"></div>' + (o.join ? '<div class="joinbar"></div>' : '') +
+      '<div class="node" style="left:' + (o.lane === 'm' ? 1 : 37) + 'px;background:var(--' + o.s + ')">' + ICONS[o.k] + '</div></div>' +
+      '<div class="body"><div class="ev-head"><span class="kind">' + o.kind + '</span><span class="state" style="color:var(--' + o.s + '-t)">' + o.sw + '</span></div>' +
+      '<div class="vars"><span class="proj">Service-Desk</span><span class="pill sm">' + esc(o.br) + '</span><span class="who">by ' + esc(o.who) + '</span></div>' +
+      '<div class="title">' + esc(o.title) + '</div><div class="meta">' + esc(o.meta) + '</div>' +
+      '<div class="trail"><span>feeds <span class="ms">Design-5 · M7 · M8</span></span><span>record: GitHub</span></div>' + (o.extra || '') + '</div>';
+    return row;
+  }
+
+  function reset() {
+    var s = TL.state; s.proj = null; s.branch = null; s.open = {}; s.feed = 'live';
+    TL.render();
+    document.getElementById('events').classList.remove('dim');
+    document.getElementById('mm-now').textContent = 'Tap a number, here or on the page, to play that motion where it would happen.';
+  }
+
+  var M = {};
+  M[1] = function () {
+    var row = eventRow({ t: '12:06', br: BR, p: 'sd', lane: 'b', k: 'check', s: 'running', kind: 'Check', sw: 'Running', who: 'Actions',
+      title: 'Checks running on PR #445', meta: 'handoff part 11 and the first mockup',
+      extra: '<div class="card jobs" data-jobs><div class="cap">Actions workflow <span class="mono">governance.yml</span> · its jobs</div>' +
+        [['pr-body', '10s'], ['build', '4m 12s'], ['governance', '5m 31s'], ['owner-signal', '8s']].map(function (j) {
+          return '<div class="job" data-t="' + j[1] + '"><i style="background:var(--idle)"></i><span>' + j[0] + '</span><span class="mono" style="font-size:11px;color:var(--ink-4)">waiting</span></div>'; }).join('') + '</div>' });
+    row.dataset.m1 = '1';
+    var d = firstDay(); d.parentNode.insertBefore(row, d.nextSibling);
+    return grow(row).then(function () { flash(row); });
+  };
+  M[2] = function () {
+    var row = document.querySelector('[data-m1]');
+    var p = row ? Promise.resolve() : M[1]();
+    return p.then(function () {
+      row = document.querySelector('[data-m1]');
+      var jobs = row.querySelectorAll('.job'), chain = Promise.resolve();
+      jobs.forEach(function (j) {
+        chain = chain.then(function () {
+          var dot = j.querySelector('i'), t = j.querySelectorAll('span')[1];
+          dot.style.background = 'var(--running)'; dot.classList.add('dotpulse'); t.textContent = 'running';
+          return wait(700).then(function () { dot.classList.remove('dotpulse'); dot.style.background = 'var(--done)'; t.textContent = j.dataset.t; return wait(150); });
+        });
+      });
+      return chain.then(function () {
+        var node = row.querySelector('.node'), st = row.querySelector('.state'), title = row.querySelector('.title');
+        anim(node, [{ transform: 'scale(1)' }, { transform: 'scale(1.25)' }, { transform: 'scale(1)' }], 400);
+        node.style.background = 'var(--done)';
+        return anim(st, [{ opacity: 1 }, { opacity: 0 }], 150).then(function () {
+          st.textContent = 'Passed'; st.style.color = 'var(--done-t)'; title.textContent = 'Checks passed: 4 of 4 on PR #445';
+          row.querySelector('.time').textContent = '12:12';
+          row.querySelector('.trail').insertAdjacentHTML('beforeend', '<span>changed from running at 12:12</span>');
+          flash(row);
+          return anim(st, [{ opacity: 0 }, { opacity: 1 }], 200);
+        });
+      });
+    });
+  };
+  M[3] = function () {
+    var box = document.getElementById('asks');
+    var card = document.createElement('div'); card.className = 'ask';
+    card.innerHTML = '<div class="ico">' + ICONS.pr + '</div><div class="body" style="padding:0"><div class="ev-head"><span class="kind">Pull request</span><span class="state" style="color:var(--you-t)">Waiting on you</span></div>' +
+      '<div class="vars"><span class="proj">Service-Desk</span><span class="pill sm">' + esc(BR) + '</span><span class="who">by chief of staff → you</span></div>' +
+      '<div class="title" style="color:var(--you-t)">Merge PR #445: handoff part 11 and the first mockup</div><div class="meta">Ready since 12:12 · waiting 0 min</div>' +
+      '<a class="btn" href="https://github.com/shumpmaster/Service-Desk/pull/445" target="_blank" rel="noopener">Open PR #445 on GitHub ↗</a></div>';
+    box.insertBefore(card, box.firstChild);
+    document.getElementById('needcount').textContent = box.querySelectorAll('.ask').length + ' waiting';
+    return grow(card).then(function () { card.querySelector('.ico').classList.add('ringpulse'); return wait(2200); });
+  };
+  M[4] = function () {
+    var card = document.querySelector('[data-ask="0"]'); if (!card) return Promise.resolve();
+    var meta = card.querySelector('.meta'), st = card.querySelector('.state');
+    st.textContent = 'Done on GitHub'; st.style.color = 'var(--done-t)'; meta.textContent = 'Merged by you at 12:04 · the record arrived';
+    card.querySelector('.ico').style.background = 'var(--done)'; card.querySelector('.ico').style.boxShadow = 'none';
+    return wait(1300).then(function () { return shrink(card); }).then(function () {
+      var n = document.querySelectorAll('#asks .ask').length - 1;
+      document.getElementById('needcount').textContent = n === 1 ? '1 waiting' : n + ' waiting';
+      var row = eventRow({ t: '12:04', br: BR, p: 'sd', lane: 'm', join: true, k: 'merge', s: 'done', kind: 'Merge', sw: 'Done', who: 'you',
+        title: 'Merged PR #444 into main', meta: 'the loop then answered stop card 4 and started the new spec' });
+      var d = firstDay(); d.parentNode.insertBefore(row, d.nextSibling);
+      return grow(row).then(function () { flash(row); });
+    });
+  };
+  M[5] = function () {
+    var card = document.querySelector('[data-ask="1"]'); if (!card) return Promise.resolve();
+    card.style.position = 'relative'; card.style.overflow = 'hidden';
+    var strip = document.createElement('div'); strip.className = 'strip';
+    strip.innerHTML = '<div style="background:var(--you)">Open on GitHub ↗</div><div style="background:var(--idle)">Move down my list</div>';
+    card.appendChild(strip);
+    var kids = [card.children[0], card.children[1]];
+    var out = kids.map(function (k) { return anim(k, [{ transform: 'none' }, { transform: 'translateX(-136px)' }], 320); });
+    kids.forEach(function (k) { k.style.transform = 'translateX(-136px)'; });
+    return Promise.all(out).then(function () {
+      card.children[1].insertAdjacentHTML('beforeend', '<div class="toast" data-toast>Moving it down your list never hides it and never marks it done.</div>');
+      return wait(2000);
+    }).then(function () {
+      var back = kids.map(function (k) { return anim(k, [{ transform: 'translateX(-136px)' }, { transform: 'none' }], 320, 'ease-in-out'); });
+      kids.forEach(function (k) { k.style.transform = ''; });
+      return Promise.all(back);
+    }).then(function () { strip.remove(); });
+  };
+  M[6] = function () {
+    var asof = document.getElementById('asof');
+    return wait(300).then(function () {
+      document.getElementById('st-late').click();
+      var b = document.querySelector('#banner .banner'); return b ? grow(b) : null;
+    }).then(function () { return wait(2200); }).then(function () {
+      document.getElementById('st-stopped').click();
+      var b = document.querySelector('#banner .banner'); if (b) flash(b);
+      document.getElementById('events').classList.add('dim');
+      return b ? anim(b, [{ transform: 'translateX(-4px)' }, { transform: 'translateX(4px)' }, { transform: 'none' }], 300) : null;
+    });
+  };
+  M[7] = function () {
+    var target = 'item/P-005', jobs = [];
+    document.querySelectorAll('#events .row').forEach(function (r) {
+      if (r.classList.contains('dayrow')) return;
+      if (r.dataset.br !== target) jobs.push(shrink(r)); else { var bl = r.querySelector('.bl'); if (bl) bl.classList.add('hl'); }
+    });
+    document.querySelectorAll('#branches .pill').forEach(function (p) { p.setAttribute('aria-pressed', String(p.textContent === target)); });
+    return Promise.all(jobs).then(function () {
+      document.querySelectorAll('#events .row[data-br="' + target + '"]').forEach(function (r) { flash(r); });
+    });
+  };
+  M[8] = function () {
+    var keep = 'sd', counts = {}, jobs = [];
+    document.querySelectorAll('#events .row').forEach(function (r) {
+      if (r.classList.contains('dayrow') || !r.dataset.p || r.dataset.p === keep) return;
+      counts[r.dataset.p] = (counts[r.dataset.p] || 0) + 1; jobs.push(shrink(r));
+    });
+    document.querySelectorAll('#projects .pill').forEach(function (p) { p.setAttribute('aria-pressed', String(p.id === 'proj-sd')); });
+    return Promise.all(jobs).then(function () {
+      var names = { om: 'operating model', ml: 'Model-Lab', pf: 'portfolio' };
+      var d = firstDay(), at = d.nextSibling;
+      ['om', 'ml', 'pf'].forEach(function (k) {
+        var row = document.createElement('div'); row.className = 'row';
+        row.innerHTML = '<div class="time"></div><div class="lanes"><div class="ml"></div><div class="bl"></div></div><div class="body summary"><span><b>' + names[k] + '</b> · ' +
+          (counts[k] ? counts[k] + (counts[k] === 1 ? ' event' : ' events') : 'no events') + ' in these two days · nothing waits on you · tap to open</span></div>';
+        d.parentNode.insertBefore(row, at); grow(row);
+      });
+    });
+  };
+
+  function play(n, keep) {
+    if (busy) return Promise.resolve();
+    busy = true; setButtons(true);
+    if (!keep) reset();
+    say(n);
+    var tgt = { 1: '#events', 2: '#events', 3: '#asks', 4: '#asks', 5: '#asks', 6: '#asof', 7: '#branches', 8: '#projects' }[n];
+    var t = document.querySelector(tgt); if (t) t.scrollIntoView({ behavior: REDUCED ? 'auto' : 'smooth', block: n === 6 ? 'start' : 'center' });
+    return wait(n === 6 ? 300 : 500).then(function () { return M[n](); }).catch(function () {}).then(function () { busy = false; setButtons(false); });
+  }
+  function setButtons(dis) { document.querySelectorAll('[data-play], #mm-all, #mm-reset').forEach(function (b) { b.disabled = dis; }); }
+
+  (function () { var kb = document.getElementById('keybody'), kt = document.getElementById('keytoggle'); TL.state.key = false; kb.hidden = true; kt.textContent = 'Show'; })();
+  var list = document.getElementById('mm-list');
+  list.innerHTML = MOTIONS.map(function (m) { return '<li><button class="mk" type="button" data-play="' + m[0] + '" aria-label="Play motion ' + m[0] + '">' + m[0] + '</button><span>' + esc(m[1]) + '</span></li>'; }).join('');
+  document.addEventListener('click', function (e) { var b = e.target.closest('[data-play]'); if (b) play(Number(b.dataset.play)); });
+  document.getElementById('mm-reset').onclick = function () { if (!busy) reset(); };
+  document.getElementById('mm-all').onclick = function () {
+    if (busy) return; reset();
+    var order = [1, 2, 3, 4, 5, 6], chain = Promise.resolve();
+    order.forEach(function (n) { chain = chain.then(function () { return play(n, true); }).then(function () { return wait(900); }); });
+    chain.then(function () { return wait(800); }).then(function () { reset(); return play(7); }).then(function () { return wait(1500); }).then(function () { reset(); return play(8); });
+  };
+})();
+</script>

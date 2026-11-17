@@ -1,0 +1,11 @@
+<!-- @dsCard group="Sheets" height=120 -->
+<!doctype html>
+<html lang="en">
+<head><meta charset="utf-8"><title>SegmentedRow</title></head>
+<body>
+<div class="dk-stage"><div class="dk-seg" role="group" aria-label="Zoom"><button aria-pressed="false">Phases</button><button aria-pressed="true"><svg class="i" aria-hidden="true" focusable="false" viewBox="0 0 256 256" fill="currentColor"><path d="M208,32H184V24a8,8,0,0,0-16,0v8H88V24a8,8,0,0,0-16,0v8H48A16,16,0,0,0,32,48V208a16,16,0,0,0,16,16H208a16,16,0,0,0,16-16V48A16,16,0,0,0,208,32ZM84,184a12,12,0,1,1,12-12A12,12,0,0,1,84,184Zm44,0a12,12,0,1,1,12-12A12,12,0,0,1,128,184Zm0-40a12,12,0,1,1,12-12A12,12,0,0,1,128,144Zm44,40a12,12,0,1,1,12-12A12,12,0,0,1,172,184Zm0-40a12,12,0,1,1,12-12A12,12,0,0,1,172,144Zm36-64H48V48H72v8a8,8,0,0,0,16,0V48h80v8a8,8,0,0,0,16,0V48h24Z"/></svg>Milestones</button><button aria-pressed="false">Sprints</button><button aria-pressed="false">More…</button></div><p class="dk-note">Tap a segment.</p></div>
+<script>
+document.addEventListener('click', function (e) { var b = e.target.closest('[aria-pressed]'); if (!b) return; b.parentNode.querySelectorAll('[aria-pressed]').forEach(function (x) { x.setAttribute('aria-pressed', String(x === b)); }); });
+</script>
+</body>
+</html>

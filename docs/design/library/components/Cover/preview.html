@@ -1,0 +1,59 @@
+<!-- @dsCard height=288 -->
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Desk Element Library</title>
+<style>
+  html, body { margin:0; height:100%; }
+  body { background:var(--ground); color:var(--text-1); font-family:var(--font-sans); overflow:hidden; }
+  .cover { position:relative; width:960px; height:288px; overflow:hidden; }
+  .band { position:absolute; top:0; left:0; width:960px; height:112px; }
+  .band svg { display:block; }
+  .ink { fill:var(--text-1); }
+  .accent { fill:var(--accent); }
+  .tint { fill:var(--now-block); }
+  .navy { fill:var(--bell-filled); }
+  .glass { fill:var(--surface); }
+  
+  .slab { rx:var(--radius-28); }
+  .pill { rx:calc(var(--size-chip) / 2); }
+  .tabpill { rx:calc(var(--size-tabbar) / 2); }
+  .disc { r:calc(var(--size-hit) / 2); }
+  .disc-round { r:calc(var(--size-round) / 2); }
+  .words { position:absolute; left:var(--space-24); bottom:var(--space-24); max-width:912px; }
+  .name { margin:0; font-size:64px; line-height:.95; font-weight:700; letter-spacing:-.02em; color:var(--text-1); white-space:nowrap; }
+  .tag { margin:var(--space-8) 0 0 3px; font-size:14px; line-height:20px; color:var(--text-2); }
+</style>
+</head>
+<body>
+<div class="cover">
+<div class="band" aria-hidden="true">
+<svg viewBox="0 0 960 112" width="960" height="112">
+<!--
+  blocks      text-1 ink 264 wide, accent 176, now-block tint 344, bell-filled navy 168: radius-28 slabs bled off the top (and the fill off the right), 16 (space-16) apart
+  arrangement a strip of unequal bands, the way the desk stacks a floating tab bar over plain ground: the top-band skeleton, because the name is too wide at 64 for the 440 zone
+  pattern     discs and pills from the radius scale ("Round shapes. Controls are capsules and circles"): 44 discs (size-hit) as the top buttons on the ink, chip pills (size-chip, half-height rx) on the tint, one 56 disc (size-round) on the accent, a tab-bar pill (size-tabbar) on the navy
+  scales      gaps space-16 and space-8, slab radius radius-28, pills rx half of size-chip and size-tabbar, discs size-hit and size-round
+-->
+  <rect class="ink slab" x="0" y="-28" width="264" height="140"/>
+  <circle class="glass disc" cx="40" cy="62"/>
+  <circle class="glass disc" cx="92" cy="62"/>
+  <rect class="accent slab" x="280" y="-28" width="176" height="140"/>
+  <circle class="glass disc-round" cx="368" cy="56"/>
+  <circle class="accent" cx="368" cy="56" r="8"/>
+  <rect class="tint slab" x="472" y="-28" width="344" height="140"/>
+  <rect class="accent pill" x="496" y="44" width="112" height="40"/>
+  <rect class="glass pill" x="616" y="44" width="68" height="40"/>
+  <rect class="glass pill" x="692" y="44" width="68" height="40"/>
+  <rect class="navy slab" x="832" y="-28" width="168" height="140"/>
+  <rect class="glass tabpill" x="848" y="34" width="140" height="62"/>
+</svg>
+</div>
+<div class="words">
+  <h1 class="name">Desk Element Library</h1>
+  <p class="tag">The quiet, round, neutral look for the whole desk, taken from the owner's Craft references.</p>
+</div>
+</div>
+</body>
+</html>

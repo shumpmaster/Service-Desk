@@ -1,0 +1,65 @@
+<title>Inside the Needs Bubble</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<style>/* Layout: the question, then v20 as it is and three live phones side by side; they wrap to two, then one, column. Tokens follow the Desk Element Library (v8). */
+:root { --ground:#f2f3f7; --surface:#ffffff; --text-1:#1c1d21; --text-2:#6b6d71; --separator:#e7e9ed; --now-word:#0868bc;
+  --sans:-apple-system,BlinkMacSystemFont,"SF Pro Text","Inter","Segoe UI",Roboto,sans-serif; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --ground:#000000; --surface:#1c1c1e; --text-1:#f2f2f7; --text-2:#98989f; --separator:#38383a; --now-word:#9fd0ff; color-scheme:dark } }
+:root[data-theme="dark"] { --ground:#000000; --surface:#1c1c1e; --text-1:#f2f2f7; --text-2:#98989f; --separator:#38383a; --now-word:#9fd0ff; color-scheme:dark }
+body { background:var(--ground); color:var(--text-1); font:400 17px/1.4 var(--sans);
+  padding-left:max(16px, env(safe-area-inset-left, 0px)); padding-right:max(16px, env(safe-area-inset-right, 0px)); padding-block:24px 48px; }
+main { max-width:1680px; margin:0 auto; display:flex; flex-direction:column; gap:32px; }
+h1 { font:700 27px/1.15 var(--sans); margin:0; text-wrap:balance; }
+p { margin:0; max-width:70ch; }
+a { color:var(--now-word); }
+.lede { display:flex; flex-direction:column; gap:10px; } .lede p { color:var(--text-2); font-size:15px; }
+.lede blockquote { margin:0; padding:10px 14px; border-radius:12px; background:var(--surface); font-size:15px; max-width:70ch; }
+.phones { display:grid; grid-template-columns:repeat(4, minmax(0, 395px)); gap:20px; align-items:start; }
+.opt { display:flex; flex-direction:column; gap:10px; min-width:0; }
+.tag { font:600 13px/1 var(--sans); letter-spacing:.06em; text-transform:uppercase; color:var(--text-2); }
+.tag.rec { color:var(--now-word); }
+h2 { font:600 19px/1.25 var(--sans); margin:0; text-wrap:balance; }
+.opt ul { margin:0; padding-left:20px; display:flex; flex-direction:column; gap:4px; font-size:15px; color:var(--text-2); min-height:9.5em; }
+.phone { width:100%; max-width:395px; height:760px; border:1px solid var(--separator); border-radius:24px; overflow:hidden; background:var(--surface); }
+.phone iframe { width:393px; max-width:100%; height:100%; border:0; display:block; }
+.open { font-size:14px; }
+@media (max-width: 1720px) { .phones { grid-template-columns:repeat(2, minmax(0, 395px)); } }
+@media (max-width: 860px) { .phones { grid-template-columns:minmax(0, 1fr); } .opt ul { min-height:0; } }
+</style>
+<main>
+  <div class="lede">
+    <h1>What the bubble shows</h1>
+    <p>Your answer on the needs:</p>
+    <blockquote>"I love the bubble as a way to link to the next layer - but i dont like the current format that is showing once you click it"</blockquote>
+    <p>So the Needs tag and its bubble stay. Only what's inside changes. In each option, a requirement with needs of its own has a chevron: tap it and that next layer opens inside the same bubble, with a trail at the top to step back. Nothing moves the page. Requirements are still examples.</p>
+    <p>Each phone opens on the timeline project. Tap "Needs 3" on Spec revised, round 4, then a chevron.</p>
+  </div>
+  <div class="phones">
+    <section class="opt">
+      <span class="tag">As it is</span><h2>The tree in the bubble</h2>
+      <ul><li>"Needs first", then each requirement as a small event row with its kind and tag, the tree's lines, then "Then unlocks".</li></ul>
+      <div class="phone"><iframe src="now.html" title="As it is, live" loading="lazy"></iframe></div>
+      <a class="open" href="now.html" target="_blank" rel="noopener">Open full screen</a>
+    </section>
+    <section class="opt">
+      <span class="tag rec">Option 1 · recommended</span><h2>A plain checklist</h2>
+      <ul><li>"Before this can happen · 0 of 3 done", then one line each: a mark, what is needed in plain words, and who or what it waits on (on you, blocked, done).</li>
+        <li>One line at the foot says what it lets happen next.</li></ul>
+      <div class="phone"><iframe src="bubble-1.html" title="Option 1, live" loading="lazy"></iframe></div>
+      <a class="open" href="bubble-1.html" target="_blank" rel="noopener">Open full screen</a>
+    </section>
+    <section class="opt">
+      <span class="tag">Option 2</span><h2>Grouped by who acts</h2>
+      <ul><li>The same lines, sorted under "Waiting on you", "Blocked", "Not started yet" and "Done", each with its count.</li>
+        <li>Shows at a glance what is yours to do, but splits a short list into small pieces.</li></ul>
+      <div class="phone"><iframe src="bubble-2.html" title="Option 2, live" loading="lazy"></iframe></div>
+      <a class="open" href="bubble-2.html" target="_blank" rel="noopener">Open full screen</a>
+    </section>
+    <section class="opt">
+      <span class="tag">Option 3</span><h2>A small flow</h2>
+      <ul><li>Top to bottom: what it needs in a grey block, an arrow ("3 still to happen"), this event outlined in blue, an arrow, then what it lets happen.</li>
+        <li>Shows the flow in and out, but takes more room.</li></ul>
+      <div class="phone"><iframe src="bubble-3.html" title="Option 3, live" loading="lazy"></iframe></div>
+      <a class="open" href="bubble-3.html" target="_blank" rel="noopener">Open full screen</a>
+    </section>
+  </div>
+</main>

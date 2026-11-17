@@ -1,0 +1,12 @@
+/* round 5, answer 13: the chain's connection, on the map and in the list (options-chain) */
+.v13map.chaining .st:not(.lit):not(.cur) { opacity: .28; transition: opacity .2s; }
+.v13map .st.lit .disc { stroke: var(--now-word); stroke-width: 2; }
+.v13map .st.cur .disc { stroke: var(--now-word); stroke-width: 3; }
+.v13map .st.lit .ic, .v13map .st.cur .ic { display: inline; } .v13map .st.lit .dot, .v13map .st.cur .dot { display: none; }
+.v13map g.ch path { fill: none; stroke: var(--now-word); stroke-width: 1.6; stroke-linecap: round; stroke-dasharray: 3 3; opacity: .85; }
+#v13list.chaining > * .v13ev:not(.ch-lit):not(.ch-cur) { opacity: .45; transition: opacity .2s; }
+#v13list.chaining .n4-bub, #v13list.chaining .n4-bub * { opacity: 1; }
+.v13ev.ch-lit > .v13ico { box-shadow: 0 0 0 2px var(--now-word) !important; }
+.v13ev.ch-cur > .v13ico { box-shadow: 0 0 0 3px var(--now-word) !important; }
+.ch-wire { position: absolute; left: 0; top: 0; pointer-events: none; overflow: visible; z-index: 1; }
+.ch-wire path { fill: none; stroke: var(--now-word); stroke-width: 1.6; stroke-linecap: round; stroke-dasharray: 3 3; opacity: .8; }

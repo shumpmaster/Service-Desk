@@ -1,0 +1,87 @@
+<!doctype html>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Home as a Map</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<style>/* Layout: the reference and v13's home as it is, then each option, light and dark side by side in phone frames. Tokens follow the Desk Element Library (v8). */
+:root { --ground:#f2f3f7; --surface:#ffffff; --text-1:#1c1d21; --text-2:#6b6d71; --separator:#e7e9ed; --now-word:#0868bc;
+  --bad:#c4321f; --bad-bg:#f9eae9; --wait:#90600a; --wait-bg:#f6eddb;
+  --sans:-apple-system,BlinkMacSystemFont,"SF Pro Text","Inter","Segoe UI",Roboto,sans-serif; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --ground:#000000; --surface:#1c1c1e; --text-1:#f2f2f7; --text-2:#98989f; --separator:#38383a; --now-word:#9fd0ff;
+  --bad:#ff6b5a; --bad-bg:#332424; --wait:#fcca6f; --wait-bg:#3c3325; color-scheme:dark } }
+:root[data-theme="dark"] { --ground:#000000; --surface:#1c1c1e; --text-1:#f2f2f7; --text-2:#98989f; --separator:#38383a; --now-word:#9fd0ff;
+  --bad:#ff6b5a; --bad-bg:#332424; --wait:#fcca6f; --wait-bg:#3c3325; color-scheme:dark }
+body { background:var(--ground); color:var(--text-1); font:400 17px/1.4 var(--sans);
+  padding-left:max(16px, env(safe-area-inset-left, 0px)); padding-right:max(16px, env(safe-area-inset-right, 0px)); padding-block:24px 48px; }
+main { max-width:1000px; margin:0 auto; display:flex; flex-direction:column; gap:40px; }
+h1 { font:700 27px/1.15 var(--sans); margin:0; text-wrap:balance; }
+p { margin:0; max-width:70ch; }
+.lede { display:flex; flex-direction:column; gap:10px; } .lede p { color:var(--text-2); font-size:15px; }
+.opt { display:flex; flex-direction:column; gap:12px; }
+.hd { display:flex; flex-direction:column; gap:6px; }
+.tag { font:600 13px/1 var(--sans); letter-spacing:.06em; text-transform:uppercase; color:var(--text-2); }
+.tag.rec { color:var(--now-word); }
+h2 { font:600 19px/1.25 var(--sans); margin:0; text-wrap:balance; }
+.hd p, .hd li { font-size:15px; color:var(--text-2); }
+.hd ul { margin:0; padding-left:20px; display:flex; flex-direction:column; gap:4px; max-width:70ch; }
+.pair { display:grid; grid-template-columns:repeat(2, minmax(0, 393px)); gap:16px; }
+.pair.four { grid-template-columns:repeat(4, minmax(0, 240px)); }
+figure { margin:0; display:flex; flex-direction:column; gap:6px; min-width:0; }
+figure img { width:100%; height:auto; border:1px solid var(--separator); border-radius:18px; display:block; }
+figcaption { font-size:13px; color:var(--text-2); }
+@media (max-width: 900px) { .pair.four { grid-template-columns:repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 640px) { .pair { grid-template-columns:minmax(0, 1fr); } }
+</style>
+<main>
+  <div class="lede">
+    <h1>Home as a map: three ways</h1>
+    <p>You asked what it would take to make the first page more like the horizontal timeline we built. I read that as the home page, and as the branch map that floats at the top of a project in v13. Each option is drawn on the real v13 home page with its real projects and what waits on you. The activity before today is an example.</p>
+    <p>The soft status colours are the only colour: red for failed or stopped, yellow for waiting on you, green for done. Now stays blue. Each picture is shown in light and dark.</p>
+  </div>
+
+  <section class="opt">
+    <div class="hd"><span class="tag">Reference</span><h2>The horizontal timeline: v13's branch map in a project</h2>
+      <p>Inside a project, the whole phase floats at the top, oldest on the left, main along the bottom. The events in view show their icons and the rest are dots.</p></div>
+    <div class="pair"><figure><img src="ref-light.png" alt="v13 project page, light: the branch map floats at the top above the phase row"><figcaption>Light</figcaption></figure>
+      <figure><img src="ref-dark.png" alt="v13 project page, dark"><figcaption>Dark</figcaption></figure></div>
+  </section>
+
+  <section class="opt">
+    <div class="hd"><span class="tag">As it is</span><h2>v13's home page today</h2>
+      <p>Needs you comes first, with five rows. Under it, Projects is a column of six cards, each saying in one sentence what is happening. Nothing on the page shows time.</p></div>
+    <div class="pair four"><figure><img src="now-light.png" alt="v13 home, light: Needs you, then the first project cards"><figcaption>Top, light</figcaption></figure>
+      <figure><img src="now-cards-light.png" alt="v13 home, light, scrolled to the project cards"><figcaption>The cards, light</figcaption></figure>
+      <figure><img src="now-dark.png" alt="v13 home, dark"><figcaption>Top, dark</figcaption></figure>
+      <figure><img src="now-cards-dark.png" alt="v13 home, dark, scrolled to the project cards"><figcaption>The cards, dark</figcaption></figure></div>
+  </section>
+
+  <section class="opt">
+    <div class="hd"><span class="tag">Option A</span><h2>A small map in each project card</h2>
+      <ul><li>The card's sentence becomes a thin strip of the last two weeks: main, its branches, events as dots, Now in blue at the right end.</li>
+        <li>Whatever waits on you shows as its icon in soft red or yellow, with a tag under the strip ("Stopped · your call").</li>
+        <li>Changes the least. Five strips stacked can feel busy, and the sentence that says what happened is gone.</li></ul></div>
+    <div class="pair"><figure><img src="A-cards-light.png" alt="Option A, light: each project card holds a thin branch strip"><figcaption>The cards, light</figcaption></figure>
+      <figure><img src="A-cards-dark.png" alt="Option A, dark"><figcaption>The cards, dark</figcaption></figure></div>
+  </section>
+
+  <section class="opt">
+    <div class="hd"><span class="tag rec">Option B · recommended</span><h2>One map for the whole desk, floating at the top</h2>
+      <ul><li>Each project is one thin lane on a shared time axis, from two weeks ago to now. Time stretches toward now, so today's events have room.</li>
+        <li>Whatever waits on you sits on its lane as its icon: the timeline's stop and questions, the widget's failed readiness check. Everything else is a dot.</li>
+        <li>It floats like the project's map, so it stays as you scroll down to Needs you and the cards. The cards drop their sentence, since the map now says what moved.</li>
+        <li>In one look: which projects moved, which are quiet, and where you are needed. Home works like a project page, with a map on top and a list below.</li></ul></div>
+    <div class="pair four"><figure><img src="B-light.png" alt="Option B, light: a desk map with five project lanes above Needs you"><figcaption>Top, light</figcaption></figure>
+      <figure><img src="B-scrolled-light.png" alt="Option B, light, scrolled: the map floats above the cards"><figcaption>Scrolled, light: the map stays</figcaption></figure>
+      <figure><img src="B-dark.png" alt="Option B, dark"><figcaption>Top, dark</figcaption></figure>
+      <figure><img src="B-scrolled-dark.png" alt="Option B, dark, scrolled"><figcaption>Scrolled, dark</figcaption></figure></div>
+  </section>
+
+  <section class="opt">
+    <div class="hd"><span class="tag">Option C</span><h2>A row of phase gauges in each card</h2>
+      <ul><li>The card's sentence becomes the project's phases as gauges, the current one raised, using the same gauges as the project page.</li>
+        <li>Shows where each project stands. It is the calmest option, but it has no time axis and says nothing about what happened lately.</li>
+        <li>Only the timeline and the widget have plans in this mockup. The other three projects' phases are examples and are marked as such.</li></ul></div>
+    <div class="pair"><figure><img src="C-cards-light.png" alt="Option C, light: each card holds a row of phase gauges"><figcaption>The cards, light</figcaption></figure>
+      <figure><img src="C-cards-dark.png" alt="Option C, dark"><figcaption>The cards, dark</figcaption></figure></div>
+  </section>
+</main>

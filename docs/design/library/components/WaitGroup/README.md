@@ -1,0 +1,11 @@
+# WaitGroup
+
+Home, grouped by what waits on the owner: one summary sentence, then a group for each project with something waiting, then the quiet projects folded into one row. It replaces the project cards and the separate Needs you list on home, and the desk map tried in mockup v14. Chosen by the owner on 16 November 2026 (decisions/questions/P-005-design-round-4.md: answer 9, "Does the home page really work?"; answer 11, "C is where I’m leaning but I feel like it’s missing something"; answer 12, "C2: what each answer holds up (Recommended), C3: a slim strip of what mattered").
+
+- **The sentence**: 17 `text-1`, the count in semibold: how many things wait, in how many projects, and how many projects are quiet.
+- **A group** is one `surface` block, radius 18, 12 inside: the project's row, then its waiting rows. Groups are ordered by their longest wait, oldest first.
+- **The project row**: the current phase's Gauge with its number (v13's rule: milestones reached, yellow while anything waits), the name in 16 semibold with the waiting count in the blue badge, when it last moved at the right in 13 `text-2`, its one line in 14 `text-2`, and under it the strip. Tapping it opens the project.
+- **The strip**: the last two weeks, 31 October to now, the time stretched toward now (square root), a 3-wide `groove` line; only the events that matter: merges as `main-mark` dots, a stop or gate waiting on the owner in `status-bad-dot`, a question waiting in `status-wait-dot`, others `text-3`; now in `accent-select`. Axis words in 9.5 `text-3`.
+- **A waiting row**: the kind's icon, the question in 15 `text-1` on up to two lines, under it what it holds up in 12.5 `text-2` ("Holds up M6, M7, M8", or the phase when it feeds no milestone), its age at the right. The longest wait on the desk, a week or more, wears a red "Longest wait" tag above its question. Each thing waiting is shown once on home.
+- **The quiet row**: a grey dot and "Nothing waits on you in …"; tapped, it opens the quiet projects as project rows, each with its strip. Shown here open.
+- Icons: Phosphor (MIT), regular for rows, bold for controls and menus, fill for anything selected; Craft's own are Apple's SF Symbols, which a web page cannot use.

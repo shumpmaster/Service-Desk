@@ -1,0 +1,66 @@
+<title>Map Fits the Milestone</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<style>/* Layout: the question, then v17 as it is and three live phones side by side; they wrap to two, then one, column. Tokens follow the Desk Element Library (v8). */
+:root { --ground:#f2f3f7; --surface:#ffffff; --text-1:#1c1d21; --text-2:#6b6d71; --separator:#e7e9ed; --now-word:#0868bc;
+  --sans:-apple-system,BlinkMacSystemFont,"SF Pro Text","Inter","Segoe UI",Roboto,sans-serif; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --ground:#000000; --surface:#1c1c1e; --text-1:#f2f2f7; --text-2:#98989f; --separator:#38383a; --now-word:#9fd0ff; color-scheme:dark } }
+:root[data-theme="dark"] { --ground:#000000; --surface:#1c1c1e; --text-1:#f2f2f7; --text-2:#98989f; --separator:#38383a; --now-word:#9fd0ff; color-scheme:dark }
+body { background:var(--ground); color:var(--text-1); font:400 17px/1.4 var(--sans);
+  padding-left:max(16px, env(safe-area-inset-left, 0px)); padding-right:max(16px, env(safe-area-inset-right, 0px)); padding-block:24px 48px; }
+main { max-width:1680px; margin:0 auto; display:flex; flex-direction:column; gap:32px; }
+h1 { font:700 27px/1.15 var(--sans); margin:0; text-wrap:balance; }
+p { margin:0; max-width:70ch; }
+a { color:var(--now-word); }
+.lede { display:flex; flex-direction:column; gap:10px; } .lede p { color:var(--text-2); font-size:15px; }
+.lede blockquote { margin:0; padding:10px 14px; border-radius:12px; background:var(--surface); font-size:15px; max-width:70ch; }
+.phones { display:grid; grid-template-columns:repeat(4, minmax(0, 395px)); gap:20px; align-items:start; }
+.opt { display:flex; flex-direction:column; gap:10px; min-width:0; }
+.tag { font:600 13px/1 var(--sans); letter-spacing:.06em; text-transform:uppercase; color:var(--text-2); }
+.tag.rec { color:var(--now-word); }
+h2 { font:600 19px/1.25 var(--sans); margin:0; text-wrap:balance; }
+.opt ul { margin:0; padding-left:20px; display:flex; flex-direction:column; gap:4px; font-size:15px; color:var(--text-2); min-height:9.5em; }
+.phone { width:100%; max-width:395px; height:760px; border:1px solid var(--separator); border-radius:24px; overflow:hidden; background:var(--surface); }
+.phone iframe { width:393px; max-width:100%; height:100%; border:0; display:block; }
+.open { font-size:14px; }
+@media (max-width: 1720px) { .phones { grid-template-columns:repeat(2, minmax(0, 395px)); } }
+@media (max-width: 860px) { .phones { grid-template-columns:minmax(0, 1fr); } .opt ul { min-height:0; } }
+</style>
+<main>
+  <div class="lede">
+    <h1>The branch map fits the milestone you pick</h1>
+    <p>The second half of your answer:</p>
+    <blockquote>"Additionally, can we make it so whenever a milestone is selected, the branch map fits to the events in that milestone and expands the dots to our icons with descriptions if we can fit them?"</blockquote>
+    <p>In each option, tapping a milestone's row selects it, and the map shows only that milestone's sprints with every event as its icon. Planned events sit at the right as open rings. A small chip on the map ("2.7 M6") says which milestone is shown; its cross, or folding the milestone, brings back the whole phase. The page opens with M6, the milestone in progress, already selected. M6 has 20 events, so they can't all carry words on a phone at once: the options differ in how they make room.</p>
+    <p>Each phone opens on the timeline project. Scroll inside it to move the window, tap another milestone (Design-5 has sprints too), and tap the chip's cross.</p>
+  </div>
+  <div class="phones">
+    <section class="opt">
+      <span class="tag">As it is</span><h2>v17</h2>
+      <ul><li>The map shows every sprint of the Design phase, oldest on the left.</li>
+        <li>Only the events in view wear icons; the rest are dots. No words.</li></ul>
+      <div class="phone"><iframe src="now.html" title="As it is: v17, live" loading="lazy"></iframe></div>
+      <a class="open" href="now.html" target="_blank" rel="noopener">Open full screen</a>
+    </section>
+    <section class="opt">
+      <span class="tag">Option A</span><h2>Fit to the width</h2>
+      <ul><li>The whole milestone fits the screen: all 20 icons, small, with nothing panning.</li>
+        <li>Words appear only where icons are far enough apart. On M6 that is just the merges on main; a smaller milestone gets words on every icon.</li></ul>
+      <div class="phone"><iframe src="fit-A.html" title="Option A, live" loading="lazy"></iframe></div>
+      <a class="open" href="fit-A.html" target="_blank" rel="noopener">Open full screen</a>
+    </section>
+    <section class="opt">
+      <span class="tag">Option B</span><h2>Readable, panning</h2>
+      <ul><li>Every icon at full size with its kind and a short title under it.</li>
+        <li>About five fit at a time, so the map pans with the list as it does today. You see words everywhere, but never the whole milestone at once.</li></ul>
+      <div class="phone"><iframe src="fit-B.html" title="Option B, live" loading="lazy"></iframe></div>
+      <a class="open" href="fit-B.html" target="_blank" rel="noopener">Open full screen</a>
+    </section>
+    <section class="opt">
+      <span class="tag rec">Option C · recommended</span><h2>Fit, and spread what's in view</h2>
+      <ul><li>The whole milestone fits, as in A. The events in view below spread apart under the window and carry their kind and short title. The rest squeeze to the sides as small icons.</li>
+        <li>As you scroll, the spread follows. You keep the whole milestone and read the part you're in. The map redraws in a step as rows come and go.</li></ul>
+      <div class="phone"><iframe src="fit-C.html" title="Option C, live" loading="lazy"></iframe></div>
+      <a class="open" href="fit-C.html" target="_blank" rel="noopener">Open full screen</a>
+    </section>
+  </div>
+</main>

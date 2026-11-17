@@ -1,0 +1,5 @@
+/* ================= v15 · home grouped by what waits (WaitGroup), on top of options-home-suggest/source/sug.css ================= */
+.sg-grp .need .crow { padding-left: 12px; }
+.sg-grp .need + .need::before { left: 46px; }
+.sg-grp .need .t1 .tt { white-space: normal; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden; line-height: 20px; }
+.sg-grp .need .crow { align-items: center; padding-top: 8px; padding-bottom: 8px; }

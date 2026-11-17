@@ -1,0 +1,59 @@
+<title>Map Window Centred</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<style>/* Layout: the question, then v19 as it is and three live phones side by side; they wrap to two, then one, column. Tokens follow the Desk Element Library (v8). */
+:root { --ground:#f2f3f7; --surface:#ffffff; --text-1:#1c1d21; --text-2:#6b6d71; --separator:#e7e9ed; --now-word:#0868bc;
+  --sans:-apple-system,BlinkMacSystemFont,"SF Pro Text","Inter","Segoe UI",Roboto,sans-serif; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --ground:#000000; --surface:#1c1c1e; --text-1:#f2f2f7; --text-2:#98989f; --separator:#38383a; --now-word:#9fd0ff; color-scheme:dark } }
+:root[data-theme="dark"] { --ground:#000000; --surface:#1c1c1e; --text-1:#f2f2f7; --text-2:#98989f; --separator:#38383a; --now-word:#9fd0ff; color-scheme:dark }
+body { background:var(--ground); color:var(--text-1); font:400 17px/1.4 var(--sans);
+  padding-left:max(16px, env(safe-area-inset-left, 0px)); padding-right:max(16px, env(safe-area-inset-right, 0px)); padding-block:24px 48px; }
+main { max-width:1680px; margin:0 auto; display:flex; flex-direction:column; gap:32px; }
+h1 { font:700 27px/1.15 var(--sans); margin:0; text-wrap:balance; }
+p { margin:0; max-width:70ch; }
+a { color:var(--now-word); }
+.lede { display:flex; flex-direction:column; gap:10px; } .lede p { color:var(--text-2); font-size:15px; }
+.lede blockquote { margin:0; padding:10px 14px; border-radius:12px; background:var(--surface); font-size:15px; max-width:70ch; }
+.phones { display:grid; grid-template-columns:repeat(4, minmax(0, 395px)); gap:20px; align-items:start; }
+.opt { display:flex; flex-direction:column; gap:10px; min-width:0; }
+.tag { font:600 13px/1 var(--sans); letter-spacing:.06em; text-transform:uppercase; color:var(--text-2); }
+.tag.rec { color:var(--now-word); }
+h2 { font:600 19px/1.25 var(--sans); margin:0; text-wrap:balance; }
+.opt ul { margin:0; padding-left:20px; display:flex; flex-direction:column; gap:4px; font-size:15px; color:var(--text-2); min-height:9.5em; }
+.phone { width:100%; max-width:395px; height:760px; border:1px solid var(--separator); border-radius:24px; overflow:hidden; background:var(--surface); }
+.phone iframe { width:393px; max-width:100%; height:100%; border:0; display:block; }
+.open { font-size:14px; }
+@media (max-width: 1720px) { .phones { grid-template-columns:repeat(2, minmax(0, 395px)); } }
+@media (max-width: 860px) { .phones { grid-template-columns:minmax(0, 1fr); } .opt ul { min-height:0; } }
+</style>
+<main>
+  <div class="lede">
+    <h1>The map's window in the centre</h1>
+    <p>Your comment on v19, on the map's window:</p>
+    <blockquote>"What are your thoughts on always pulling the highlighted section to the center of the slider so you can see the before and after?"</blockquote>
+    <p>I think it's a good idea. Today the window sits wherever the events in view fall, so near the newest events it hugs the right edge and you see only what came before. Centred, what came before fills the left side and what comes after fills the right. The cost: each side is squeezed by its own count, so where the window sits no longer says how far along the milestone you are. Here M6 has 17 events before the newest ones, so the left side gets tight, and its sprint names can crowd.</p>
+    <p>Each phone opens on the timeline project with M6 selected. Scroll inside it: at the top you're at the planned end, further down you reach the stop and the reviews.</p>
+  </div>
+  <div class="phones">
+    <section class="opt">
+      <span class="tag">As it is</span><h2>v19</h2>
+      <ul><li>The events in view spread apart where they fall, so the window moves along the map as you scroll.</li>
+        <li>Near either end it sits at the edge, with nothing on one side.</li></ul>
+      <div class="phone"><iframe src="now.html" title="As it is: v19, live" loading="lazy"></iframe></div>
+      <a class="open" href="now.html" target="_blank" rel="noopener">Open full screen</a>
+    </section>
+    <section class="opt">
+      <span class="tag">Option 1</span><h2>Always in the centre</h2>
+      <ul><li>The window never moves: it stays in the middle, and the map slides through it as you scroll. Before is on the left, after on the right.</li>
+        <li>At the newest end (the top of the list) the right half is empty, which says there is nothing after yet.</li></ul>
+      <div class="phone"><iframe src="centre-1.html" title="Option 1, live" loading="lazy"></iframe></div>
+      <a class="open" href="centre-1.html" target="_blank" rel="noopener">Open full screen</a>
+    </section>
+    <section class="opt">
+      <span class="tag rec">Option 2 · recommended</span><h2>Centred, except at the ends</h2>
+      <ul><li>As option 1 while there is something on both sides.</li>
+        <li>At either end of the milestone the window slides to that edge, so no half of the map sits empty.</li></ul>
+      <div class="phone"><iframe src="centre-2.html" title="Option 2, live" loading="lazy"></iframe></div>
+      <a class="open" href="centre-2.html" target="_blank" rel="noopener">Open full screen</a>
+    </section>
+  </div>
+</main>

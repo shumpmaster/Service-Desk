@@ -1,0 +1,199 @@
+<title>Motion and Branch Lines</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<style>
+/* Layout: one column. For motion, a frame strip of the opening, read left to right; for lines, the same three spots on the screen per option. Tokens follow the Desk Element Library. */
+:root {
+  --ground: #f2f3f7; --surface: #ffffff; --text-1: #17181c; --text-2: #6b6d71;
+  --separator: #e7e9ed; --accent: #0a6fc0;
+  --sans: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Inter", "Segoe UI", Roboto, sans-serif;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --ground: #000000; --surface: #1c1c1e; --text-1: #f2f2f7; --text-2: #a1a1a6; --separator: #38383a; --accent: #5aa7ff; color-scheme: dark } }
+:root[data-theme="dark"] {
+  --ground: #000000; --surface: #1c1c1e; --text-1: #f2f2f7; --text-2: #a1a1a6; --separator: #38383a; --accent: #5aa7ff; color-scheme: dark }
+body { background: var(--ground); color: var(--text-1); font: 400 17px/1.4 var(--sans);
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); padding-block: 24px 48px; }
+main { max-width: 1000px; margin: 0 auto; display: flex; flex-direction: column; gap: 28px; }
+h1 { font: 700 27px/1.15 var(--sans); margin: 0; text-wrap: balance; }
+h2 { font: 700 22px/1.2 var(--sans); margin: 8px 0 0; }
+h3 { font: 600 19px/1.25 var(--sans); margin: 0; text-wrap: balance; }
+p { margin: 0; max-width: 65ch; }
+.lede { color: var(--text-2); font-size: 15px; }
+a { color: var(--accent); }
+section { display: flex; flex-direction: column; gap: 10px; padding-top: 20px; border-top: 1px solid var(--separator); min-width: 0; }
+.tag { font: 600 13px/1 var(--sans); letter-spacing: .06em; text-transform: uppercase; color: var(--text-2); }
+.tag.rec { color: var(--accent); }
+.strip { overflow-x: auto; border-radius: 14px; border: 1px solid var(--separator); background: var(--surface); }
+.strip img { display: block; height: 320px; width: auto; max-width: none; }
+.frames { font-size: 13px; color: var(--text-2); }
+.grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; }
+figure { margin: 0; display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+figure img { width: 100%; border-radius: 12px; border: 1px solid var(--separator); display: block; }
+figcaption { font-size: 13px; color: var(--text-2); }
+.try { display: inline-flex; align-self: flex-start; align-items: center; height: 40px; padding: 0 16px; border-radius: 9999px; background: var(--accent); color: #fff; font-weight: 600; text-decoration: none; }
+@media (max-width: 700px) { .grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } .strip img { height: 240px; } }
+</style>
+<main>
+  <header style="display:flex;flex-direction:column;gap:10px">
+    <h1>Opening a project, and its branch lines</h1>
+    <p class="lede">First the motion: how a project opens now, then three ways it could fade in from the left. Then the lines: how they look now, then three styles. Every picture is the real v10 page with only that part changed.</p>
+    <a class="try" href="https://claude.ai/artifact/MkkJfg5bkfSoNSvrMFevEe">Try them live</a>
+    <p class="lede">The live page has a switcher above the tab bar. Pick a motion and a line style, then tap a project.</p>
+  </header>
+
+  <h2>Motion</h2>
+  <section>
+    <span class="tag">Now (v10)</span>
+    <h3>A pen draws the plan from the top down</h3>
+    <p>The card flies up, a line draws out of the desk's trunk, and then a pen grows the plan downwards while the page scrolls after it to Now. It takes about two and a half seconds.</p>
+    <div class="strip"><img src="img/strip-m0.png" alt="Eight frames: the desk; the card lifting; an empty plan; the line growing down from the top; rows appearing behind it as the page scrolls; the plan settled on Now"></div>
+    <p class="frames">Frames at 0.06, 0.18, 0.32, 0.48, 0.64, 0.82, 1.05 and 1.35 seconds.</p>
+  </section>
+  <section>
+    <span class="tag rec">Option 1 · recommended</span>
+    <h3>All at once, from the left</h3>
+    <p>The desk fades out, and the whole plan fades in from 16 points to the left, already centred on Now. No scrolling and no drawing. It takes about 0.4 seconds.</p>
+    <div class="strip"><img src="img/strip-m1.png" alt="Eight frames over 0.7 seconds: the desk fading, then the plan centred on Now sliding in slightly from the left and settling"></div>
+    <p class="frames">Frames at 0, 0.07, 0.14, 0.21, 0.28, 0.35, 0.44 and 0.70 seconds.</p>
+  </section>
+  <section>
+    <span class="tag">Option 2</span>
+    <h3>A quick ripple from Now</h3>
+    <p>As in 1, but the rows come in one after another: Now first, then the rows above and below it, 22 milliseconds apart. It takes about 0.6 seconds and shows your eye where Now is.</p>
+    <div class="strip"><img src="img/strip-m2.png" alt="Eight frames: Now appears first, then the rows around it fade in from the left, spreading up and down"></div>
+    <p class="frames">Frames at the same times as option 1.</p>
+  </section>
+  <section>
+    <span class="tag">Option 3</span>
+    <h3>Lines first, then the rows</h3>
+    <p>The line and the header fade in from the left first, and the rows follow together a moment later. The branch shows first, in two steps. It takes about 0.6 seconds.</p>
+    <div class="strip"><img src="img/strip-m3.png" alt="Eight frames: the header and the line appear first; then all the rows fade in from the left together"></div>
+    <p class="frames">Frames at the same times as option 1.</p>
+  </section>
+  <p class="lede">All three close the same way, with the plan fading out to the left and the desk fading back in. I also changed the yellow flash on Now, left over from v8, to a soft blue in all three.</p>
+
+  <h2>Branch lines</h2>
+  <section>
+    <span class="tag">Now (v10)</span>
+    <h3>Dashed elbows</h3>
+    <p>The lines are thin and grey, with dashed square-cornered elbows from the trunk to each card. A sharp step joins the desk's line to the project's line under the title. Planned work is dashed.</p>
+    <div class="grid">
+      <figure><img src="img/l0-light-desk.png" alt="Desk: dashed grey elbows from the trunk to each project card"><figcaption>Desk</figcaption></figure>
+      <figure><img src="img/l0-light-top.png" alt="Project top: a small stepped elbow above the chips"><figcaption>Project, top</figcaption></figure>
+      <figure><img src="img/l0-light-now.png" alt="The plan around Now: a dashed line above Now and a solid one below"><figcaption>Around Now</figcaption></figure>
+      <figure><img src="img/l0-dark-desk.png" alt="The desk in dark"><figcaption>Desk, dark</figcaption></figure>
+    </div>
+  </section>
+  <section>
+    <span class="tag rec">Option 1 · recommended</span>
+    <h3>Hairline curves</h3>
+    <p>Every line is one 1.5-point hairline with round ends. Each card's branch leaves the trunk in one smooth curve. The desk's line flows into the project's line in a gentle S. Planned work is a fine row of round dots, not dashes.</p>
+    <div class="grid">
+      <figure><img src="img/l1-light-desk.png" alt="Desk: a smooth hairline curve from the trunk into each card"><figcaption>Desk</figcaption></figure>
+      <figure><img src="img/l1-light-top.png" alt="Project top: a smooth S curve from the desk's line to the project's"><figcaption>Project, top</figcaption></figure>
+      <figure><img src="img/l1-light-now.png" alt="Around Now: fine round dots above Now, a hairline below"><figcaption>Around Now</figcaption></figure>
+      <figure><img src="img/l1-dark-desk.png" alt="The desk in dark"><figcaption>Desk, dark</figcaption></figure>
+    </div>
+  </section>
+  <section>
+    <span class="tag">Option 2</span>
+    <h3>Soft rail</h3>
+    <p>The line becomes a 4-point track in a pale fill, like a slider's track, with the same smooth curves. Done work is a shade darker and planned work paler. The dots sit on the track.</p>
+    <div class="grid">
+      <figure><img src="img/l2-light-desk.png" alt="Desk: a soft pale track curving into each card"><figcaption>Desk</figcaption></figure>
+      <figure><img src="img/l2-light-top.png" alt="Project top: the track curving in a soft S"><figcaption>Project, top</figcaption></figure>
+      <figure><img src="img/l2-light-now.png" alt="Around Now: a pale track above Now and a darker one below"><figcaption>Around Now</figcaption></figure>
+      <figure><img src="img/l2-dark-desk.png" alt="The desk in dark"><figcaption>Desk, dark</figcaption></figure>
+    </div>
+  </section>
+  <section>
+    <span class="tag">Option 3</span>
+    <h3>Just the line, no connectors</h3>
+    <p>Hairlines as in 1, but with no branches drawn at all. The cards and rows sit beside the line, and their indent alone shows they hang from it. This is the closest to Craft, which draws no lines.</p>
+    <div class="grid">
+      <figure><img src="img/l3-light-desk.png" alt="Desk: a single vertical hairline with cards beside it and no connectors"><figcaption>Desk</figcaption></figure>
+      <figure><img src="img/l3-light-top.png" alt="Project top: no step above the chips"><figcaption>Project, top</figcaption></figure>
+      <figure><img src="img/l3-light-now.png" alt="Around Now: dotted above, hairline below"><figcaption>Around Now</figcaption></figure>
+      <figure><img src="img/l3-dark-desk.png" alt="The desk in dark"><figcaption>Desk, dark</figcaption></figure>
+    </div>
+  </section>
+
+  <h2>Round 2</h2>
+  <p class="lede">You asked whether there are other motions, and said the soft rail is the closest but not quite right. Here are four more motions, and four variations on the soft rail. All of them are in the live page's switcher too.</p>
+
+  <h2>Motion, round 2</h2>
+  <section>
+    <span class="tag">Option 4</span>
+    <h3>Soft focus</h3>
+    <p>The plan fades in from the left out of a light blur, sharpening as it settles, and the desk blurs as it leaves. It takes about 0.5 seconds.</p>
+    <div class="strip"><img src="img/strip-m4.png" alt="Eight frames: the desk blurring away, then the plan coming into focus from the left"></div>
+    <p class="frames">Frames at 0, 0.08, 0.16, 0.24, 0.32, 0.40, 0.52 and 0.80 seconds.</p>
+  </section>
+  <section>
+    <span class="tag">Option 5</span>
+    <h3>Push</h3>
+    <p>The desk slides out to the right while the plan slides in from the left, 40 points, like turning back a page. The direction is clearer than in 1, and it takes about 0.5 seconds.</p>
+    <div class="strip"><img src="img/strip-m5.png" alt="Eight frames: the desk moving right and fading, then the plan arriving from the left"></div>
+    <p class="frames">Frames at 0, 0.08, 0.16, 0.24, 0.32, 0.40, 0.52 and 0.80 seconds.</p>
+  </section>
+  <section>
+    <span class="tag">Option 6</span>
+    <h3>The branch reaches out</h3>
+    <p>On the desk, the tapped project&#8217;s branch first draws out from the trunk to its card while everything else fades. Then the plan fades in from the left. The branch is the cue, drawn sideways rather than down. It takes about 0.7 seconds.</p>
+    <div class="strip"><img src="img/strip-m6.png" alt="Eight frames: other projects fading, the tapped card&#8217;s branch drawing out, then the plan fading in from the left"></div>
+    <p class="frames">Frames at 0, 0.08, 0.16, 0.24, 0.32, 0.40, 0.52 and 0.80 seconds.</p>
+  </section>
+  <section>
+    <span class="tag">Option 7</span>
+    <h3>Settle</h3>
+    <p>As in 1, but the plan also grows very slightly, from 98.5 percent, anchored on the left, so it seems to settle into place. It takes about 0.4 seconds.</p>
+    <div class="strip"><img src="img/strip-m7.png" alt="Eight frames: the plan sliding in from the left and settling to full size"></div>
+    <p class="frames">Frames at 0, 0.08, 0.16, 0.24, 0.32, 0.40, 0.52 and 0.80 seconds.</p>
+  </section>
+
+  <h2>Branch lines, round 2: variations on the soft rail</h2>
+  <section>
+    <span class="tag">Option 4</span>
+    <h3>Groove</h3>
+    <p>The track is pressed into the page: a 6-point groove with a soft inner shadow and a light lower edge, the opposite of the raised chips. The done part fills the groove like a slider&#8217;s fill.</p>
+    <div class="grid">
+      <figure><img src="img/l4-light-desk.png" alt="Groove: the desk"><figcaption>Desk</figcaption></figure>
+      <figure><img src="img/l4-light-top.png" alt="Groove: the project's top"><figcaption>Project, top</figcaption></figure>
+      <figure><img src="img/l4-light-now.png" alt="Groove: around Now"><figcaption>Around Now</figcaption></figure>
+      <figure><img src="img/l4-dark-desk.png" alt="Groove: the desk in dark"><figcaption>Desk, dark</figcaption></figure>
+    </div>
+  </section>
+  <section>
+    <span class="tag">Option 5</span>
+    <h3>Thin rail</h3>
+    <p>A 2.5-point rail, between the hairline and the soft rail. Done work is a clear grey and planned work pale.</p>
+    <div class="grid">
+      <figure><img src="img/l5-light-desk.png" alt="Thin rail: the desk"><figcaption>Desk</figcaption></figure>
+      <figure><img src="img/l5-light-top.png" alt="Thin rail: the project's top"><figcaption>Project, top</figcaption></figure>
+      <figure><img src="img/l5-light-now.png" alt="Thin rail: around Now"><figcaption>Around Now</figcaption></figure>
+      <figure><img src="img/l5-dark-desk.png" alt="Thin rail: the desk in dark"><figcaption>Desk, dark</figcaption></figure>
+    </div>
+  </section>
+  <section>
+    <span class="tag">Option 6</span>
+    <h3>Fading rail</h3>
+    <p>The soft rail, but each branch fades out as it reaches its card, and the planned rail fades away upwards into the future.</p>
+    <div class="grid">
+      <figure><img src="img/l6-light-desk.png" alt="Fading rail: the desk"><figcaption>Desk</figcaption></figure>
+      <figure><img src="img/l6-light-top.png" alt="Fading rail: the project's top"><figcaption>Project, top</figcaption></figure>
+      <figure><img src="img/l6-light-now.png" alt="Fading rail: around Now"><figcaption>Around Now</figcaption></figure>
+      <figure><img src="img/l6-dark-desk.png" alt="Fading rail: the desk in dark"><figcaption>Desk, dark</figcaption></figure>
+    </div>
+  </section>
+  <section>
+    <span class="tag">Option 7</span>
+    <h3>Line in the rail</h3>
+    <p>A pale 4-point track everywhere, with a thin darker line running inside it for the work that is done, like progress along a track.</p>
+    <div class="grid">
+      <figure><img src="img/l7-light-desk.png" alt="Line in the rail: the desk"><figcaption>Desk</figcaption></figure>
+      <figure><img src="img/l7-light-top.png" alt="Line in the rail: the project's top"><figcaption>Project, top</figcaption></figure>
+      <figure><img src="img/l7-light-now.png" alt="Line in the rail: around Now"><figcaption>Around Now</figcaption></figure>
+      <figure><img src="img/l7-dark-desk.png" alt="Line in the rail: the desk in dark"><figcaption>Desk, dark</figcaption></figure>
+    </div>
+  </section>
+</main>

@@ -1,0 +1,66 @@
+<title>Needs, Part of the Event</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<style>/* Layout: the question, then v20 as it is and three live phones side by side; they wrap to two, then one, column. Tokens follow the Desk Element Library (v8). */
+:root { --ground:#f2f3f7; --surface:#ffffff; --text-1:#1c1d21; --text-2:#6b6d71; --separator:#e7e9ed; --now-word:#0868bc;
+  --sans:-apple-system,BlinkMacSystemFont,"SF Pro Text","Inter","Segoe UI",Roboto,sans-serif; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --ground:#000000; --surface:#1c1c1e; --text-1:#f2f2f7; --text-2:#98989f; --separator:#38383a; --now-word:#9fd0ff; color-scheme:dark } }
+:root[data-theme="dark"] { --ground:#000000; --surface:#1c1c1e; --text-1:#f2f2f7; --text-2:#98989f; --separator:#38383a; --now-word:#9fd0ff; color-scheme:dark }
+body { background:var(--ground); color:var(--text-1); font:400 17px/1.4 var(--sans);
+  padding-left:max(16px, env(safe-area-inset-left, 0px)); padding-right:max(16px, env(safe-area-inset-right, 0px)); padding-block:24px 48px; }
+main { max-width:1680px; margin:0 auto; display:flex; flex-direction:column; gap:32px; }
+h1 { font:700 27px/1.15 var(--sans); margin:0; text-wrap:balance; }
+p { margin:0; max-width:70ch; }
+a { color:var(--now-word); }
+.lede { display:flex; flex-direction:column; gap:10px; } .lede p { color:var(--text-2); font-size:15px; }
+.lede blockquote { margin:0; padding:10px 14px; border-radius:12px; background:var(--surface); font-size:15px; max-width:70ch; }
+.phones { display:grid; grid-template-columns:repeat(4, minmax(0, 395px)); gap:20px; align-items:start; }
+.opt { display:flex; flex-direction:column; gap:10px; min-width:0; }
+.tag { font:600 13px/1 var(--sans); letter-spacing:.06em; text-transform:uppercase; color:var(--text-2); }
+.tag.rec { color:var(--now-word); }
+h2 { font:600 19px/1.25 var(--sans); margin:0; text-wrap:balance; }
+.opt ul { margin:0; padding-left:20px; display:flex; flex-direction:column; gap:4px; font-size:15px; color:var(--text-2); min-height:9.5em; }
+.phone { width:100%; max-width:395px; height:760px; border:1px solid var(--separator); border-radius:24px; overflow:hidden; background:var(--surface); }
+.phone iframe { width:393px; max-width:100%; height:100%; border:0; display:block; }
+.open { font-size:14px; }
+@media (max-width: 1720px) { .phones { grid-template-columns:repeat(2, minmax(0, 395px)); } }
+@media (max-width: 860px) { .phones { grid-template-columns:minmax(0, 1fr); } .opt ul { min-height:0; } }
+</style>
+<main>
+  <div class="lede">
+    <h1>What an event needs, as part of the event</h1>
+    <p>Your comment on the why options:</p>
+    <blockquote>"I like what you did with the whhy but originally i was asking about the needs first and such. I dont want clicking on this type of card to move the flow back"</blockquote>
+    <p>So the why is B, the small "Why" you tap, in every phone here. The "Needs first" list comes out from under the event and becomes part of it, like the why. The tree stays inside it: a ringed icon still opens what that requirement needs in turn. Tapping a requirement no longer scrolls the page back up the plan; nothing moves.</p>
+    <p>Each phone opens on the timeline project with S-011's planned events near the top. Tap the Needs tags and chips, and the ringed icons inside.</p>
+  </div>
+  <div class="phones">
+    <section class="opt">
+      <span class="tag">As it is</span><h2>The tree, needs under the event</h2>
+      <ul><li>"Needs first" hangs under each planned event on the tree's line, open.</li>
+        <li>Tapping a requirement scrolls the page to that event.</li></ul>
+      <div class="phone"><iframe src="now.html" title="As it is, live" loading="lazy"></iframe></div>
+      <a class="open" href="now.html" target="_blank" rel="noopener">Open full screen</a>
+    </section>
+    <section class="opt">
+      <span class="tag rec">Option A · recommended</span><h2>A Needs tag, a bubble</h2>
+      <ul><li>A "Needs 3" tag on the event's first line, tinted by the worst of them: red if one is blocked, yellow if one waits on you.</li>
+        <li>Tap it and the tree opens in a bubble under the title, like the why. One at a time.</li></ul>
+      <div class="phone"><iframe src="needs4-A.html" title="Option A, live" loading="lazy"></iframe></div>
+      <a class="open" href="needs4-A.html" target="_blank" rel="noopener">Open full screen</a>
+    </section>
+    <section class="opt">
+      <span class="tag">Option B</span><h2>Chips on the event</h2>
+      <ul><li>What is still missing shows as small chips on the event's last line, each with its mark, so you see what it needs without tapping.</li>
+        <li>Tap any chip to open the same bubble. Busier than A on events that need a lot.</li></ul>
+      <div class="phone"><iframe src="needs4-B.html" title="Option B, live" loading="lazy"></iframe></div>
+      <a class="open" href="needs4-B.html" target="_blank" rel="noopener">Open full screen</a>
+    </section>
+    <section class="opt">
+      <span class="tag">Option C</span><h2>A Needs tag, a sheet</h2>
+      <ul><li>The same tag as A. Tap it and the tree rises in a sheet over the page, which stays where it was underneath. The cross closes it.</li>
+        <li>More room for a deep tree, but it covers the plan while it's open.</li></ul>
+      <div class="phone"><iframe src="needs4-C.html" title="Option C, live" loading="lazy"></iframe></div>
+      <a class="open" href="needs4-C.html" target="_blank" rel="noopener">Open full screen</a>
+    </section>
+  </div>
+</main>

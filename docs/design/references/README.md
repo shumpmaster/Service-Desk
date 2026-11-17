@@ -100,3 +100,9 @@ Source: forevercomponents.com, a "Branch timeline" component (a git-style graph 
 Build one full screen at a time, in the order above, each matched to its reference. Fit each
 element (agent detail, usage, quiet and problem states, the plain-language layer) into the
 screen it belongs to. Don't give an element a page of its own.
+
+## The rebrand's starting style: Craft (14 Nov 2026)
+
+For the desk's complete style revision (the owner's word: "this would be a complete style revision rebrand"), across the whole desk, with the timeline's locked meanings opened up for proposals the owner approves one by one. Seven screens of Craft, curated by Mobbin, in the owner's order: [11](11-style-craft.png) Home, [12](12-style-craft.png) Tasks, [13](13-style-craft.png) Easy Styling sheet, [14](14-style-craft.png) folder picker over the keyboard, [15](15-style-craft.png) insert sheet, [16](16-style-craft.png) card style, [17](17-style-craft.png) property-type menu. The owner's source link: https://mobbin.com/screens/bafd6326-3a72-414a-9935-9b8658881ab4
+
+The owner's words, verbatim: "Not quite, attached are screenshots of the style I like. Elements, shapes, spacing, font, text size - some interactions etc and the base neutral color pallet. I will likely want to add color to this base pallet but I want to see what you can do from this first."

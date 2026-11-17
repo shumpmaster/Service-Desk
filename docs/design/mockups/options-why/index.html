@@ -1,0 +1,66 @@
+<title>Why Things Happen</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<style>/* Layout: the question, then v18 as it is and three live phones side by side; they wrap to two, then one, column. Tokens follow the Desk Element Library (v8). */
+:root { --ground:#f2f3f7; --surface:#ffffff; --text-1:#1c1d21; --text-2:#6b6d71; --separator:#e7e9ed; --now-word:#0868bc;
+  --sans:-apple-system,BlinkMacSystemFont,"SF Pro Text","Inter","Segoe UI",Roboto,sans-serif; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --ground:#000000; --surface:#1c1c1e; --text-1:#f2f2f7; --text-2:#98989f; --separator:#38383a; --now-word:#9fd0ff; color-scheme:dark } }
+:root[data-theme="dark"] { --ground:#000000; --surface:#1c1c1e; --text-1:#f2f2f7; --text-2:#98989f; --separator:#38383a; --now-word:#9fd0ff; color-scheme:dark }
+body { background:var(--ground); color:var(--text-1); font:400 17px/1.4 var(--sans);
+  padding-left:max(16px, env(safe-area-inset-left, 0px)); padding-right:max(16px, env(safe-area-inset-right, 0px)); padding-block:24px 48px; }
+main { max-width:1680px; margin:0 auto; display:flex; flex-direction:column; gap:32px; }
+h1 { font:700 27px/1.15 var(--sans); margin:0; text-wrap:balance; }
+p { margin:0; max-width:70ch; }
+a { color:var(--now-word); }
+.lede { display:flex; flex-direction:column; gap:10px; } .lede p { color:var(--text-2); font-size:15px; }
+.lede blockquote { margin:0; padding:10px 14px; border-radius:12px; background:var(--surface); font-size:15px; max-width:70ch; }
+.phones { display:grid; grid-template-columns:repeat(4, minmax(0, 395px)); gap:20px; align-items:start; }
+.opt { display:flex; flex-direction:column; gap:10px; min-width:0; }
+.tag { font:600 13px/1 var(--sans); letter-spacing:.06em; text-transform:uppercase; color:var(--text-2); }
+.tag.rec { color:var(--now-word); }
+h2 { font:600 19px/1.25 var(--sans); margin:0; text-wrap:balance; }
+.opt ul { margin:0; padding-left:20px; display:flex; flex-direction:column; gap:4px; font-size:15px; color:var(--text-2); min-height:9.5em; }
+.phone { width:100%; max-width:395px; height:760px; border:1px solid var(--separator); border-radius:24px; overflow:hidden; background:var(--surface); }
+.phone iframe { width:393px; max-width:100%; height:100%; border:0; display:block; }
+.open { font-size:14px; }
+@media (max-width: 1720px) { .phones { grid-template-columns:repeat(2, minmax(0, 395px)); } }
+@media (max-width: 860px) { .phones { grid-template-columns:minmax(0, 1fr); } .opt ul { min-height:0; } }
+</style>
+<main>
+  <div class="lede">
+    <h1>Why things happen, and how they feed into one another</h1>
+    <p>The second half of your last round 4 point:</p>
+    <blockquote>"the one thing I always struggle understanding is how actions task events feed into one another. So when I’m perusing the plan I will want to see the context behind how or why things are happening the way they are? If that makes sense?"</blockquote>
+    <p>What an event needs now shows under it (v17), and the plan's actions say which event needs them. These options add the other direction: why each thing that happened, happened. The records don't say why, so every reason below is an example I wrote from the records, and the links follow the same example requirements. They're shown on S-011, the spec that has stopped.</p>
+    <p>Each phone opens on the timeline project. Scroll down inside it to S-011's events.</p>
+  </div>
+  <div class="phones">
+    <section class="opt">
+      <span class="tag">As it is</span><h2>v18</h2>
+      <ul><li>Each event says what happened and who did it. What it needs shows only while something is unmet.</li>
+        <li>Why it happened, and what came before it, you work out from the order.</li></ul>
+      <div class="phone"><iframe src="now.html" title="As it is: v18, live" loading="lazy"></iframe></div>
+      <a class="open" href="now.html" target="_blank" rel="noopener">Open full screen</a>
+    </section>
+    <section class="opt">
+      <span class="tag">Option A</span><h2>A Because line</h2>
+      <ul><li>Under each event, "Because" and the event that led to it, as a small chip with its icon. Tap it to go there.</li>
+        <li>Short, and it links events, but it names what came before without saying why.</li></ul>
+      <div class="phone"><iframe src="why-A.html" title="Option A, live" loading="lazy"></iframe></div>
+      <a class="open" href="why-A.html" target="_blank" rel="noopener">Open full screen</a>
+    </section>
+    <section class="opt">
+      <span class="tag">Option B</span><h2>Why, on tap</h2>
+      <ul><li>Events with a reason wear a small "Why". Tap the event: a card rises with the milestone's goal at the top, then the chain of events that led here, one plain sentence each, and what it led to.</li>
+        <li>The whole story in one place, but only when you ask, so you don't see it while you scroll.</li></ul>
+      <div class="phone"><iframe src="why-B.html" title="Option B, live" loading="lazy"></iframe></div>
+      <a class="open" href="why-B.html" target="_blank" rel="noopener">Open full screen</a>
+    </section>
+    <section class="opt">
+      <span class="tag rec">Option C · recommended</span><h2>The story between events</h2>
+      <ul><li>Under each event, one plain sentence says why it happened, on a dotted line down to the event before it. The agent's plan stays where it is, as the detail of how.</li>
+        <li>You read the plan as a story while you scroll: the review found this, so the spec writer did that. It adds a line or two to each event.</li></ul>
+      <div class="phone"><iframe src="why-C.html" title="Option C, live" loading="lazy"></iframe></div>
+      <a class="open" href="why-C.html" target="_blank" rel="noopener">Open full screen</a>
+    </section>
+  </div>
+</main>

@@ -1,0 +1,1125 @@
+<title>Desk Timeline v6</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+/* Layout: one phone column. The desk is a trunk on the left; each project branches off it into a card.
+   Opening a project turns its branch into that project's own main line, with its CI timeline below. */
+:root {
+  --ground: #f6f6f3; --surface: #ffffff; --ink: #1a1a18; --ink-2: #4a4a45; --ink-3: #6b6b65; --ink-4: #8a8a83;
+  --rule: #e1e1dc; --rule-2: #efefeb; --pill-line: #cfcfca; --branch-line: #c9c9c4; --trunk-faint: #dcdcd6; --main-line: #1a1a18;
+  --done: #2f8a4e; --running: #b7791f; --failed: #c2341b; --you: #1d4ed8; --idle: #8a8a83; --step: #3d3d39;
+  --done-t: #256b3d; --running-t: #7a4f0d; --failed-t: #a12a15; --you-t: #1d4ed8; --idle-t: #55554f;
+  --you-ring: #c9d7fa; --you-wash: #eef3fe; --warn-wash: #fdf3e2; --stop-wash: #fbe9e5; --flash: #fff3c4;
+  --font-ui: Inter, system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --ground: #141413; --surface: #1d1d1b; --ink: #ecece7; --ink-2: #c4c4bd; --ink-3: #a3a39c; --ink-4: #85857e;
+  --rule: #33332f; --rule-2: #2a2a27; --pill-line: #45453f; --branch-line: #4d4d47; --trunk-faint: #34342f; --main-line: #ecece7;
+  --done: #3da862; --running: #d4952e; --failed: #e2553a; --you: #5b8cff; --idle: #77776f; --step: #5a5a54;
+  --done-t: #6cc98d; --running-t: #e8b35c; --failed-t: #f08a73; --you-t: #8fb0ff; --idle-t: #a3a39c;
+  --you-ring: #263c73; --you-wash: #17213a; --warn-wash: #2e2414; --stop-wash: #331913; --flash: #3a3214; color-scheme: dark; } }
+:root[data-theme="dark"] {
+  --ground: #141413; --surface: #1d1d1b; --ink: #ecece7; --ink-2: #c4c4bd; --ink-3: #a3a39c; --ink-4: #85857e;
+  --rule: #33332f; --rule-2: #2a2a27; --pill-line: #45453f; --branch-line: #4d4d47; --trunk-faint: #34342f; --main-line: #ecece7;
+  --done: #3da862; --running: #d4952e; --failed: #e2553a; --you: #5b8cff; --idle: #77776f; --step: #5a5a54;
+  --done-t: #6cc98d; --running-t: #e8b35c; --failed-t: #f08a73; --you-t: #8fb0ff; --idle-t: #a3a39c;
+  --you-ring: #263c73; --you-wash: #17213a; --warn-wash: #2e2414; --stop-wash: #331913; --flash: #3a3214; color-scheme: dark; }
+
+body { background: var(--ground); color: var(--ink); font-family: var(--font-ui); }
+.page { max-width: 440px; margin: 0 auto; padding-block: 20px 48px; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+button { font-family: var(--font-ui); color: inherit; }
+button:focus-visible, a:focus-visible { outline: 2px solid var(--you); outline-offset: 2px; }
+.mono { font-family: var(--font-mono); }
+.label { font-size: 11px; font-weight: 600; color: var(--ink-3); text-transform: uppercase; letter-spacing: .6px; }
+
+.top { display: flex; flex-direction: column; gap: 4px; margin-bottom: 12px; }
+.crumb { font-size: 13px; color: var(--ink-3); }
+h1 { margin: 0; font-size: 30px; font-weight: 700; letter-spacing: -.4px; }
+.asof { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 10px; font-size: 12px; color: var(--ink-3); }
+.asof b { color: var(--ink); font-weight: 600; }
+.live { display: inline-flex; align-items: center; gap: 6px; font-weight: 600; color: var(--done-t); }
+.live i { width: 8px; height: 8px; border-radius: 4px; background: var(--done); }
+.live.late { color: var(--running-t); } .live.late i { background: var(--running); }
+.live.stopped { color: var(--failed-t); } .live.stopped i { background: var(--failed); }
+.banner { border-radius: 10px; padding: 10px 12px; font-size: 13px; line-height: 1.45; margin-bottom: 12px; }
+.banner.late { background: var(--warn-wash); color: var(--running-t); }
+.banner.stopped { background: var(--stop-wash); color: var(--failed-t); }
+.banner span { color: var(--ink-2); }
+.demo { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; font-size: 11px; color: var(--ink-4); margin-bottom: 14px; }
+.demo button { min-height: 28px; padding: 0 9px; border-radius: 14px; border: 1px dashed var(--pill-line); background: transparent; color: var(--ink-3); font-size: 11px; cursor: pointer; }
+.demo button[aria-pressed="true"] { border-style: solid; color: var(--ink); background: var(--surface); }
+
+/* icons */
+.ico { width: 24px; height: 24px; border-radius: 12px; display: flex; align-items: center; justify-content: center; color: #fff; flex: none; }
+.ico.sq { border-radius: 6px; }
+.ico svg { width: 12px; height: 12px; }
+
+/* condensed rows (needs you and events) */
+.crow { display: flex; align-items: center; gap: 10px; width: 100%; min-height: 44px; padding: 6px 0; background: none; border: none; text-align: left; cursor: pointer; }
+.crow .t1 { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 1px; }
+.crow .line1 { display: flex; align-items: baseline; gap: 6px; min-width: 0; }
+.crow .k { font-size: 13px; font-weight: 700; flex: none; }
+.crow .s { font-size: 11px; font-weight: 600; flex: none; }
+.crow .tt { font-size: 13px; color: var(--ink-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+.crow .sub { font-size: 11px; color: var(--ink-4); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.crow .tm { font-size: 11px; color: var(--ink-4); flex: none; font-variant-numeric: tabular-nums; }
+.chev { width: 14px; height: 14px; flex: none; color: var(--ink-4); transition: transform .2s; }
+.open > .crow .chev, .open > .rbody > .crow .chev { transform: rotate(90deg); }
+.minijobs { display: inline-flex; gap: 3px; flex: none; }
+.minijobs i { width: 6px; height: 6px; border-radius: 3px; display: block; }
+.detail { display: flex; flex-direction: column; gap: 6px; padding: 2px 0 12px; font-size: 12px; color: var(--ink-3); }
+.detail .title { font-size: 14px; font-weight: 600; color: var(--ink); line-height: 1.35; }
+.vars { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+.pill { display: inline-flex; align-items: center; min-height: 24px; padding: 0 9px; border-radius: 12px; border: 1px solid var(--pill-line); background: var(--surface); font: 500 11px var(--font-mono); color: var(--ink); white-space: nowrap; max-width: 100%; overflow: hidden; text-overflow: ellipsis; }
+.who { font-size: 11px; font-weight: 600; color: var(--ink-2); }
+.trail { display: flex; flex-wrap: wrap; gap: 2px 10px; font-size: 11px; color: var(--ink-4); }
+.trail .ms { color: var(--ink-2); font-weight: 600; }
+.trail .nr { font-style: italic; }
+.jobs { border: 1px solid var(--rule); border-radius: 10px; background: var(--surface); padding: 2px 10px; }
+.job { display: flex; align-items: center; gap: 8px; padding: 6px 0; border-top: 1px solid var(--rule-2); font-size: 12px; color: var(--ink-2); }
+.job:first-child { border-top: none; }
+.job i { width: 9px; height: 9px; border-radius: 5px; flex: none; }
+.job span:first-of-type { flex: 1; }
+.btn { display: inline-flex; align-items: center; justify-content: center; min-height: 38px; padding: 0 14px; border-radius: 10px; font-weight: 600; font-size: 13px; background: var(--you); color: #fff; text-decoration: none; align-self: flex-start; }
+.ctx { display: flex; flex-direction: column; gap: 3px; }
+.ctx div { display: flex; align-items: center; gap: 6px; }
+.ctx i { width: 7px; height: 7px; border-radius: 4px; flex: none; }
+
+/* needs you */
+.needs { background: var(--you-wash); border: 1px solid var(--you-ring); border-radius: 12px; padding: 6px 12px; margin-bottom: 18px; }
+.needs-head { display: flex; align-items: baseline; justify-content: space-between; padding: 6px 0 2px; }
+.needs-head h2 { margin: 0; font-size: 15px; font-weight: 700; }
+.needs-head span { font-size: 12px; color: var(--ink-3); }
+.need { border-top: 1px solid var(--you-ring); }
+.need:first-of-type { border-top: none; }
+.need .ico { background: var(--you); }
+.need .k { color: var(--you-t); }
+
+/* desk view: the trunk and project branches */
+.desk { position: relative; padding-top: 4px; }
+.desk-label { display: flex; align-items: center; gap: 8px; height: 28px; padding-left: 30px; }
+.trunk { position: absolute; left: 13px; top: 14px; bottom: 30px; width: 3px; border-radius: 2px; background: var(--main-line); }
+.trunk-cap { position: absolute; left: 7px; top: 8px; width: 15px; height: 15px; border-radius: 8px; background: var(--main-line); }
+.proj { position: relative; padding-left: 40px; padding-block: 8px; }
+.proj svg.conn { position: absolute; left: 0; top: 0; width: 44px; height: 46px; overflow: visible; }
+.proj svg.conn path { fill: none; stroke: var(--branch-line); stroke-width: 2.5; stroke-dasharray: 5 4; }
+.proj svg.conn path.ink { stroke: var(--main-line); stroke-width: 3; stroke-dasharray: 1; stroke-dashoffset: 1; }
+.pen { position: absolute; left: 43px; top: -8px; width: 11px; height: 11px; margin-top: -5px; border-radius: 6px; background: var(--main-line); box-shadow: 0 0 0 4px var(--ground); z-index: 3; opacity: 0; pointer-events: none; }
+.pager { margin: 8px 0 0 40px; display: flex; align-items: center; justify-content: space-between; gap: 6px; font-size: 11px; color: var(--ink-4); }
+.pager button { min-height: 32px; padding: 0 10px; border-radius: 16px; border: 1px solid var(--pill-line); background: var(--surface); font: 500 11px var(--font-mono); cursor: pointer; max-width: 42%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.pager .dots { display: inline-flex; gap: 5px; }
+.pager .dots i { width: 6px; height: 6px; border-radius: 3px; background: var(--pill-line); display: block; }
+.pager .dots i.on { background: var(--main-line); }
+.swipehint { margin: 4px 0 0 40px; font-size: 11px; color: var(--ink-4); }
+#view { touch-action: pan-y; }
+.proj.hot svg.conn path { stroke: var(--ink); stroke-dasharray: none; }
+.pcard { width: 100%; text-align: left; background: var(--surface); border: 1px solid var(--rule); border-radius: 12px; padding: 12px; display: flex; flex-direction: column; gap: 8px; cursor: pointer; }
+.pcard:hover { border-color: var(--pill-line); }
+.p-top { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.p-name { font: 600 14px var(--font-mono); }
+.p-badge { font-size: 11px; font-weight: 700; color: #fff; background: var(--you); border-radius: 10px; padding: 2px 8px; }
+.p-badge.quiet { background: transparent; color: var(--ink-4); padding: 0; font-weight: 600; }
+.p-what { font-size: 13px; color: var(--ink-2); line-height: 1.35; }
+.p-last { display: flex; align-items: center; gap: 8px; font-size: 12px; color: var(--ink-3); }
+.p-last .ico { width: 18px; height: 18px; } .p-last .ico svg { width: 10px; height: 10px; }
+.pulse { display: flex; align-items: center; gap: 4px; }
+.pulse i { width: 8px; height: 8px; border-radius: 4px; display: block; }
+.pulse i.sq { border-radius: 2px; }
+.pulse span { font-size: 10px; color: var(--ink-4); margin-left: 4px; }
+.desk-end { padding: 6px 0 0 40px; font-size: 11px; color: var(--ink-4); }
+
+/* project view */
+.back { min-height: 36px; padding: 0 12px 0 8px; border-radius: 18px; border: 1px solid var(--pill-line); background: var(--surface); font-size: 13px; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; gap: 4px; margin-bottom: 10px; }
+.branchoff { position: relative; height: 34px; }
+.branchoff svg { position: absolute; left: 0; top: 0; width: 60px; height: 34px; overflow: visible; }
+.branchoff .bo-desk { position: absolute; left: 13px; top: 0; bottom: 0; width: 3px; background: var(--trunk-faint); }
+.branchoff span { position: absolute; left: 26px; top: 2px; font-size: 10px; font-weight: 600; color: var(--ink-4); letter-spacing: .4px; }
+.phead { margin-left: 40px; }
+.phead .pcard { cursor: default; }
+.ptl { position: relative; margin-top: 8px; }
+.ptl .faint { position: absolute; left: 13px; top: -60px; bottom: 0; width: 3px; background: var(--trunk-faint); }
+.ptl .pmain { position: absolute; left: 47px; top: -8px; bottom: 0; width: 3px; border-radius: 2px; background: var(--main-line); transform-origin: top; }
+.ptl .pbr { position: absolute; left: 83px; top: 0; bottom: 0; border-left: 2px dashed var(--branch-line); transform-origin: top; }
+.lanehead { display: flex; padding-left: 36px; font-size: 10px; color: var(--ink-3); font-weight: 600; letter-spacing: .4px; height: 20px; align-items: center; position: relative; }
+.lanehead span:first-child { width: 36px; }
+.day { position: relative; padding: 12px 0 4px 104px; }
+.ev { position: relative; }
+.ev .node { position: absolute; top: 10px; width: 24px; height: 24px; border-radius: 12px; border: 3px solid var(--ground); display: flex; align-items: center; justify-content: center; color: #fff; z-index: 1; }
+.ev .node.sq { border-radius: 8px; }
+.ev .node svg { width: 11px; height: 11px; }
+.ev .node.m { left: 36px; } .ev .node.b { left: 72px; }
+.ev .joinbar { position: absolute; top: 20px; left: 50px; width: 32px; height: 3px; background: var(--branch-line); }
+.ev .rbody { margin-left: 104px; min-width: 0; }
+.ev .crow { min-height: 44px; }
+/* the past: finished lines sit back, a little more for each earlier day; running and waiting stay at full strength */
+.ev .rbody, .ev .node, .ev .joinbar { transition: opacity .25s, filter .25s; }
+.ev.past .rbody { opacity: .74; }
+.ev.past .node { opacity: .72; filter: saturate(.7); }
+.ev.past .joinbar { opacity: .7; }
+.ev.past.older .rbody { opacity: .6; }
+.ev.past.older .node { opacity: .58; filter: saturate(.55); }
+.ev.past.oldest .rbody { opacity: .5; }
+.ev.past.oldest .node { opacity: .5; filter: saturate(.45); }
+.ev.past.open .rbody, .ev.past.open .node, .ev.past:hover .rbody, .ev.past:hover .node, .ev.past:focus-within .rbody, .ev.past:focus-within .node { opacity: 1; filter: none; }
+.need-here { margin: 0 0 6px 40px; position: relative; z-index: 2; }
+.need-here .needs { margin-bottom: 8px; }
+.ev, .day, .lanehead { position: relative; z-index: 1; }
+.replay { margin: 4px 0 6px 40px; display: flex; align-items: center; gap: 8px; font-size: 11px; color: var(--ink-4); position: relative; z-index: 2; background: var(--ground); border-radius: 15px; padding: 4px 0; }
+.replay button { min-height: 30px; padding: 0 10px; border-radius: 15px; border: 1px solid var(--pill-line); background: var(--surface); font-size: 12px; font-weight: 600; cursor: pointer; }
+.flash { animation: flash 1.8s ease-out; }
+@keyframes flash { 0% { background: var(--flash); } 100% { background: transparent; } }
+.dotpulse { animation: dotpulse .55s ease-in-out infinite alternate; }
+@keyframes dotpulse { from { transform: scale(.85); opacity: .65; } to { transform: scale(1.15); opacity: 1; } }
+.foot { font-size: 11px; color: var(--ink-4); line-height: 1.5; border-top: 1px solid var(--rule); padding-top: 12px; margin-top: 18px; }
+@media (prefers-reduced-motion: reduce) { .flash, .dotpulse { animation: none; } .chev { transition: none; } }
+
+/* v4: the plan */
+.p-repo { display: block; font: 500 10px var(--font-mono); color: var(--ink-4); margin-top: 2px; }
+.phbar { display: flex; gap: 3px; }
+.phbar .ph { flex: 1; display: flex; flex-direction: column; gap: 3px; font-size: 10px; color: var(--ink-4); min-width: 0; }
+.phbar .ph i { display: block; height: 5px; border-radius: 3px; background: var(--rule); }
+.phbar .ph.done i { background: var(--done); opacity: .75; }
+.phbar .ph.current i { background: var(--ink); }
+.phbar .ph.current { color: var(--ink); font-weight: 700; }
+.nophase { font-size: 11px; color: var(--ink-4); font-style: italic; }
+.modebar { margin: 10px 0 0 40px; display: inline-flex; border: 1px solid var(--pill-line); border-radius: 17px; overflow: hidden; }
+.modebar button { min-height: 32px; padding: 0 14px; border: none; background: var(--surface); font-size: 12px; font-weight: 600; cursor: pointer; color: var(--ink-3); }
+.modebar button[aria-pressed="true"] { background: var(--ink); color: var(--ground); }
+.pfut { position: absolute; left: 47px; width: 0; border-left: 3px dashed var(--branch-line); }
+.planmode .pbr { display: none; }
+.planmode { padding-top: 6px; }
+.phase { position: relative; z-index: 1; padding: 14px 0 6px 64px; display: flex; align-items: baseline; gap: 8px; }
+.phase .phname { font-size: 16px; font-weight: 700; letter-spacing: -.2px; }
+.phase .phnote { font-size: 11px; color: var(--ink-4); text-transform: uppercase; letter-spacing: .5px; font-weight: 600; }
+.phase.current .phnote { color: var(--you-t); }
+.phase.planned .phname { color: var(--ink-3); }
+.pl { position: relative; z-index: 1; }
+.pl > .rbody { margin-left: 64px; min-width: 0; }
+.pl .node { position: absolute; top: 12px; left: 37px; width: 22px; height: 22px; border-radius: 11px; border: 3px solid var(--ground); box-sizing: border-box; display: flex; align-items: center; justify-content: center; color: #fff; z-index: 1; }
+.pl .node svg { width: 11px; height: 11px; }
+.pl .node.sq { border-radius: 7px; }
+.pl .node.ms { width: 16px; height: 16px; left: 40px; top: 15px; border-width: 3px; }
+.pl .node.ms.big { width: 20px; height: 20px; left: 38px; top: 13px; }
+.pl .node.ms.reached, .pl .node.ms.done { background: var(--done); }
+.pl .node.ms.notrec, .pl .node.ms.notreach { background: var(--ground); box-shadow: inset 0 0 0 2px var(--idle); }
+.pl .node.ms.progress { background: var(--running); }
+.pl .node.ms.planned { background: var(--ground); box-shadow: inset 0 0 0 2px var(--branch-line); }
+.pl .node.ms.own { border-radius: 4px; transform: rotate(45deg); }
+.pl .node.hollow { background: var(--ground); color: var(--ink-4); box-shadow: inset 0 0 0 2px var(--branch-line); }
+.pl.planned .crow .k, .pl.planned .crow .tt { color: var(--ink-3); }
+.pl.gate.planned .crow .k { color: var(--ink-3); }
+.pl.reached > .rbody, .pl.notrec > .rbody, .pl.notreach > .rbody, .pl.phase-done > .rbody, .pl.gate.done > .rbody { opacity: .72; }
+.pl.reached.open > .rbody, .pl.notrec.open > .rbody, .pl.notreach.open > .rbody, .pl.phase-done.open > .rbody { opacity: 1; }
+.k.mid { font-family: var(--font-mono); font-size: 12px; }
+.pl.now { margin: 10px 0; }
+.pl.now > .rbody { background: var(--you-wash); border: 1px solid var(--you-ring); border-radius: 12px; padding: 4px 12px 2px; }
+.pl .now-node { width: 30px; height: 30px; border-radius: 15px; left: 33px; top: 22px; background: var(--you); animation: ringpulse 1.6s ease-out infinite; }
+.nowtag { font-size: 10px; font-weight: 800; letter-spacing: .8px; color: var(--you-t); padding-top: 6px; }
+@keyframes ringpulse { 0% { box-shadow: 0 0 0 0 var(--you-ring); } 100% { box-shadow: 0 0 0 12px transparent; } }
+.steps { position: relative; display: flex; flex-direction: column; padding-left: 14px; margin-top: 2px; }
+.steps::before { content: ""; position: absolute; left: 4px; top: 8px; bottom: 8px; border-left: 2px solid var(--rule); }
+.stp .crow, .pl.nested .crow { min-height: 36px; padding: 4px 0; }
+.mini { width: 10px; height: 10px; border-radius: 5px; flex: none; background: var(--idle); position: relative; left: -14px; margin-right: -10px; box-shadow: 0 0 0 3px var(--ground); }
+.mini.done, .mini.reached { background: var(--done); } .mini.failed { background: var(--failed); } .mini.you { background: var(--you); } .mini.running, .mini.progress { background: var(--running); }
+.mini.notrec, .mini.notreach, .mini.planned { background: var(--ground); box-shadow: inset 0 0 0 2px var(--idle), 0 0 0 3px var(--ground); }
+.pl.nested > .rbody { margin-left: 0; }
+.pl.nested { padding-left: 14px; }
+.pl.empty > .rbody { padding: 6px 0 10px; font-size: 12px; color: var(--ink-4); }
+.nr { font-style: italic; }
+@media (prefers-reduced-motion: reduce) { .pl .now-node { animation: none; } }
+
+/* v5: newest first, and milestones that branch out into sprints and events */
+.pl.now > .rbody { margin-top: 8px; margin-bottom: 8px; }
+.pl .now-node { top: 36px; }
+.cnt { font-size: 11px; color: var(--ink-4); font-weight: 600; }
+.noplan { position: relative; z-index: 1; margin: 6px 0 4px 40px; font-size: 12px; color: var(--ink-4); font-style: italic; }
+.linkbtn { background: none; border: none; padding: 4px 0 10px; font-size: 12px; font-weight: 600; color: var(--you-t); cursor: pointer; text-decoration: underline; text-underline-offset: 3px; }
+.pl.unhide > .rbody { margin-left: 64px; }
+.br-out { position: absolute; left: 48px; top: 22px; width: 36px; height: 24px; border-top: 2px solid var(--branch-line); border-right: 2px solid var(--branch-line); border-top-right-radius: 14px; box-sizing: border-box; }
+.br-lane { position: absolute; left: 82px; top: 46px; bottom: 16px; border-left: 2px solid var(--branch-line); }
+.sprints { display: flex; flex-direction: column; gap: 2px; margin-top: 4px; }
+.spr { position: relative; padding-left: 18px; }
+.spr > .crow { min-height: 40px; }
+.snode { position: absolute; left: 6px; top: 15px; width: 12px; height: 12px; border-radius: 3px; box-shadow: 0 0 0 3px var(--ground); z-index: 1; }
+.br-out2 { position: absolute; left: 12px; top: 21px; width: 22px; height: 18px; border-top: 2px dashed var(--branch-line); border-right: 2px dashed var(--branch-line); border-top-right-radius: 12px; box-sizing: border-box; }
+.br-lane2 { position: absolute; left: 32px; top: 39px; bottom: 12px; border-left: 2px dashed var(--branch-line); }
+.events { display: flex; flex-direction: column; padding-left: 4px; padding-bottom: 6px; }
+.evt { position: relative; }
+.evt > .crow { min-height: 38px; padding: 3px 0; }
+.ico.enode { width: 20px; height: 20px; border-radius: 10px; box-shadow: 0 0 0 3px var(--ground); }
+.ico.enode.sq { border-radius: 5px; }
+.ico.enode svg { width: 10px; height: 10px; }
+.evt.past > .crow { opacity: .74; }
+.evt.past.open > .crow { opacity: 1; }
+.evt .detail { padding-left: 32px; }
+
+/* ================= v6 · Aurora, done right =================
+   Layout: one phone column. Glass only on the controls layer (the top bar, the Needs-you sheet, the floating dock);
+   the timeline itself is calm, dense content on solid surfaces. A quiet colour field behind, tinted by state.
+   Type: IBM Plex Sans and Mono (the desk's ruled faces). Radii: 4 / 8 / 12 / full. Weights 400–600. */
+:root {
+  --ground: #f4f3ef; --surface: #ffffff; --surface-2: #faf9f6;
+  --ink: #18181a; --ink-2: #3f3f45; --ink-3: #5c5c63; --ink-4: #5c5c63;
+  --rule: #e2e0da; --rule-2: #ecebe6; --pill-line: #cfccc4; --branch-line: #86837b; --trunk-faint: #d9d6cf; --main-line: #18181a;
+  --done: #1f7a45; --running: #a8670a; --failed: #c0321a; --you: #2152e6; --idle: #77746c; --step: #3f3f45;
+  --done-t: #1a6a3c; --running-t: #8a5306; --failed-t: #a62a15; --you-t: #1d48d0; --idle-t: #57544d;
+  --you-ring: #c3d1fa; --you-wash: #ecf1fe; --warn-wash: #fbf1e1; --stop-wash: #fbe8e4; --flash: #fff1c8;
+  --on-fill: #ffffff;
+  --glass: rgba(255, 255, 255, .62); --glass-edge: rgba(24, 24, 26, .10); --glass-hi: rgba(255, 255, 255, .9);
+  --field-a: rgba(33, 82, 230, .16); --field-b: rgba(31, 122, 69, .10); --field-c: rgba(168, 103, 10, .08);
+  --font-ui: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+  --spring: linear(0, 0.006, 0.025 2.8%, 0.101 6.1%, 0.539 18.9%, 0.721 25.3%, 0.849 31.5%, 0.937 38.1%, 0.968 41.8%, 0.991 45.7%, 1.006 50.1%, 1.015 55%, 1.017 63.9%, 1.001 85.9%, 1);
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --ground: #0f0f11; --surface: #19191c; --surface-2: #141416;
+  --ink: #ededee; --ink-2: #c6c6cb; --ink-3: #a1a1a8; --ink-4: #a1a1a8;
+  --rule: #2a2a2f; --rule-2: #222226; --pill-line: #3c3c42; --branch-line: #7d7d86; --trunk-faint: #2e2e33; --main-line: #ededee;
+  --done: #3fb36a; --running: #e0a03a; --failed: #ef6a4f; --you: #6b95ff; --idle: #8a8a92; --step: #c6c6cb;
+  --done-t: #74d398; --running-t: #f0bd66; --failed-t: #f8957e; --you-t: #9bb8ff; --idle-t: #b0b0b7;
+  --you-ring: #2b3d73; --you-wash: #161d33; --warn-wash: #2a2213; --stop-wash: #2e1814; --flash: #3a3214;
+  --on-fill: #0f0f11;
+  --glass: rgba(28, 28, 32, .58); --glass-edge: rgba(255, 255, 255, .10); --glass-hi: rgba(255, 255, 255, .08);
+  --field-a: rgba(107, 149, 255, .20); --field-b: rgba(63, 179, 106, .10); --field-c: rgba(224, 160, 58, .08);
+  color-scheme: dark; } }
+:root[data-theme="dark"] {
+  --ground: #0f0f11; --surface: #19191c; --surface-2: #141416;
+  --ink: #ededee; --ink-2: #c6c6cb; --ink-3: #a1a1a8; --ink-4: #a1a1a8;
+  --rule: #2a2a2f; --rule-2: #222226; --pill-line: #3c3c42; --branch-line: #7d7d86; --trunk-faint: #2e2e33; --main-line: #ededee;
+  --done: #3fb36a; --running: #e0a03a; --failed: #ef6a4f; --you: #6b95ff; --idle: #8a8a92; --step: #c6c6cb;
+  --done-t: #74d398; --running-t: #f0bd66; --failed-t: #f8957e; --you-t: #9bb8ff; --idle-t: #b0b0b7;
+  --you-ring: #2b3d73; --you-wash: #161d33; --warn-wash: #2a2213; --stop-wash: #2e1814; --flash: #3a3214;
+  --on-fill: #0f0f11;
+  --glass: rgba(28, 28, 32, .58); --glass-edge: rgba(255, 255, 255, .10); --glass-hi: rgba(255, 255, 255, .08);
+  --field-a: rgba(107, 149, 255, .20); --field-b: rgba(63, 179, 106, .10); --field-c: rgba(224, 160, 58, .08);
+  color-scheme: dark; }
+
+/* the quiet colour field: blue when something waits on you, green and amber when the work is just moving */
+body { background-color: var(--ground); background-image: radial-gradient(70% 38% at 85% -4%, var(--field-a), transparent 70%), radial-gradient(60% 30% at 0% 18%, var(--field-c), transparent 70%); background-attachment: fixed; }
+html[data-mood="calm"] body { background-image: radial-gradient(70% 38% at 85% -4%, var(--field-b), transparent 70%), radial-gradient(60% 30% at 0% 18%, var(--field-c), transparent 70%); }
+.page { padding-bottom: calc(96px + env(safe-area-inset-bottom, 0px)); overflow-x: clip; }
+
+/* type: Plex, on the ruled scale (28/20/18/15/13/12/11), weights 400–600 */
+h1 { font-size: 28px; font-weight: 600; letter-spacing: -.4px; }
+.crow .k, .needs-head h2, .p-name, .phase .phname, .nowtag, .btn, .p-badge, .back, .k.mid { font-weight: 600; }
+.phase .phname { font-size: 18px; letter-spacing: -.2px; }
+.p-repo, .phbar .ph, .pulse span, .branchoff span, .nowtag, .cnt, .label, .phase .phnote, .lanehead { font-size: 11px; }
+.crow .tm, .tm { font-variant-numeric: tabular-nums; }
+
+/* glass, only on the controls layer */
+.glass, .top, .needs, .dock {
+  background: var(--glass); border: 1px solid var(--glass-edge);
+  -webkit-backdrop-filter: blur(22px) saturate(160%); backdrop-filter: blur(22px) saturate(160%);
+  box-shadow: inset 0 1px 0 var(--glass-hi), 0 8px 30px rgba(0, 0, 0, .08);
+}
+.top { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 30; border-radius: 0 0 20px 20px; margin: -20px calc(-1 * max(16px, env(safe-area-inset-left, 0px))) 12px; padding: 14px max(16px, env(safe-area-inset-left, 0px)) 12px; border-top: none; }
+body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-area-inset-top, 0px); z-index: 31; background: var(--ground); }
+.top h1 { font-size: 22px; }
+.needs { border-radius: 20px; padding: 6px 14px; }
+.need { border-top-color: var(--glass-edge); }
+.need .ico { box-shadow: 0 0 0 3px color-mix(in srgb, var(--you) 18%, transparent); }
+
+/* the floating dock: All projects, and Jump to Now (glass capsule, concentric with the phone's corners) */
+.dock { position: fixed; z-index: 40; left: 50%; transform: translateX(-50%); bottom: calc(14px + env(safe-area-inset-bottom, 0px)); display: flex; gap: 6px; padding: 6px; border-radius: 999px; }
+.dock button { min-height: 44px; padding: 0 18px; border-radius: 999px; border: none; background: transparent; font: 600 13px var(--font-ui); color: var(--ink); cursor: pointer; white-space: nowrap; }
+.dock button.now { background: var(--you); color: var(--on-fill); }
+.dock button:hover { background: color-mix(in srgb, var(--ink) 6%, transparent); }
+.dock button.now:hover { background: var(--you); }
+.back { display: none; }
+
+/* @media fallbacks: reduced transparency makes glass solid; more contrast strengthens edges */
+@media (prefers-reduced-transparency: reduce) { .top, .needs, .dock, .glass { -webkit-backdrop-filter: none; backdrop-filter: none; background: var(--surface); } }
+@media (prefers-contrast: more) { .top, .needs, .dock, .pcard, .pl.now > .rbody { border-color: var(--ink-2); } :root { --ink-3: var(--ink-2); --branch-line: var(--ink-2); } }
+
+/* content: calm and dense, solid surfaces, soft borders, colour only where it means something */
+.pcard { border-radius: 12px; border: 1px solid var(--rule); background: var(--surface); box-shadow: 0 1px 2px rgba(0, 0, 0, .04); }
+.pcard:hover { border-color: var(--pill-line); }
+.jobs { border-radius: 8px; }
+.pill, .demo button, .pager button, .p-badge { border-radius: 999px; }
+.p-badge:not(.quiet) { background: var(--you); color: var(--on-fill); }
+.ico.sq, .node.sq, .snode, .ico.enode.sq { border-radius: 4px; }
+.ico, .node, .ev .node, .pl .node:not(.ms):not(.hollow), .btn { color: var(--on-fill); }
+.btn { border-radius: 999px; min-height: 44px; padding: 0 18px; }
+.phbar .ph i { height: 4px; border-radius: 4px; }
+
+/* lines: 2 px main, 1.5 px dashed branch, at least 3:1 against the ground */
+.trunk, .ptl .pmain { width: 2px; }
+.trunk-cap { width: 12px; height: 12px; left: 8px; top: 9px; }
+.ptl .pmain { left: 47px; }
+.pfut { border-left: 2px dashed var(--branch-line); left: 47px; }
+.branchoff svg path { stroke-width: 2 !important; }
+.proj svg.conn path { stroke-width: 1.5; stroke-dasharray: 4 3; stroke: var(--branch-line); }
+.proj svg.conn path.ink { stroke-width: 2; stroke-dasharray: 1; stroke: var(--main-line); }
+.ptl .faint, .branchoff .bo-desk { width: 2px; }
+
+/* nodes: two sizes, no faded opacity for the past; age is shown by ink-3 */
+.ev.past .rbody, .ev.past .node, .evt.past > .crow, .pl.reached > .rbody, .pl.notrec > .rbody, .pl.notreach > .rbody, .pl.gate.done > .rbody { opacity: 1; filter: none; }
+.ev.past .tt, .evt.past .tt, .pl.reached .tt, .pl.notrec .tt, .pl.notreach .tt, .pl.gate.done .tt { color: var(--ink-3); }
+.pl .node:not(.ms):not(.now-node) { width: 20px; height: 20px; left: 38px; top: 13px; border-width: 3px; }
+.pl .node.ms { width: 12px; height: 12px; left: 42px; top: 17px; border-width: 2px; }
+.pl .node.ms.notrec, .pl .node.ms.notreach, .pl .node.ms.planned { box-shadow: inset 0 0 0 2px var(--branch-line); }
+.ico.enode { width: 18px; height: 18px; }
+
+/* Now: the one emphasised item (larger, filled with your colour, a single soft glow, no endless pulse) */
+.pl.now > .rbody { background: var(--you); border: none; border-radius: 20px; padding: 6px 16px 4px; box-shadow: 0 10px 30px color-mix(in srgb, var(--you) 35%, transparent); }
+.pl.now > .rbody *, .pl.now > .rbody .k, .pl.now > .rbody .s { color: var(--on-fill) !important; }
+.pl.now .crow .tt { font-size: 17px; line-height: 1.3; font-weight: 500; }
+.pl.now .nowtag { letter-spacing: .6px; }
+.pl.now .detail .btn { background: var(--on-fill); color: var(--you) !important; }
+.pl .now-node { animation: none; width: 26px; height: 26px; left: 35px; background: var(--you); box-shadow: 0 0 0 3px var(--ground), 0 0 0 5px color-mix(in srgb, var(--you) 40%, transparent); }
+
+/* the branch out of an opened milestone runs below its title in its own margin, never through text */
+.pl.open > .rbody > .detail { padding-left: 16px; }
+.br-out { left: 47px; top: 30px; width: 22px; height: 34px; border: none; border-left: 1.5px dashed var(--branch-line); border-bottom: 1.5px dashed var(--branch-line); border-radius: 0 0 0 12px; }
+.br-lane { left: 68px; top: 62px; bottom: 16px; border-left: 1.5px dashed var(--branch-line); }
+.snode { left: -16px; }
+.br-out2 { left: -10px; top: 26px; width: 20px; height: 22px; border: none; border-left: 1.5px dashed var(--branch-line); border-bottom: 1.5px dashed var(--branch-line); border-radius: 0 0 0 10px; }
+.br-lane2 { left: 8px; top: 46px; bottom: 10px; border-left: 1.5px dashed var(--branch-line); }
+.events { margin-left: -18px; padding-left: 0; }
+.spr { padding-left: 18px; }
+
+/* state words stay words beside their colour: a soft chip behind each, in the same family */
+.crow .s { padding: 1px 7px; border-radius: 999px; background: color-mix(in srgb, currentColor 11%, transparent); font-size: 11px; font-weight: 500; }
+.pl.now .crow .s { background: rgba(255, 255, 255, .18); }
+
+/* ================= v6.1 · bolder: a vivid aurora field, frosted panels, big type, glowing rails ================= */
+:root {
+  --ground: #e9ecf8; --surface: #ffffff;
+  --field-a: rgba(37, 99, 235, .42); --field-b: rgba(20, 184, 166, .34); --field-c: rgba(245, 158, 11, .22); --field-d: rgba(99, 102, 241, .30);
+  --panel: rgba(255, 255, 255, .78); --panel-edge: rgba(255, 255, 255, .9); --glow: rgba(37, 99, 235, .35);
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --ground: #070a14; --surface: #121626;
+  --field-a: rgba(59, 130, 246, .55); --field-b: rgba(20, 184, 166, .38); --field-c: rgba(245, 158, 11, .20); --field-d: rgba(99, 102, 241, .40);
+  --panel: rgba(18, 22, 38, .72); --panel-edge: rgba(255, 255, 255, .10); --glow: rgba(107, 149, 255, .55);
+  --glass: rgba(22, 27, 46, .55); } }
+:root[data-theme="dark"] {
+  --ground: #070a14; --surface: #121626;
+  --field-a: rgba(59, 130, 246, .55); --field-b: rgba(20, 184, 166, .38); --field-c: rgba(245, 158, 11, .20); --field-d: rgba(99, 102, 241, .40);
+  --panel: rgba(18, 22, 38, .72); --panel-edge: rgba(255, 255, 255, .10); --glow: rgba(107, 149, 255, .55);
+  --glass: rgba(22, 27, 46, .55); }
+
+/* the aurora: large soft fields of colour, fixed behind everything, tinted by state */
+body { background-color: var(--ground); background-image:
+  radial-gradient(55% 45% at 100% 0%, var(--field-a), transparent 70%),
+  radial-gradient(50% 40% at 0% 30%, var(--field-b), transparent 70%),
+  radial-gradient(60% 40% at 80% 75%, var(--field-d), transparent 70%),
+  radial-gradient(45% 35% at 10% 100%, var(--field-c), transparent 70%); background-attachment: fixed; }
+html[data-mood="calm"] body { background-image:
+  radial-gradient(55% 45% at 100% 0%, var(--field-b), transparent 70%),
+  radial-gradient(50% 40% at 0% 30%, var(--field-c), transparent 70%),
+  radial-gradient(60% 40% at 80% 75%, var(--field-b), transparent 70%); }
+
+/* big type */
+h1 { font-size: 40px; letter-spacing: -1px; line-height: 1.05; }
+.top h1 { font-size: 34px; }
+.phase .phname { font-size: 28px; letter-spacing: -.6px; font-weight: 600; }
+.phase { padding-top: 22px; }
+.p-name { font-size: 18px; }
+.needs-head h2 { font-size: 20px; }
+
+/* frosted panels: content stays readable (a near-solid frost), the aurora shows through its edges */
+.pcard, .pl.reached > .rbody, .pl.progress > .rbody, .pl.planned > .rbody, .pl.notrec > .rbody, .pl.notreach > .rbody, .pl.gate > .rbody, .pl.phase-done > .rbody {
+  background: var(--panel); border: 1px solid var(--panel-edge); border-radius: 16px;
+  -webkit-backdrop-filter: blur(16px) saturate(150%); backdrop-filter: blur(16px) saturate(150%);
+  box-shadow: 0 6px 24px rgba(10, 20, 60, .10); }
+.pl > .rbody { padding: 0 12px; margin-top: 6px; margin-right: 0; }
+.pl.unhide > .rbody, .pl.empty > .rbody { background: none; border: none; box-shadow: none; -webkit-backdrop-filter: none; backdrop-filter: none; }
+.pcard { border-radius: 20px; padding: 16px; }
+.needs { border-radius: 24px; }
+.top { border-radius: 0 0 28px 28px; }
+
+/* glowing rails and dots */
+.trunk, .ptl .pmain { width: 3px; box-shadow: 0 0 14px var(--glow); }
+.ptl .pmain { left: 46.5px; }
+.branchoff svg path { stroke-width: 3 !important; filter: drop-shadow(0 0 6px var(--glow)); }
+.pfut { border-left: 2px dashed var(--branch-line); }
+.pl .node, .ev .node, .ico.enode, .snode, .need .ico, .p-last .ico { box-shadow: 0 0 0 3px var(--ground), 0 0 14px -2px currentColor; }
+.pl .node.ms.reached { box-shadow: 0 0 0 3px var(--ground), 0 0 12px var(--done); }
+.pl .node.ms.progress { box-shadow: 0 0 0 3px var(--ground), 0 0 14px var(--running); }
+
+/* Now: the hero. A luminous card, larger type, a halo around its dot */
+.pl.now > .rbody { background: linear-gradient(135deg, var(--you), color-mix(in srgb, var(--you) 70%, #14b8a6)); border-radius: 24px; padding: 10px 18px 8px; box-shadow: 0 16px 48px var(--glow), inset 0 1px 0 rgba(255, 255, 255, .35); }
+.pl.now .crow .tt { font-size: 20px; line-height: 1.25; font-weight: 600; letter-spacing: -.3px; }
+.pl .now-node { width: 30px; height: 30px; left: 33px; box-shadow: 0 0 0 4px var(--ground), 0 0 0 8px color-mix(in srgb, var(--you) 35%, transparent), 0 0 30px var(--glow); }
+
+/* the dock: bigger, brighter */
+.dock { padding: 8px; box-shadow: inset 0 1px 0 var(--glass-hi), 0 16px 40px rgba(10, 20, 60, .25); }
+.dock button { min-height: 48px; font-size: 14px; }
+.dock button.now { background: linear-gradient(135deg, var(--you), color-mix(in srgb, var(--you) 70%, #14b8a6)); box-shadow: 0 6px 18px var(--glow); }
+
+/* phase bar on cards: thicker, with a glow on the current phase */
+.phbar .ph i { height: 6px; border-radius: 6px; }
+.phbar .ph.current i { background: var(--you); box-shadow: 0 0 10px var(--glow); }
+.phbar .ph.current { color: var(--you-t); }
+
+@media (prefers-reduced-transparency: reduce) { .pcard, .pl > .rbody { -webkit-backdrop-filter: none; backdrop-filter: none; background: var(--surface); } }
+</style>
+
+<div class="page">
+  <div id="view"></div>
+  <p class="foot">Mockup, version 6, “Aurora, done right”, for the timeline work's Design step: glass only on the controls (the top bar, the Needs-you sheet, the floating dock), a calm and dense timeline on solid surfaces, a quiet colour field tinted by state, IBM Plex type, spring motion, and one emphasised item, Now. It follows the 14 November research memo and design audit. Every function is version 5's, plus the dock's Jump to Now. Newest first: planned work above, the current step in the middle, finished work below. Each milestone branches out into its sprints, and each sprint into its events. Milestones with nothing on record in a past or current phase are hidden until you ask for them. Plan states come from the desk's own trace check and dispatch log. Built from the desk's real records across Service-Desk, the operating model, Model-Lab and the portfolio, as of 14 November 2026 at 17:25 UTC; events picked by hand, times in UTC. Tap a project to open it; tap any line to open its detail. Buttons open the real page on GitHub, where you finish the step yourself.</p>
+</div>
+
+<script>
+(function () {
+  var SPRING = (window.CSS && CSS.supports && CSS.supports('animation-timing-function', 'linear(0, 1)')) ? 'linear(0, 0.006, 0.025 2.8%, 0.101 6.1%, 0.539 18.9%, 0.721 25.3%, 0.849 31.5%, 0.937 38.1%, 0.968 41.8%, 0.991 45.7%, 1.006 50.1%, 1.015 55%, 1.017 63.9%, 1.001 85.9%, 1)' : 'cubic-bezier(.2,.8,.2,1)';
+  var REDUCED = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  var ICONS = {
+    branch: '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><circle cx="4" cy="3" r="1.6"/><circle cx="4" cy="13" r="1.6"/><circle cx="12" cy="5" r="1.6"/><path d="M4 4.6v6.8M12 6.6c0 3-8 2-8 4.8"/></svg>',
+    commit: '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><circle cx="8" cy="8" r="2.8"/><path d="M1 8h4.2M10.8 8H15"/></svg>',
+    pr: '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="4" cy="3.5" r="1.6"/><circle cx="4" cy="12.5" r="1.6"/><circle cx="12" cy="12.5" r="1.6"/><path d="M4 5.1v5.8M12 10.9V6a2 2 0 0 0-2-2H7.5M9 2.5L7.5 4 9 5.5"/></svg>',
+    check: '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" aria-hidden="true"><path d="M5 3.2v9.6L12.8 8z"/></svg>',
+    review: '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M1.2 8S3.8 3.5 8 3.5 14.8 8 14.8 8 12.2 12.5 8 12.5 1.2 8 1.2 8z"/><circle cx="8" cy="8" r="2"/></svg>',
+    merge: '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><circle cx="4" cy="3" r="1.6"/><circle cx="4" cy="13" r="1.6"/><circle cx="12" cy="9" r="1.6"/><path d="M4 4.6v6.8M4.6 4.4c1 3 4 4.6 5.8 4.6"/></svg>',
+    deploy: '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 10.5V2M4.8 5.2L8 2l3.2 3.2M2.5 10v3.5h11V10"/></svg>',
+    gate: '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3.5 14.5V2M3.5 2.5h8.5l-2 3 2 3H3.5"/></svg>',
+    decision: '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 3h12v8H7l-3 2.5V11H2z"/><path d="M5.5 7l1.8 1.6L10.5 5.5"/></svg>',
+    research: '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><circle cx="7" cy="7" r="4.2"/><path d="M10.2 10.2L14 14"/></svg>',
+    stop: '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5.5 1.8h5l3.7 3.7v5l-3.7 3.7h-5l-3.7-3.7v-5z"/><path d="M5.5 8h5"/></svg>'
+  };
+  var CHEV = '<svg class="chev" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 3l5 5-5 5"/></svg>';
+  var STEP = { gate: 1, decision: 1, research: 1, stop: 1 };
+  var KL = { branch: 'Branch', commit: 'Commit', pr: 'Pull request', check: 'Check', review: 'Review', merge: 'Merge', deploy: 'Deploy', gate: 'Gate', decision: 'Decision', research: 'Research', stop: 'Stop' };
+  var SL = { done: 'Done', running: 'Running', failed: 'Failed', you: 'Waiting on you', idle: 'Not started' };
+  var GH = 'https://github.com/shumpmaster/';
+  var SDB = 'claude/chief-of-staff-p005-la55js', TLB = 'claude/chief-of-staff-timeline-7bfp34';
+
+  var NEEDS = [
+    { p: 'tl', k: 'stop', t: '15:42', title: 'S-011 failed three plan reviews: what happens next?', age: 'waiting 1 h 43 min', who: 'orchestrator → you', rec: 'the Orchestrator', feeds: ['M6', 'M7', 'M8'],
+      ctx: [['failed', '15:36 plan review round 3 failed'], ['done', '15:42 Triage traced the cause']], action: 'Open stop card 5 on GitHub', href: GH + 'Service-Desk/blob/main/queue/P-005-stop-5.md' },
+    { p: 'tl', k: 'decision', t: '14:46', title: 'Which phone widths must the timeline fit?', age: 'waiting 2 h 39 min', who: 'chief of staff → you', rec: 'GitHub', feeds: ['M7', 'M8'],
+      ctx: [['failed', 'raised by plan review round 2']], action: 'Open the question on GitHub', href: GH + 'Service-Desk/blob/main/questions/P-005-s011-widths.md' },
+    { p: 'tl', k: 'decision', t: '14:46', title: 'Is the spec’s reading of “each thing reaches my phone” enough for M8?', age: 'waiting 2 h 39 min', who: 'chief of staff → you', rec: 'GitHub', feeds: ['M8'],
+      ctx: [['failed', 'raised by plan review round 2']], action: 'Open the question on GitHub', href: GH + 'Service-Desk/blob/main/questions/P-005-s011-m8-reading.md' },
+    { p: 'tl', k: 'decision', t: '14:46', title: 'Let the spec writer see the experiment files and your answers?', age: 'waiting 2 h 39 min', who: 'chief of staff → you', rec: 'GitHub', feeds: ['M6', 'M7', 'M8'],
+      ctx: [['failed', 'rounds 2 and 3 ran without them']], action: 'Open the question on GitHub', href: GH + 'Service-Desk/blob/main/questions/P-005-definer-pack.md' },
+    { p: 'wd', k: 'gate', t: '4 Nov', title: 'The widget failed its readiness check: resubmit or stop?', age: 'waiting 9 days', who: 'orchestrator → you', rec: 'the Orchestrator', feeds: null,
+      ctx: [['failed', '4 Nov 20:52 readiness check failed, round 1'], ['idle', 'nothing moves until you answer; waiting is never counted as stalled']], action: 'Open the card on GitHub', href: GH + 'Service-Desk/blob/main/queue/P-004-dor-fail-1.md' }
+  ];
+
+  var PROJECTS = [
+    { id: 'tl', name: 'The timeline', repo: 'Service-Desk · P-005', what: 'Design: the spec stopped again after three plan reviews. Your call.',
+      last: { k: 'stop', s: 'you', text: 'Stop card 5', t: 'since 15:42' },
+      events: [
+        { day: 'Today, 14 Nov' },
+        { t: '15:42', lane: 'b', br: 'item/P-005', k: 'stop', s: 'you', who: 'orchestrator', rec: 'the Orchestrator', title: 'S-011 stopped: three plan reviews failed', meta: 'stop card 5 waits on you', feeds: ['M6', 'M7', 'M8'] },
+        { t: '15:36', lane: 'b', br: 'item/P-005', k: 'review', s: 'failed', who: 'reviewer (plan)', rec: 'an agent', title: 'Plan review failed, round 3', meta: '', feeds: ['M6', 'M7', 'M8'] },
+        { t: '15:23', lane: 'b', br: 'item/P-005', k: 'commit', s: 'done', who: 'spec writer', rec: 'GitHub', title: 'Spec S-011 revised for round 3', meta: '', feeds: ['M6', 'M7', 'M8'] },
+        { t: '15:14', lane: 'b', br: 'item/P-005', k: 'review', s: 'failed', who: 'reviewer (plan)', rec: 'an agent', title: 'Plan review failed, round 2', meta: 'its findings became three questions for you', feeds: ['M6', 'M7', 'M8'] },
+        { t: '14:46', lane: 'm', br: TLB, join: true, k: 'merge', s: 'done', who: 'you', rec: 'GitHub', title: 'Merged PR #446: three questions for you', meta: 'they wait on you', feeds: ['M6', 'M7', 'M8'] },
+        { t: '13:54', lane: 'm', br: SDB, join: true, k: 'merge', s: 'done', who: 'you', rec: 'GitHub', title: 'Merged PR #445: handoff and the first mockup', meta: '', feeds: ['M7', 'M8'] },
+        { t: '12:37', lane: 'b', br: 'item/P-005', k: 'commit', s: 'done', who: 'spec writer', rec: 'GitHub', title: 'Spec S-011 revised after round 1', meta: '', feeds: ['M6', 'M7', 'M8'] },
+        { t: '12:29', lane: 'b', br: 'item/P-005', k: 'review', s: 'failed', who: 'reviewer (plan)', rec: 'an agent', title: 'Plan review failed, round 1', meta: '', feeds: ['M6', 'M7', 'M8'] },
+        { t: '12:16', lane: 'b', br: 'item/P-005', k: 'commit', s: 'done', who: 'spec writer', rec: 'GitHub', title: 'First draft of spec S-011', meta: 'with your six answers from stop card 4', feeds: ['M6', 'M7', 'M8'] },
+        { t: '12:07', lane: 'm', br: 'main', k: 'decision', s: 'done', who: 'orchestrator', rec: 'the Orchestrator', title: 'Stop card 4 applied: new spec S-011, rounds reset', meta: '', feeds: ['M6', 'M7', 'M8'] },
+        { t: '12:04', lane: 'm', br: SDB, join: true, k: 'merge', s: 'done', who: 'you', rec: 'GitHub', title: 'Merged PR #444: the spec-number fix and stop card 4’s answer', meta: '', feeds: ['M6', 'M7', 'M8', 'M4'] },
+        { t: '01:05', lane: 'b', br: 'item/P-005', k: 'stop', s: 'done', who: 'orchestrator', rec: 'the Orchestrator', title: 'S-010 stopped: three plan reviews failed', meta: 'answered at 04:58', feeds: ['M6', 'M7', 'M8'] },
+        { day: 'Yesterday, 13 Nov' },
+        { t: '23:51', lane: 'b', br: 'item/P-005', k: 'review', s: 'failed', who: 'reviewer (plan)', rec: 'an agent', title: 'Plan review of S-010 failed, round 3', meta: '', feeds: ['M6', 'M7', 'M8'] },
+        { t: '16:10', lane: 'm', br: 'main', k: 'gate', s: 'done', who: 'you', rec: 'an agent (the chief of staff wrote it down)', title: 'Design gate passed: proceed', meta: '', feeds: ['M6', 'M7', 'M8'] }
+      ] },
+    { id: 'wd', name: 'Home-screen widget', repo: 'Service-Desk · P-004', what: 'Discovery: its readiness check failed on 4 November. Your call.',
+      last: { k: 'gate', s: 'you', text: 'Readiness card', t: 'since 4 Nov' },
+      events: [
+        { day: '4 Nov' },
+        { t: '20:53', lane: 'm', br: 'main', k: 'gate', s: 'you', who: 'orchestrator', rec: 'the Orchestrator', title: 'Readiness card: resubmit or stop?', meta: 'waits on you', feeds: null },
+        { t: '20:52', lane: 'b', br: 'item/P-004', k: 'review', s: 'failed', who: 'reviewer (readiness)', rec: 'an agent', title: 'Readiness check failed, round 1', meta: '', feeds: null },
+        { t: '20:43', lane: 'b', br: 'item/P-004', k: 'review', s: 'done', who: 'reviewer (readiness)', rec: 'the Orchestrator', title: 'Readiness check started', meta: '', feeds: null }
+      ] },
+    { id: 'om', name: 'operating model', repo: 'Personal-Org-Operating-Model', what: 'The spec-number fix is released as 3.7.3.',
+      last: { k: 'merge', s: 'done', text: 'Merged PR #59', t: '04:56' },
+      events: [
+        { day: 'Today, 14 Nov' },
+        { t: '04:56', lane: 'm', br: SDB, join: true, k: 'merge', s: 'done', who: 'you', rec: 'GitHub', title: 'Merged PR #59: two lessons rows', meta: '', feeds: null },
+        { t: '02:55', lane: 'm', br: SDB, join: true, k: 'merge', s: 'done', who: 'you', rec: 'GitHub', title: 'Merged PR #58: a new spec number counts every spec', meta: 'released as 3.7.3', feeds: null },
+        { t: '02:24', lane: 'b', br: SDB, k: 'check', s: 'done', who: 'Actions', rec: 'GitHub', title: 'Checks passed on PR #58', meta: '', feeds: null, jobs: [['done', 'pr-body'], ['done', 'governance'], ['done', 'owner-signal']] },
+        { t: '01:19', lane: 'b', br: SDB, k: 'review', s: 'done', who: 'reviewer', rec: 'an agent', title: 'Build review passed', meta: '', feeds: null },
+        { t: '01:16', lane: 'b', br: 'build/tools-builder/s038', join: true, k: 'merge', s: 'done', who: 'orchestrator', rec: 'GitHub', title: 'Merged the build into the working branch', meta: '', feeds: null },
+        { t: '01:07', lane: 'b', br: 'build/tools-builder/s038', k: 'commit', s: 'done', who: 'builder', rec: 'GitHub', title: 'The tools changed', meta: '', feeds: null },
+        { t: '00:56', lane: 'b', br: 'build/tools-builder/s038', k: 'commit', s: 'done', who: 'builder', rec: 'GitHub', title: 'Tests first: the desk’s case gives S-009', meta: '', feeds: null }
+      ] },
+    { id: 'ml', name: 'Model-Lab', repo: 'Model-Lab', what: 'Four pull requests merged overnight.',
+      last: { k: 'merge', s: 'done', text: 'Merged PR #118', t: '01:06' },
+      events: [
+        { day: 'Today, 14 Nov' },
+        { t: '01:06', lane: 'm', br: 'claude/chief-of-staff-handoff-mt30qq', join: true, k: 'merge', s: 'done', who: 'you', rec: 'GitHub', title: 'Merged PR #118: a Chief of Staff handoff', meta: '', feeds: null },
+        { t: '01:02', lane: 'm', br: 'claude/determined-allen-1pygg8', join: true, k: 'merge', s: 'done', who: 'you', rec: 'GitHub', title: 'Merged PR #117', meta: '', feeds: null },
+        { day: 'Yesterday, 13 Nov' },
+        { t: '23:45', lane: 'm', br: 'claude/determined-allen-1pygg8', join: true, k: 'merge', s: 'done', who: 'you', rec: 'GitHub', title: 'Merged PR #116', meta: '', feeds: null }
+      ] },
+    { id: 'pf', name: 'portfolio', repo: 'portfolio', what: 'Quiet since 12 November.',
+      last: { k: 'merge', s: 'done', text: 'Merged PR #13', t: '12 Nov' },
+      events: [
+        { day: '12 Nov' },
+        { t: '16:03', lane: 'm', br: 'claude/admiring-ritchie-8qo5jt', join: true, k: 'merge', s: 'done', who: 'you', rec: 'GitHub', title: 'Merged PR #13: log the idea of a listing of every session', meta: '', feeds: null }
+      ] }
+  ];
+
+  /* The plans, as the desk's trace check reads them (v3_checks trace, main at 16:10 UTC). st: reached, notrec (not recorded),
+     notreach (not reached in the records), progress, now, planned. Steps are the trace's own steps and the dispatch log's verdicts. */
+  function ev(t, k, s, who, title, meta, rec) { return { t: t, k: k, s: s, who: who, title: title, meta: meta || '', rec: rec || (k === 'commit' || k === 'merge' || k === 'pr' || k === 'check' ? 'GitHub' : who === 'you' ? 'an agent (the chief of staff wrote it down)' : who === 'orchestrator' ? 'the Orchestrator' : 'an agent') }; }
+  var PLANS = {
+    tl: [
+      { type: 'phase', name: 'Discovery', st: 'done', note: 'done · 13 Nov', items: [
+        { id: 'Discovery-1', name: 'An idea worth exploring', st: 'notrec' },
+        { id: 'Discovery-2', name: 'Success defined', st: 'reached', why: 'Reached by the plan’s value targets; no sprint on record.' },
+        { id: 'Discovery-3', name: 'The expert’s questions answered', st: 'notreach' },
+        { id: 'Discovery-4', name: 'The right problem chosen', st: 'notrec' },
+        { id: 'Discovery-5', name: 'What already exists is known', st: 'notreach', why: 'Its research passed an hour after the readiness pass, so the rule reads it as not reached (lesson LL-051).', sprints: [
+          { name: 'Q-028', label: 'How long GitHub keeps run results', st: 'done', events: [
+            ev('13 Nov 05:00', 'research', 'done', 'researcher', 'Memo written'), ev('13 Nov 05:14', 'review', 'failed', 'source checker', 'Source check failed'),
+            ev('13 Nov 05:26', 'research', 'done', 'researcher', 'Memo revised'), ev('13 Nov 05:35', 'review', 'failed', 'source checker', 'Source check failed'),
+            ev('13 Nov 05:48', 'research', 'done', 'researcher', 'Memo revised again'), ev('13 Nov 06:03', 'review', 'done', 'source checker', 'Source check passed')] }] },
+        { id: 'Discovery-6', name: 'The risks are known', st: 'notrec' },
+        { id: 'Discovery-7', name: 'Scope, limits and owners agreed', st: 'reached', why: 'Reached by the plan’s sections 1, 4 and 5; no sprint on record.' },
+        { id: 'Discovery-8', name: 'A brief ready to rule on', st: 'reached', sprints: [
+          { name: 'The brief', label: 'its readiness check and gate case', st: 'done', events: [
+            ev('13 Nov 03:44', 'review', 'failed', 'reviewer (readiness)', 'Readiness check failed'), ev('13 Nov 04:48', 'decision', 'done', 'you', 'You said resubmit'),
+            ev('13 Nov 04:48', 'review', 'done', 'reviewer (readiness)', 'Readiness check passed'), ev('13 Nov 05:26', 'review', 'done', 'gate reviewer', 'Gate case reviewed'),
+            ev('13 Nov 14:18', 'decision', 'done', 'you', 'You said hold'), ev('13 Nov 14:42', 'review', 'done', 'gate reviewer', 'Gate case reviewed again'),
+            ev('13 Nov 16:10', 'gate', 'done', 'you', 'You said proceed')] }] }
+      ] },
+      { type: 'gate', name: 'Design gate', st: 'done', note: 'you said proceed · 13 Nov 16:10' },
+      { type: 'phase', name: 'Design', st: 'current', note: 'now', items: [
+        { id: 'Design-1', name: 'Done defined in real scenarios', st: 'reached', why: 'Reached by the spec’s scenarios; no sprint on record.' },
+        { id: 'M6', own: true, name: 'The records can carry the timeline', st: 'progress', sprints: [
+          { name: 'Spec S-010', label: 'superseded by S-011', st: 'done', events: [
+            ev('13 Nov 21:32', 'commit', 'done', 'spec writer', 'First draft, and experiments E1 and E2 registered'), ev('13 Nov 21:44', 'review', 'failed', 'reviewer (plan)', 'Plan review failed'),
+            ev('13 Nov 23:45', 'commit', 'done', 'spec writer', 'Spec revised'), ev('13 Nov 23:51', 'review', 'failed', 'reviewer (plan)', 'Plan review failed', 'the stop rule’s third round'),
+            ev('14 Nov 01:05', 'stop', 'done', 'orchestrator', 'Stop card 4', 'Triage: the reviewer never got the experiment files'),
+            ev('14 Nov 04:56', 'merge', 'done', 'you', 'Merged PR #443: the card’s notes and two questions'),
+            ev('14 Nov 04:58', 'decision', 'done', 'you', 'You said: write a new spec', 'with six answers for the spec writer'),
+            ev('14 Nov 12:04', 'merge', 'done', 'you', 'Merged PR #444: the answer, the number fix, the pack fix')] },
+          { name: 'Spec S-011', label: 'stopped · your call', st: 'you', events: [
+            ev('14 Nov 12:07', 'decision', 'done', 'orchestrator', 'New spec S-011, rounds reset'), ev('14 Nov 12:16', 'commit', 'done', 'spec writer', 'First draft'),
+            ev('14 Nov 12:29', 'review', 'failed', 'reviewer (plan)', 'Plan review failed, round 1'), ev('14 Nov 12:37', 'commit', 'done', 'spec writer', 'Spec revised'),
+            ev('14 Nov 14:46', 'merge', 'done', 'you', 'Merged PR #446: three questions for you', 'they still wait on you'),
+            ev('14 Nov 15:14', 'review', 'failed', 'reviewer (plan)', 'Plan review failed, round 2'), ev('14 Nov 15:23', 'commit', 'done', 'spec writer', 'Spec revised again'),
+            ev('14 Nov 15:36', 'review', 'failed', 'reviewer (plan)', 'Plan review failed, round 3'), ev('14 Nov 15:42', 'stop', 'you', 'orchestrator', 'Stop card 5', 'waits on you')] }] },
+        { id: 'now', now: true, name: 'Stop card 5: S-011 failed three plan reviews. What happens next?', st: 'now', need: 0 },
+        { id: 'Design-6', name: 'A plan that passed review', st: 'planned', next: true, why: 'Next: a spec that passes plan review, then frozen with your approval.' },
+        { id: 'Design-3', name: 'Every unknown has a test', st: 'planned', why: 'Experiments E1 and E2 are registered; their runs are still to come.', sprints: [
+          { name: 'E1 and E2', label: 'registered, not yet run', st: 'planned', events: [
+            ev('13 Nov 21:32', 'commit', 'done', 'spec writer', 'Both experiments registered', 'in the same commit as S-010’s first draft'),
+            ev('planned', 'research', 'idle', 'a read-only helper', 'Run E1: how long your steps wait today', 'not started', 'nothing yet'),
+            ev('planned', 'research', 'idle', 'a read-only helper', 'Run E2: can the records carry the timeline', 'not started', 'nothing yet')] }] },
+        { id: 'Design-2', name: 'How the pieces connect is mapped', st: 'planned' },
+        { id: 'Design-4', name: 'Every fact is backed by evidence', st: 'planned' },
+        { id: 'Design-5', name: 'The design fits together', st: 'planned', why: 'The join-up review, which these mockups feed.', sprints: [
+          { name: 'PR #445', label: 'the first mockup, merged', st: 'done', events: [
+            ev('14 Nov 12:05', 'commit', 'done', 'chief of staff', 'First timeline mockup'), ev('14 Nov 12:12', 'check', 'done', 'Actions', 'Checks passed'),
+            ev('14 Nov 13:54', 'merge', 'done', 'you', 'Merged PR #445')] },
+          { name: 'Mockups v2 to v4', label: 'on a branch, not yet in a pull request', st: 'running', events: [
+            ev('14 Nov 14:56', 'commit', 'done', 'chief of staff', 'Motion map'), ev('14 Nov 15:26', 'commit', 'done', 'chief of staff', 'v2: the desk as a trunk'),
+            ev('14 Nov 15:52', 'commit', 'done', 'chief of staff', 'v3: the motion pass'), ev('14 Nov 16:00', 'commit', 'done', 'chief of staff', 'v3: the past shaded lighter'),
+            ev('14 Nov 16:14', 'commit', 'done', 'chief of staff', 'v4: projects open on their plan')] }] }
+      ] },
+      { type: 'gate', name: 'Build gate', st: 'planned', note: 'yours: you approve the plan' },
+      { type: 'phase', name: 'Build', st: 'planned', note: 'planned', items: [
+        { id: 'Build-1', name: 'Tests written before the work', st: 'planned' },
+        { id: 'M7', own: true, name: 'Everything the agent team does, on one timeline', st: 'planned' },
+        { id: 'M8', own: true, name: 'What needs you comes first, one tap from done', st: 'planned' },
+        { id: 'Build-2', name: 'The work is built', st: 'planned' },
+        { id: 'Build-3', name: 'Independently reviewed and passing', st: 'planned' },
+        { id: 'Build-4', name: 'The experiments are answered', st: 'planned' },
+        { id: 'Build-5', name: 'Everything built fits together', st: 'planned' },
+        { id: 'M9', own: true, name: 'The related desk work brought in', st: 'planned', why: 'Moved to a second spec by your answer on stop card 4.' },
+        { id: 'M10', own: true, name: 'The timeline is the desk', st: 'planned', why: 'Moved to a second spec by your answer on stop card 4.' }
+      ] },
+      { type: 'gate', name: 'Launch gate', st: 'planned', note: 'yours' },
+      { type: 'phase', name: 'Launch', st: 'planned', note: 'planned', items: [
+        { id: 'Launch-1', name: 'It’s live', st: 'planned', why: 'The plan says Launch’s other milestones are written before the Build gate.' }
+      ] }
+    ],
+    wd: [
+      { type: 'phase', name: 'Discovery', st: 'current', note: 'now', items: [
+        { id: 'Discovery-1', name: 'An idea worth exploring', st: 'notrec' },
+        { id: 'Discovery-2', name: 'Success defined', st: 'notrec' },
+        { id: 'Discovery-8', name: 'A brief ready to rule on', st: 'progress', sprints: [
+          { name: 'The brief', label: 'its readiness check', st: 'you', events: [
+            ev('4 Nov 20:43', 'review', 'done', 'reviewer (readiness)', 'Readiness check started', '', 'the Orchestrator'), ev('4 Nov 20:52', 'review', 'failed', 'reviewer (readiness)', 'Readiness check failed, round 1'),
+            ev('4 Nov 20:53', 'gate', 'you', 'orchestrator', 'Readiness card', 'waits on you')] }] },
+        { id: 'now', now: true, name: 'Readiness card: resubmit or stop?', st: 'now', need: 4 },
+        { id: 'Discovery-3', name: 'The expert’s questions answered', st: 'notreach' },
+        { id: 'Discovery-4', name: 'The right problem chosen', st: 'notrec' },
+        { id: 'Discovery-5', name: 'What already exists is known', st: 'notreach' },
+        { id: 'Discovery-6', name: 'The risks are known', st: 'notrec' },
+        { id: 'Discovery-7', name: 'Scope, limits and owners agreed', st: 'notrec' }
+      ] },
+      { type: 'gate', name: 'Design gate', st: 'planned', note: 'yours' },
+      { type: 'phase', name: 'Design', st: 'planned', note: 'milestones written at the Design gate', items: [] },
+      { type: 'phase', name: 'Build', st: 'planned', note: 'planned', items: [] },
+      { type: 'phase', name: 'Launch', st: 'planned', note: 'planned', items: [] }
+    ]
+  };
+  var PST = { reached: ['done', 'Reached'], notrec: ['idle', 'Not recorded'], notreach: ['idle', 'Not reached in the records'], progress: ['running', 'In progress'], now: ['you', 'Waiting on you'], planned: ['idle', 'Planned'], done: ['done', 'Passed'] };
+  /* a milestone is unused when nothing is on record for it and its phase has begun */
+  function unused(it, phase) { return phase.st !== 'planned' && !it.now && !it.next && !it.own && (it.st === 'notrec' || it.st === 'notreach' || it.st === 'planned') && !it.sprints; }
+
+  var state = { view: 'desk', proj: null, open: {}, feed: 'live', mode: 'plan', unused: {} };
+  var busy = false;
+
+  function esc(s) { return String(s).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
+  function D(ms) { return REDUCED ? 0 : ms; }
+  function wait(ms) { return new Promise(function (r) { setTimeout(r, D(ms)); }); }
+  function anim(el, frames, opts) {
+    if (REDUCED || !el || !el.animate) return Promise.resolve();
+    return new Promise(function (r) { var a = el.animate(frames, Object.assign({ duration: 300, easing: SPRING, fill: 'backwards' }, opts)); a.onfinish = r; a.oncancel = r; });
+  }
+  function ico(k, s, cls) { return '<span class="' + (cls || 'ico') + (STEP[k] ? ' sq' : '') + '" style="background:var(--' + s + ')">' + ICONS[k] + '</span>'; }
+  function feeds(f) { return f == null ? '<span class="nr">feeds: not recorded</span>' : '<span>feeds <span class="ms">' + f.join(' · ') + '</span></span>'; }
+  function proj(id) { for (var i = 0; i < PROJECTS.length; i++) if (PROJECTS[i].id === id) return PROJECTS[i]; }
+  function pulseOf(p) {
+    return p.events.filter(function (e) { return !e.day; }).slice(0, 10).reverse()
+      .map(function (e) { return '<i class="' + (STEP[e.k] ? 'sq' : '') + '" style="background:var(--' + e.s + ')" title="' + esc(KL[e.k] + ' · ' + SL[e.s]) + '"></i>'; }).join('');
+  }
+
+  function header(crumb) {
+    var f = state.feed;
+    var dot = { live: ['', 'Live'], late: ['late', 'Late'], stopped: ['stopped', 'Stopped'] }[f];
+    var age = { live: 'data read 1 min ago', late: 'data read 6 min ago', stopped: 'last data 13 min ago' }[f];
+    var h = '<header class="top"><div class="crumb mono">' + esc(crumb) + '</div><h1>Timeline</h1>' +
+      '<div class="asof"><span class="live ' + dot[0] + '"><i></i>' + dot[1] + '</span><span>As of <b>17:25 UTC</b></span><span>· ' + age + '</span></div></header>';
+    if (f === 'late') h += '<div class="banner late"><b>Late: the last read was 6 minutes ago.</b> <span>The desk reads every 2 minutes, so this is from 15:14 and may have changed.</span></div>';
+    if (f === 'stopped') h += '<div class="banner stopped"><b>Stopped since 15:07 UTC.</b> <span>The outside check has not heard from the desk for 13 minutes. Nothing below is new, and waiting items may already be done.</span></div>';
+    h += '<div class="demo"><span>Mockup: preview the feed as</span>' + ['live', 'late', 'stopped'].map(function (x) {
+      return '<button type="button" data-feed="' + x + '" aria-pressed="' + (f === x) + '">' + x + '</button>'; }).join('') + '</div>';
+    return h;
+  }
+
+  function needRow(n, i) {
+    var key = 'n' + i, open = !!state.open[key];
+    return '<div class="need' + (open ? ' open' : '') + '" data-key="' + key + '">' +
+      '<button type="button" class="crow" aria-expanded="' + open + '">' + ico(n.k, 'you') +
+        '<span class="t1"><span class="line1"><span class="k">' + KL[n.k] + '</span><span class="tt">' + esc(n.title) + '</span></span>' +
+        '<span class="sub">' + esc(proj(n.p).name) + ' · ' + esc(n.age) + '</span></span>' + CHEV + '</button>' +
+      (open ? detailNeed(n) : '') + '</div>';
+  }
+  function detailNeed(n) {
+    return '<div class="detail"><div class="title" style="color:var(--you-t)">' + esc(n.title) + '</div>' +
+      '<div class="vars"><span class="who">by ' + esc(n.who) + '</span><span>filed ' + esc(n.t) + '</span></div>' +
+      '<div class="ctx">' + n.ctx.map(function (c) { return '<div><i style="background:var(--' + c[0] + ')"></i><span>' + esc(c[1]) + '</span></div>'; }).join('') + '</div>' +
+      '<div class="trail">' + feeds(n.feeds) + '<span>record: ' + esc(n.rec) + '</span></div>' +
+      '<a class="btn" href="' + n.href + '" target="_blank" rel="noopener">' + esc(n.action) + ' ↗</a></div>';
+  }
+  function needsBlock(filter) {
+    var list = NEEDS.map(function (n, i) { return [n, i]; }).filter(function (x) { return !filter || x[0].p === filter; });
+    if (!list.length) return '';
+    return '<section class="needs" aria-label="Needs you"><div class="needs-head"><h2>Needs you</h2><span>' + list.length + ' waiting</span></div>' +
+      list.map(function (x) { return needRow(x[0], x[1]); }).join('') + '</section>';
+  }
+
+  function phaseBar(id) {
+    var plan = PLANS[id];
+    if (!plan) return '<span class="nophase">No plan on record in this mockup</span>';
+    return '<span class="phbar" aria-label="Phases">' + plan.filter(function (b) { return b.type === 'phase'; }).map(function (b) {
+      return '<span class="ph ' + b.st + '"><i></i>' + esc(b.name) + '</span>'; }).join('') + '</span>';
+  }
+  function projCard(p) {
+    var n = NEEDS.filter(function (x) { return x.p === p.id; }).length;
+    return '<button type="button" class="pcard" data-proj="' + p.id + '" aria-label="Open ' + esc(p.name) + '">' +
+      '<span class="p-top"><span class="p-name">' + esc(p.name) + '<span class="p-repo">' + esc(p.repo) + '</span></span>' + (n ? '<span class="p-badge">' + n + ' for you</span>' : '<span class="p-badge quiet">nothing for you</span>') + '</span>' +
+      '<span class="p-what">' + esc(p.what) + '</span>' + phaseBar(p.id) +
+      '<span class="p-last">' + ico(p.last.k, p.last.s) + '<span><b style="color:var(--' + p.last.s + '-t)">' + SL[p.last.s] + '</b> · ' + esc(p.last.text) + ' · ' + esc(p.last.t) + '</span></span>' +
+      '<span class="pulse" aria-label="Its last events, oldest to newest">' + pulseOf(p) + '<span>last ' + Math.min(10, p.events.filter(function (e) { return !e.day; }).length) + '</span></span>' +
+    '</button>';
+  }
+
+  function setMood(waiting) { document.documentElement.dataset.mood = waiting ? 'you' : 'calm'; }
+  function dock(html) { var d = document.getElementById('dock'); if (!d) { d = document.createElement('nav'); d.id = 'dock'; d.className = 'dock'; d.setAttribute('aria-label', 'Controls'); document.body.appendChild(d); } d.innerHTML = html; }
+  function renderDesk() {
+    var order = PROJECTS.slice().sort(function (a, b) {
+      return NEEDS.filter(function (x) { return x.p === b.id; }).length - NEEDS.filter(function (x) { return x.p === a.id; }).length; });
+    var h = header('all projects') + needsBlock(null) +
+      '<section class="desk" aria-label="Projects"><div class="trunk"></div><div class="trunk-cap"></div>' +
+      '<div class="desk-label label">The desk · ' + PROJECTS.length + ' projects</div>' +
+      order.map(function (p) {
+        return '<div class="proj" data-row="' + p.id + '"><svg class="conn" viewBox="0 0 44 46" aria-hidden="true"><path d="M14.5 0 V18 Q14.5 34 30 34 H42"/><path class="ink" pathLength="1" d="M14.5 0 V18 Q14.5 34 30 34 H42"/></svg>' + projCard(p) + '</div>'; }).join('') +
+      '<div class="desk-end">Tap a project to follow its branch.</div></section>';
+    document.getElementById('view').innerHTML = h;
+    setMood(NEEDS.length > 0);
+    dock(NEEDS.length ? '<button type="button" class="now" data-jump-needs>' + NEEDS.length + ' need you</button>' : '');
+  }
+
+  function ageOf(p, idx) { var d = -1; for (var j = 0; j <= idx; j++) if (p.events[j].day) d++; return d; }
+  function evRow(p, e, idx) {
+    var key = p.id + idx, open = !!state.open[key];
+    var mini = e.jobs ? '<span class="minijobs">' + e.jobs.map(function (j) { return '<i style="background:var(--' + j[0] + ')"></i>'; }).join('') + '</span>' : '';
+    var age = ageOf(p, idx), past = (e.s === 'done' || e.s === 'failed');
+    var h = '<div class="ev' + (open ? ' open' : '') + (past ? ' past' + (age === 1 ? ' older' : age >= 2 ? ' oldest' : '') : '') + '" data-key="' + key + '">' + (e.join ? '<div class="joinbar"></div>' : '') +
+      '<div class="node ' + e.lane + (STEP[e.k] ? ' sq' : '') + (e.s === 'running' ? ' dotpulse' : '') + '" style="background:var(--' + e.s + ')">' + ICONS[e.k] + '</div>' +
+      '<div class="rbody"><button type="button" class="crow" aria-expanded="' + open + '">' +
+        '<span class="t1"><span class="line1"><span class="k">' + KL[e.k] + '</span><span class="s" style="color:var(--' + e.s + '-t)">' + SL[e.s] + '</span>' + mini + '</span>' +
+        '<span class="tt">' + esc(e.title) + '</span></span><span class="tm mono">' + e.t + '</span>' + CHEV + '</button>';
+    if (open) h += detailEv(e);
+    return h + '</div></div>';
+  }
+  function detailEv(e) {
+    var h = '<div class="detail"><div class="vars">' + (e.br !== 'main' ? '<span class="pill">' + esc(e.br) + '</span>' : '<span class="pill">main</span>') + '<span class="who">by ' + esc(e.who) + '</span></div>' +
+      (e.meta ? '<div>' + esc(e.meta) + '</div>' : '') +
+      '<div class="trail">' + feeds(e.feeds) + '<span>record: ' + esc(e.rec) + '</span></div>';
+    if (e.jobs) h += '<div class="jobs">' + e.jobs.map(function (j) { return '<div class="job"><i style="background:var(--' + j[0] + ')"></i><span>' + esc(j[1]) + '</span><span class="mono" style="font-size:11px;color:var(--ink-4)">' + (j[0] === 'done' ? 'passed' : j[0] === 'failed' ? 'failed' : j[0]) + '</span></div>'; }).join('') + '</div>';
+    return h + '</div>';
+  }
+
+  function renderProject(id, hideRows) {
+    var p = proj(id), plan = PLANS[id];
+    var h = header('all projects / ' + p.name) +
+
+      '<div class="branchoff"><div class="bo-desk"></div><svg viewBox="0 0 60 34" aria-hidden="true"><path id="bo-path" d="M14.5 0 V8 Q14.5 22 30 22 H48.5 V34" pathLength="1" style="fill:none;stroke:var(--main-line);stroke-width:3"/></svg><span>THE DESK</span></div>' +
+      '<div class="phead">' + projCard(p) + '</div>' + pager(id);
+    h += '<div class="ptl' + (plan ? ' planmode' : '') + '" id="ptl"><div class="faint"></div><div class="pmain" id="pmain"></div><div class="pbr" id="pbr"></div><div class="pfut" id="pfut"></div><div class="pen" id="pen"></div>';
+    if (plan) h += planHTML(id);
+    else {
+      var needs = NEEDS.map(function (n, i) { return [n, i]; }).filter(function (x) { return x[0].p === id; });
+      if (needs.length) h += '<div class="need-here">' + needsBlock(id) + '</div>';
+      h += '<div class="noplan">No plan on record for this project in the mockup, so its events are shown on their own.</div>';
+      h += '<div class="lanehead"><span>MAIN</span><span>BRANCH</span></div>';
+      p.events.forEach(function (e, i) {
+        if (e.day) { h += '<div class="day label">' + esc(e.day) + '</div>'; return; }
+        h += evRow(p, e, i);
+      });
+    }
+    h += '</div>';
+    document.getElementById('view').innerHTML = h;
+    setMood(NEEDS.some(function (n) { return n.p === id; }));
+    dock('<button type="button" id="back">\u2039 All projects</button>' + (plan ? '<button type="button" class="now" data-jump-now>Jump to Now</button>' : ''));
+    var ph = document.querySelector('.phead .pcard'); if (ph) { ph.removeAttribute('data-proj'); ph.setAttribute('aria-label', p.name); ph.tabIndex = -1; }
+    layoutCut();
+    if (hideRows) {
+      items().forEach(function (r) { r.style.opacity = '0'; });
+      var pm = document.getElementById('pmain'), pb = document.getElementById('pbr'), pf = document.getElementById('pfut');
+      pm.style.height = '0px'; pb.style.bottom = 'auto'; pb.style.height = '0px'; pf.style.height = '0px';
+      var bo = document.getElementById('bo-path'); if (!REDUCED) { bo.style.strokeDasharray = '1'; bo.style.strokeDashoffset = '1'; }
+    }
+  }
+  /* newest first: the line is dashed from the top down to the current step (what is planned), and solid below it (what is done) */
+  function layoutCut() {
+    var ptl = document.getElementById('ptl'), now = ptl.querySelector('.pl.now'), pm = document.getElementById('pmain'), pf = document.getElementById('pfut');
+    if (!now) { ptl.removeAttribute('data-cut'); pf.style.display = 'none'; pm.style.top = '-8px'; pm.style.bottom = '0'; pm.style.height = 'auto'; return; }
+    var cut = now.offsetTop + 36; ptl.dataset.cut = String(cut);
+    pf.style.display = ''; pf.style.top = '-8px'; pf.style.height = (cut + 8) + 'px';
+    pm.style.top = cut + 'px'; pm.style.bottom = 'auto'; pm.style.height = Math.max(0, ptl.scrollHeight - cut) + 'px';
+  }
+
+  function stateOf(it) { return PST[it.st] || PST.planned; }
+  function msRow(b, i) {
+    var it = PLANS[state.proj][b].items[i], key = 'it:' + b + ':' + i, open = !!state.open[key], sw = stateOf(it);
+    var cls = 'pl ' + it.st + (it.now ? ' now' : '') + (open ? ' open' : '');
+    if (it.now) {
+      var n = NEEDS[it.need];
+      return '<div class="' + cls + '" data-key="' + key + '"><div class="node m now-node">' + ICONS[n.k] + '</div><div class="rbody">' +
+        '<div class="nowtag">NOW</div><button type="button" class="crow" aria-expanded="' + open + '"><span class="t1"><span class="line1"><span class="k" style="color:var(--you-t)">' + KL[n.k] + '</span><span class="s" style="color:var(--you-t)">Waiting on you</span></span>' +
+        '<span class="tt" style="white-space:normal">' + esc(it.name) + '</span><span class="sub">' + esc(n.age) + '</span></span>' + CHEV + '</button>' + (open ? detailNeed(n) : '') + '</div></div>';
+    }
+    var count = it.sprints ? it.sprints.length + (it.sprints.length === 1 ? ' sprint' : ' sprints') : '';
+    var h = '<div class="' + cls + '" data-key="' + key + '"><div class="node m ms ' + it.st + (it.own ? ' own' : '') + '"></div>' +
+      (open && it.sprints ? '<div class="br-out"></div><div class="br-lane"></div>' : '') +
+      '<div class="rbody"><button type="button" class="crow" aria-expanded="' + open + '">' +
+      '<span class="t1"><span class="line1"><span class="k mid">' + esc(it.id) + '</span><span class="s" style="color:var(--' + sw[0] + '-t)">' + sw[1] + '</span>' + (count ? '<span class="cnt">' + count + '</span>' : '') + '</span>' +
+      '<span class="tt">' + esc(it.name) + '</span></span>' + CHEV + '</button>';
+    if (open) {
+      h += '<div class="detail">';
+      if (it.why) h += '<div>' + esc(it.why) + '</div>';
+      if (it.own) h += '<div class="trail"><span>one of this project’s own milestones</span></div>';
+      if (it.sprints) h += '<div class="sprints">' + it.sprints.map(function (sp, g) { return g; }).reverse().map(function (g) { return sprintRow(b, i, g); }).join('') + '</div>';
+      else if (!it.why) h += '<div class="trail"><span class="nr">nothing on record for it yet</span></div>';
+      h += '</div>';
+    }
+    return h + '</div></div>';
+  }
+  function sprintRow(b, i, g) {
+    var sp = PLANS[state.proj][b].items[i].sprints[g], key = 'sp:' + b + ':' + i + ':' + g, open = !!state.open[key];
+    var col = sp.st === 'you' ? 'you' : sp.st === 'planned' ? 'idle' : sp.st;
+    var h = '<div class="spr' + (open ? ' open' : '') + '" data-key="' + key + '"><span class="snode" style="background:var(--' + col + ')"></span>' +
+      (open ? '<div class="br-out2"></div><div class="br-lane2"></div>' : '') +
+      '<button type="button" class="crow"><span class="t1"><span class="line1"><span class="k mid">' + esc(sp.name) + '</span><span class="cnt">' + sp.events.length + ' events</span></span>' +
+      '<span class="tt">' + esc(sp.label) + '</span></span>' + CHEV + '</button>';
+    if (open) h += '<div class="events">' + sp.events.map(function (x, e) { return e; }).reverse().map(function (e) { return eventRow(b, i, g, e); }).join('') + '</div>';
+    return h + '</div>';
+  }
+  function eventRow(b, i, g, e) {
+    var x = PLANS[state.proj][b].items[i].sprints[g].events[e], key = 'ev:' + b + ':' + i + ':' + g + ':' + e, open = !!state.open[key];
+    var short = x.t.indexOf('14 Nov ') === 0 ? x.t.slice(7) : x.t;
+    var h = '<div class="evt' + (open ? ' open' : '') + (x.s === 'done' || x.s === 'failed' ? ' past' : '') + '" data-key="' + key + '">' +
+      '<button type="button" class="crow">' + ico(x.k, x.s, 'ico enode') +
+      '<span class="t1"><span class="line1"><span class="k">' + KL[x.k] + '</span><span class="s" style="color:var(--' + x.s + '-t)">' + (x.t === 'planned' ? 'Planned' : SL[x.s]) + '</span></span><span class="tt">' + esc(x.title) + '</span></span>' +
+      '<span class="tm mono">' + esc(short) + '</span>' + CHEV + '</button>';
+    if (open) h += '<div class="detail"><div class="vars"><span class="who">by ' + esc(x.who) + '</span><span>' + esc(x.t) + '</span></div>' + (x.meta ? '<div>' + esc(x.meta) + '</div>' : '') + '<div class="trail"><span>record: ' + esc(x.rec) + '</span></div></div>';
+    return h + '</div>';
+  }
+  function phaseRow(b) {
+    var ph = PLANS[state.proj][b];
+    return '<div class="phase ' + ph.st + '"><span class="phname">' + esc(ph.name) + '</span><span class="phnote">' + esc(ph.note) + '</span></div>';
+  }
+  function gateRow(b) {
+    var g = PLANS[state.proj][b], sw = g.st === 'done' ? PST.done : ['idle', 'Planned'];
+    return '<div class="pl gate ' + g.st + '"><div class="node m sq ' + (g.st === 'done' ? '' : 'hollow') + '" style="' + (g.st === 'done' ? 'background:var(--done)' : '') + '">' + ICONS.gate + '</div><div class="rbody"><div class="crow" style="cursor:default">' +
+      '<span class="t1"><span class="line1"><span class="k">' + esc(g.name) + '</span><span class="s" style="color:var(--' + sw[0] + '-t)">' + sw[1] + '</span></span><span class="tt">' + esc(g.note) + '</span></span></div></div></div>';
+  }
+  function planHTML(id) {
+    var plan = PLANS[id], h = '';
+    for (var b = plan.length - 1; b >= 0; b--) {
+      var blk = plan[b];
+      if (blk.type === 'gate') { h += gateRow(b); continue; }
+      h += phaseRow(b);
+      var showAll = !!state.unused[b];
+      for (var i = blk.items.length - 1; i >= 0; i--) {
+        if (unused(blk.items[i], blk) && !showAll) continue;
+        h += msRow(b, i);
+      }
+      if (!blk.items.length) h += '<div class="pl empty"><div class="rbody"><span class="nr">' + esc(blk.note === 'planned' ? 'milestones not written yet' : blk.note) + '</span></div></div>';
+      var nUnused = blk.items.filter(function (it) { return unused(it, blk); }).length;
+      if (nUnused) h += '<div class="pl unhide"><div class="rbody"><button type="button" class="linkbtn" data-unused="' + b + '">' + (showAll ? 'Hide the ' + nUnused + ' unused milestones' : 'Show ' + nUnused + ' unused ' + (nUnused === 1 ? 'milestone' : 'milestones')) + '</button></div></div>';
+    }
+    return h;
+  }
+  function items() { return Array.prototype.slice.call(document.querySelectorAll('#ptl > .need-here, #ptl > .noplan, #ptl > .lanehead, #ptl > .day, #ptl > .ev, #ptl > .pl, #ptl > .phase')); }
+  function order() {
+    return PROJECTS.slice().sort(function (a, b) {
+      return NEEDS.filter(function (x) { return x.p === b.id; }).length - NEEDS.filter(function (x) { return x.p === a.id; }).length; });
+  }
+  function pager(id) {
+    var o = order(), i = o.map(function (p) { return p.id; }).indexOf(id);
+    var prev = o[(i - 1 + o.length) % o.length], next = o[(i + 1) % o.length];
+    return '<div class="pager"><button type="button" data-step="-1" aria-label="Previous project: ' + esc(prev.name) + '">\u2039 ' + esc(prev.name) + '</button>' +
+      '<span class="dots" aria-label="Project ' + (i + 1) + ' of ' + o.length + '">' + o.map(function (p, j) { return '<i class="' + (j === i ? 'on' : '') + '"></i>'; }).join('') + '</span>' +
+      '<button type="button" data-step="1" aria-label="Next project: ' + esc(next.name) + '">' + esc(next.name) + ' \u203a</button></div>' +
+      '<div class="swipehint">Swipe sideways to slide along the desk to the next project.</div>';
+  }
+
+  function render() { if (state.view === 'desk') renderDesk(); else renderProject(state.proj); }
+
+  /* the pen: grows (or rewinds) the project's line, showing (or hiding) each line as the tip passes it */
+  function pen(dir) {
+    var ptl = document.getElementById('ptl'), pm = document.getElementById('pmain'), pb = document.getElementById('pbr'), tip = document.getElementById('pen');
+    var list = items(), full = ptl.scrollHeight;
+    var visibleEnd = Math.min(full, window.innerHeight - ptl.getBoundingClientRect().top + 40);
+    var firstBranch = 0;
+    for (var k = 0; k < list.length; k++) { if (list[k].classList.contains('ev') && list[k].querySelector('.node.b')) { firstBranch = list[k].offsetTop; break; } }
+    var cut = ptl.dataset.cut ? Number(ptl.dataset.cut) : Infinity, pf = document.getElementById('pfut');
+    var nowEl = ptl.querySelector('.pl.now'), follow = dir > 0 && nowEl;
+    if (follow) visibleEnd = Math.min(full, cut + window.innerHeight * 0.45);
+    function at(y) {
+      tip.style.top = y + 'px';
+      pb.style.height = Math.max(0, y) + 'px';
+      if (cut === Infinity) pm.style.height = Math.max(0, y + 8) + 'px';
+      else { pf.style.height = Math.max(0, Math.min(y, cut) + 8) + 'px'; pm.style.top = cut + 'px'; pm.style.height = Math.max(0, y - cut) + 'px'; }
+      if (follow) { var top = ptl.getBoundingClientRect().top + window.scrollY; window.scrollTo(0, Math.max(0, top + Math.min(y, cut) - window.innerHeight / 2)); }
+    }
+    if (REDUCED) {
+      pm.style.bottom = '0'; pm.style.height = 'auto'; pb.style.bottom = '0'; pb.style.height = 'auto';
+      list.forEach(function (r) { r.style.opacity = dir > 0 ? '' : '0'; });
+      layoutCut(); if (dir > 0) centerNow();
+      return Promise.resolve();
+    }
+    var from = dir > 0 ? -8 : visibleEnd, to = dir > 0 ? visibleEnd : -8;
+    if (dir < 0) {
+      if (cut !== Infinity) visibleEnd = Math.min(full, Math.max(visibleEnd, window.scrollY + window.innerHeight - (ptl.getBoundingClientRect().top + window.scrollY) + 40));
+      list.forEach(function (r) { if (r.offsetTop > visibleEnd) r.style.opacity = '0'; });
+      pm.style.bottom = 'auto'; pb.style.bottom = 'auto';
+    }
+    var ms = Math.max(380, Math.min(dir > 0 ? 1050 : 650, Math.abs(to - from) * (dir > 0 ? 1.4 : 0.9)));
+    tip.style.opacity = '1';
+    return new Promise(function (done) {
+      var t0 = null;
+      function frame(now) {
+        if (t0 === null) t0 = now;
+        var t = Math.min(1, (now - t0) / ms), e = dir > 0 ? 1 - Math.pow(1 - t, 2.2) : t * t;
+        var y = from + (to - from) * e; at(y);
+        list.forEach(function (r) {
+          var hit = r.offsetTop + 18;
+          if (dir > 0 && hit <= y && r.style.opacity === '0') {
+            r.style.opacity = ''; anim(r, [{ opacity: 0, transform: 'translateX(-8px)' }, { opacity: 1, transform: 'none' }], { duration: 220 });
+          }
+          if (dir < 0 && hit > y && r.style.opacity !== '0') { r.style.opacity = '0'; anim(r, [{ opacity: 1 }, { opacity: 0 }], { duration: 120 }); }
+        });
+        if (t < 1) { requestAnimationFrame(frame); return; }
+        if (dir > 0) {
+          list.forEach(function (r) { if (r.style.opacity === '0') r.style.opacity = ''; });
+          pm.style.bottom = '0'; pm.style.height = 'auto'; pb.style.bottom = '0'; pb.style.height = 'auto';
+          layoutCut();
+        }
+        anim(tip, [{ opacity: 1 }, { opacity: 0 }], { duration: 200 }).then(function () { tip.style.opacity = '0'; });
+        done();
+      }
+      requestAnimationFrame(frame);
+    });
+  }
+  function centerNow() {
+    var now = document.querySelector('#ptl .pl.now'); if (!now) return;
+    now.scrollIntoView({ behavior: REDUCED ? 'auto' : 'smooth', block: 'center' });
+    now.classList.remove('flash'); void now.offsetWidth; now.classList.add('flash');
+  }
+  function drawPath(el, show, ms) {
+    if (REDUCED || !el) { if (el) el.style.strokeDashoffset = show ? '0' : '1'; return Promise.resolve(); }
+    el.style.strokeDasharray = '1';
+    el.style.transition = 'none'; el.style.strokeDashoffset = show ? '1' : '0'; el.getBoundingClientRect();
+    el.style.transition = 'stroke-dashoffset ' + ms + 'ms ' + (show ? 'ease-out' : 'ease-in'); el.style.strokeDashoffset = show ? '0' : '1';
+    return wait(ms);
+  }
+  function fly(el, fromRect, ms) {
+    var r1 = el.getBoundingClientRect();
+    var dx = fromRect.left - r1.left, dy = fromRect.top - r1.top, sx = fromRect.width / r1.width;
+    return anim(el, [{ transform: 'translate(' + dx + 'px,' + dy + 'px) scale(' + sx + ')', transformOrigin: 'top left' }, { transform: 'none', transformOrigin: 'top left' }], { duration: ms });
+  }
+
+  /* one drawn gesture: the line leaves the desk's trunk, curves out, and runs down into the project */
+  function openProject(id) {
+    if (busy) return; busy = true;
+    var row = document.querySelector('[data-row="' + id + '"]'), card = row.querySelector('.pcard');
+    var others = Array.prototype.slice.call(document.querySelectorAll('.proj')).filter(function (r) { return r !== row; });
+    others.forEach(function (r, i) { anim(r, [{ opacity: 1, transform: 'none' }, { opacity: 0, transform: 'translateX(18px)' }], { duration: 220, delay: i * 40, fill: 'forwards' }); });
+    var nb = document.querySelector('.needs'); if (nb) anim(nb, [{ opacity: 1 }, { opacity: 0 }], { duration: 200, fill: 'forwards' });
+    anim(document.querySelector('.desk-end'), [{ opacity: 1 }, { opacity: 0 }], { duration: 150, fill: 'forwards' });
+    drawPath(row.querySelector('path.ink'), true, 280).then(function () {
+      var r0 = card.getBoundingClientRect();
+      state.view = 'proj'; state.proj = id; window.scrollTo(0, 0);
+      renderProject(id, true);
+      var head = document.querySelector('.phead .pcard');
+      var pg = document.querySelectorAll('.pager, .swipehint'); pg.forEach(function (x) { x.style.opacity = '0'; });
+      return Promise.all([fly(head, r0, 480), wait(160).then(function () { return drawPath(document.getElementById('bo-path'), true, 320); })]);
+    }).then(function () {
+      document.querySelectorAll('.pager, .swipehint').forEach(function (x) { x.style.opacity = ''; anim(x, [{ opacity: 0 }, { opacity: 1 }], { duration: 250 }); });
+      return pen(1);
+    }).then(function () { centerNow(); busy = false; });
+  }
+
+  /* rewind: the line pulls back up its own path and rejoins the trunk */
+  function closeProject() {
+    if (busy) return; busy = true;
+    var id = state.proj;
+    window.scrollTo(0, 0);
+    document.querySelectorAll('.pager, .swipehint').forEach(function (x) { anim(x, [{ opacity: 1 }, { opacity: 0 }], { duration: 150, fill: 'forwards' }); });
+    pen(-1).then(function () {
+      return drawPath(document.getElementById('bo-path'), false, 260);
+    }).then(function () {
+      var r1 = document.querySelector('.phead .pcard').getBoundingClientRect();
+      state.view = 'desk'; state.proj = null;
+      renderDesk();
+      var row = document.querySelector('[data-row="' + id + '"]'), card = row.querySelector('.pcard'), ink = row.querySelector('path.ink');
+      ink.style.strokeDashoffset = '0';
+      var others = Array.prototype.slice.call(document.querySelectorAll('.proj')).filter(function (r) { return r !== row; });
+      others.forEach(function (r) { r.style.opacity = '0'; });
+      var nb = document.querySelector('.needs'); if (nb) nb.style.opacity = '0';
+      return fly(card, r1, 460).then(function () {
+        return drawPath(ink, false, 300);
+      }).then(function () {
+        others.forEach(function (r, i) { r.style.opacity = ''; anim(r, [{ opacity: 0, transform: 'translateX(18px)' }, { opacity: 1, transform: 'none' }], { duration: 240, delay: i * 50 }); });
+        if (nb) { nb.style.opacity = ''; anim(nb, [{ opacity: 0 }, { opacity: 1 }], { duration: 240 }); }
+        return wait(300);
+      });
+    }).then(function () { busy = false; });
+  }
+
+  /* slide along the trunk to the next project's branch */
+  function step(dir) {
+    if (busy || state.view !== 'proj') return; busy = true;
+    var o = order(), i = o.map(function (p) { return p.id; }).indexOf(state.proj), next = o[(i + dir + o.length) % o.length].id;
+    var moving = document.querySelectorAll('.phead, .pager, .swipehint, #ptl');
+    var outs = Array.prototype.map.call(moving, function (el) { return anim(el, [{ opacity: 1, transform: 'none' }, { opacity: 0, transform: 'translateX(' + (-dir * 48) + 'px)' }], { duration: 220, fill: 'forwards', easing: 'ease-in' }); });
+    outs.push(drawPath(document.getElementById('bo-path'), false, 200));
+    Promise.all(outs).then(function () {
+      state.proj = next; renderProject(next, true);
+      var ins = document.querySelectorAll('.phead, .pager, .swipehint');
+      return Promise.all(Array.prototype.map.call(ins, function (el) { return anim(el, [{ opacity: 0, transform: 'translateX(' + (dir * 48) + 'px)' }, { opacity: 1, transform: 'none' }], { duration: 260 }); })
+        .concat([wait(80).then(function () { return drawPath(document.getElementById('bo-path'), true, 260); })]));
+    }).then(function () { return pen(1); }).then(function () { centerNow(); busy = false; });
+  }
+
+  /* each line opens out of its own dot */
+  function dotOf(item) { return item.querySelector(':scope > .node') || item.querySelector(':scope > .snode') || item.querySelector(':scope > .crow .ico') || item.querySelector('.node'); }
+  function clipFrom(detail, dot) {
+    var d = detail.getBoundingClientRect(), n = dot.getBoundingClientRect();
+    var cx = n.left + n.width / 2 - d.left, cy = n.top + n.height / 2 - d.top;
+    var r = Math.hypot(Math.max(Math.abs(cx), Math.abs(d.width - cx)), Math.max(Math.abs(cy), Math.abs(d.height - cy))) + 20;
+    return ['circle(0px at ' + cx + 'px ' + cy + 'px)', 'circle(' + r + 'px at ' + cx + 'px ' + cy + 'px)'];
+  }
+  function rebuild(item, key) {
+    var tmp = document.createElement('div');
+    var parts = key.split(':');
+    if (item.classList.contains('need')) { var idx = Number(key.slice(1)); tmp.innerHTML = needRow(NEEDS[idx], idx); }
+    else if (parts[0] === 'it') tmp.innerHTML = msRow(Number(parts[1]), Number(parts[2]));
+    else if (parts[0] === 'sp') tmp.innerHTML = sprintRow(Number(parts[1]), Number(parts[2]), Number(parts[3]));
+    else if (parts[0] === 'ev') tmp.innerHTML = eventRow(Number(parts[1]), Number(parts[2]), Number(parts[3]), Number(parts[4]));
+    else { var p = proj(state.proj), i = Number(key.slice(state.proj.length)); tmp.innerHTML = evRow(p, p.events[i], i); }
+    var fresh = tmp.firstChild; item.parentNode.replaceChild(fresh, item); return fresh;
+  }
+  function toggle(item) {
+    var key = item.dataset.key, opening = !state.open[key];
+    state.open[key] = opening;
+    var before = item.offsetHeight;
+    if (opening) {
+      var fresh = rebuild(item, key), after = fresh.offsetHeight, det = fresh.querySelector('.detail'), dot = dotOf(fresh);
+      fresh.style.overflow = 'hidden';
+      anim(fresh, [{ height: before + 'px' }, { height: after + 'px' }], { duration: 300 }).then(function () { fresh.style.overflow = ''; if (state.view === 'proj') layoutCut(); });
+      if (dot) anim(dot, [{ transform: 'scale(1)' }, { transform: 'scale(1.25)' }, { transform: 'scale(1)' }], { duration: 300 });
+      if (det && dot) { var c = clipFrom(det, dot); anim(det, [{ clipPath: c[0], opacity: .4 }, { clipPath: c[1], opacity: 1 }], { duration: 380, easing: 'cubic-bezier(.3,.7,.2,1)' }); }
+      return;
+    }
+    var det2 = item.querySelector('.detail'), dot2 = dotOf(item);
+    var shut = det2 && dot2 ? (function () { var c = clipFrom(det2, dot2); return anim(det2, [{ clipPath: c[1], opacity: 1 }, { clipPath: c[0], opacity: .4 }], { duration: 240, easing: 'ease-in', fill: 'forwards' }); })() : Promise.resolve();
+    shut.then(function () {
+      var fresh = rebuild(item, key), after = fresh.offsetHeight;
+      fresh.style.overflow = 'hidden';
+      return anim(fresh, [{ height: before + 'px' }, { height: after + 'px' }], { duration: 220 }).then(function () { fresh.style.overflow = ''; if (state.view === 'proj') layoutCut(); });
+    });
+  }
+
+  /* the replay in Service-Desk: what the records show at 15:14 */
+  function replay() {
+    if (busy) return; busy = true;
+    var evs = document.querySelectorAll('#ptl .ev');
+    var newRun = evs[0], review = evs[1];
+    newRun.style.display = 'none';
+    var node = review.querySelector('.node'), st = review.querySelector('.s'), tt = review.querySelector('.tt'), tm = review.querySelector('.tm');
+    review.classList.remove('past'); node.style.background = 'var(--running)'; node.classList.add('dotpulse'); st.textContent = 'Running'; st.style.color = 'var(--running-t)';
+    tt.textContent = 'Plan review of S-011, round 2'; tm.textContent = '12:37';
+    review.scrollIntoView({ behavior: REDUCED ? 'auto' : 'smooth', block: 'center' });
+    wait(1600).then(function () {
+      node.classList.remove('dotpulse'); node.style.background = 'var(--failed)';
+      anim(node, [{ transform: 'scale(1)' }, { transform: 'scale(1.3)' }, { transform: 'scale(1)' }], { duration: 380 });
+      st.textContent = 'Failed'; st.style.color = 'var(--failed-t)'; tt.textContent = 'Plan review failed, round 2'; tm.textContent = '15:14';
+      setTimeout(function () { review.classList.add('past'); }, D(1400));
+      review.classList.remove('flash'); void review.offsetWidth; review.classList.add('flash');
+      return wait(900);
+    }).then(function () {
+      newRun.style.display = ''; var h = newRun.scrollHeight; newRun.style.overflow = 'hidden';
+      var n2 = newRun.querySelector('.node'); n2.classList.add('dotpulse');
+      newRun.classList.remove('flash'); void newRun.offsetWidth; newRun.classList.add('flash');
+      return anim(newRun, [{ height: '0px', opacity: 0 }, { height: h + 'px', opacity: 1 }], { duration: 420 }).then(function () { newRun.style.overflow = ''; return wait(2400); }).then(function () { n2.classList.remove('dotpulse'); });
+    }).then(function () { busy = false; });
+  }
+
+  document.addEventListener('click', function (e) {
+    var t = e.target;
+    var f = t.closest('[data-feed]'); if (f) { state.feed = f.dataset.feed; render(); return; }
+    var pc = t.closest('[data-proj]'); if (pc) { state.mode = 'plan'; openProject(pc.dataset.proj); return; }
+    if (t.closest('#back')) { closeProject(); return; }
+    if (t.closest('[data-jump-now]')) { centerNow(); return; }
+    if (t.closest('[data-jump-needs]')) { var nb = document.querySelector('.needs'); if (nb) nb.scrollIntoView({ behavior: REDUCED ? 'auto' : 'smooth', block: 'start' }); return; }
+    if (t.closest('#replay')) { replay(); return; }
+    var st = t.closest('[data-step]'); if (st) { step(Number(st.dataset.step)); return; }
+    var un = t.closest('[data-unused]'); if (un && !busy) {
+      var bb = Number(un.dataset.unused); state.unused[bb] = !state.unused[bb];
+      var y = un.getBoundingClientRect().top; renderProject(state.proj, false);
+      var again = document.querySelector('[data-unused="' + bb + '"]'); if (again) window.scrollBy(0, again.getBoundingClientRect().top - y);
+      return; }
+    var cr = t.closest('.crow'); if (cr && !busy) { toggle(cr.closest('[data-key]')); }
+  });
+  var sx = null, sy = null, swiped = false;
+  var viewEl = document.getElementById('view');
+  viewEl.addEventListener('pointerdown', function (e) { if (state.view === 'proj') { sx = e.clientX; sy = e.clientY; swiped = false; } });
+  viewEl.addEventListener('pointerup', function (e) {
+    if (sx === null) return;
+    var dx = e.clientX - sx, dy = e.clientY - sy; sx = null;
+    if (Math.abs(dx) > 60 && Math.abs(dx) > Math.abs(dy) * 1.5) { swiped = true; step(dx < 0 ? 1 : -1); }
+  });
+  viewEl.addEventListener('click', function (e) { if (swiped) { e.stopPropagation(); e.preventDefault(); swiped = false; } }, true);
+  render();
+})();
+</script>

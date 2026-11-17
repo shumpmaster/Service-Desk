@@ -1,0 +1,66 @@
+<title>Home Suggestions</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<style>/* Layout: the question, then v14 as it is and three live phones side by side; they wrap to two, then one, column. Tokens follow the Desk Element Library (v8). */
+:root { --ground:#f2f3f7; --surface:#ffffff; --text-1:#1c1d21; --text-2:#6b6d71; --separator:#e7e9ed; --now-word:#0868bc;
+  --sans:-apple-system,BlinkMacSystemFont,"SF Pro Text","Inter","Segoe UI",Roboto,sans-serif; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --ground:#000000; --surface:#1c1c1e; --text-1:#f2f2f7; --text-2:#98989f; --separator:#38383a; --now-word:#9fd0ff; color-scheme:dark } }
+:root[data-theme="dark"] { --ground:#000000; --surface:#1c1c1e; --text-1:#f2f2f7; --text-2:#98989f; --separator:#38383a; --now-word:#9fd0ff; color-scheme:dark }
+body { background:var(--ground); color:var(--text-1); font:400 17px/1.4 var(--sans);
+  padding-left:max(16px, env(safe-area-inset-left, 0px)); padding-right:max(16px, env(safe-area-inset-right, 0px)); padding-block:24px 48px; }
+main { max-width:1680px; margin:0 auto; display:flex; flex-direction:column; gap:32px; }
+h1 { font:700 27px/1.15 var(--sans); margin:0; text-wrap:balance; }
+p { margin:0; max-width:70ch; }
+a { color:var(--now-word); }
+.lede { display:flex; flex-direction:column; gap:10px; } .lede p { color:var(--text-2); font-size:15px; }
+.lede blockquote { margin:0; padding:10px 14px; border-radius:12px; background:var(--surface); font-size:15px; max-width:70ch; }
+.phones { display:grid; grid-template-columns:repeat(4, minmax(0, 395px)); gap:20px; align-items:start; }
+.opt { display:flex; flex-direction:column; gap:10px; min-width:0; }
+.tag { font:600 13px/1 var(--sans); letter-spacing:.06em; text-transform:uppercase; color:var(--text-2); }
+.tag.rec { color:var(--now-word); }
+h2 { font:600 19px/1.25 var(--sans); margin:0; text-wrap:balance; }
+.opt ul { margin:0; padding-left:20px; display:flex; flex-direction:column; gap:4px; font-size:15px; color:var(--text-2); min-height:9.5em; }
+.phone { width:100%; max-width:395px; height:760px; border:1px solid var(--separator); border-radius:24px; overflow:hidden; background:var(--surface); }
+.phone iframe { width:393px; max-width:100%; height:100%; border:0; display:block; }
+.open { font-size:14px; }
+@media (max-width: 1720px) { .phones { grid-template-columns:repeat(2, minmax(0, 395px)); } }
+@media (max-width: 860px) { .phones { grid-template-columns:minmax(0, 1fr); } .opt ul { min-height:0; } }
+</style>
+<main>
+  <div class="lede">
+    <h1>Home: what C may be missing</h1>
+    <p>Your answer on the three suggestions:</p>
+    <blockquote>"C is where I’m leaning but I feel like it’s missing something"</blockquote>
+    <p>Here are three things C could be missing, each added to C on its own so you can judge it. They can be combined. Everything shown is the desk's real records. Tap projects and rows; in C, C2 and C3, tap the quiet row to open it. The first three suggestions are kept at <a href="first.html">first.html</a>.</p>
+  </div>
+  <div class="phones">
+    <section class="opt">
+      <span class="tag">As it is</span><h2>C: what waits, grouped by project</h2>
+      <ul><li>One sentence, then the two projects with something waiting, each with its rows.</li>
+        <li>The three quiet projects fold into one row.</li></ul>
+      <div class="phone"><iframe src="sug-C.html" title="As it is: C, live" loading="lazy"></iframe></div>
+      <a class="open" href="sug-C.html" target="_blank" rel="noopener">Open full screen</a>
+    </section>
+    <section class="opt">
+      <span class="tag">C1 · motion</span><h2>What moved without you</h2>
+      <ul><li>The quiet projects are no longer folded away. They become "Moving without you": each says how much happened today and names the latest thing ("7 events today · latest: Merged PR #59").</li>
+        <li>This answers "is the rest of the desk alive?", which the map was reaching for, in words.</li></ul>
+      <div class="phone"><iframe src="sug-C1.html" title="C1, live" loading="lazy"></iframe></div>
+      <a class="open" href="sug-C1.html" target="_blank" rel="noopener">Open full screen</a>
+    </section>
+    <section class="opt">
+      <span class="tag rec">C2 · stakes · recommended</span><h2>What each answer holds up</h2>
+      <ul><li>Each waiting row says what it holds up ("Holds up M6, M7, M8").</li>
+        <li>The longest wait comes first, with a red "Longest wait" tag, so the widget's 9-day gate is no longer last.</li>
+        <li>This answers "which one first, and why does it matter?"</li></ul>
+      <div class="phone"><iframe src="sug-C2.html" title="C2, live" loading="lazy"></iframe></div>
+      <a class="open" href="sug-C2.html" target="_blank" rel="noopener">Open full screen</a>
+    </section>
+    <section class="opt">
+      <span class="tag">C3 · time</span><h2>A slim strip of what mattered</h2>
+      <ul><li>Under each project, a thin two-week strip of only the events that matter: merges dark, stops and gates red, questions yellow, now blue.</li>
+        <li>It keeps the map's character in its smallest useful form.</li></ul>
+      <div class="phone"><iframe src="sug-C3.html" title="C3, live" loading="lazy"></iframe></div>
+      <a class="open" href="sug-C3.html" target="_blank" rel="noopener">Open full screen</a>
+    </section>
+  </div>
+</main>

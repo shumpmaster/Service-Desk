@@ -1,0 +1,68 @@
+<title>Home as a Map</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<style>/* Layout: the question, then option 1 as chosen and three live phones side by side; they wrap to two, then one, column. Tokens follow the Desk Element Library (v8). */
+:root { --ground:#f2f3f7; --surface:#ffffff; --text-1:#1c1d21; --text-2:#6b6d71; --separator:#e7e9ed; --now-word:#0868bc;
+  --sans:-apple-system,BlinkMacSystemFont,"SF Pro Text","Inter","Segoe UI",Roboto,sans-serif; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --ground:#000000; --surface:#1c1c1e; --text-1:#f2f2f7; --text-2:#98989f; --separator:#38383a; --now-word:#9fd0ff; color-scheme:dark } }
+:root[data-theme="dark"] { --ground:#000000; --surface:#1c1c1e; --text-1:#f2f2f7; --text-2:#98989f; --separator:#38383a; --now-word:#9fd0ff; color-scheme:dark }
+body { background:var(--ground); color:var(--text-1); font:400 17px/1.4 var(--sans);
+  padding-left:max(16px, env(safe-area-inset-left, 0px)); padding-right:max(16px, env(safe-area-inset-right, 0px)); padding-block:24px 48px; }
+main { max-width:1680px; margin:0 auto; display:flex; flex-direction:column; gap:32px; }
+h1 { font:700 27px/1.15 var(--sans); margin:0; text-wrap:balance; }
+p { margin:0; max-width:70ch; }
+a { color:var(--now-word); }
+.lede { display:flex; flex-direction:column; gap:10px; } .lede p { color:var(--text-2); font-size:15px; }
+.lede blockquote { margin:0; padding:10px 14px; border-radius:12px; background:var(--surface); font-size:15px; max-width:70ch; }
+.phones { display:grid; grid-template-columns:repeat(4, minmax(0, 395px)); gap:20px; align-items:start; }
+.opt { display:flex; flex-direction:column; gap:10px; min-width:0; }
+.tag { font:600 13px/1 var(--sans); letter-spacing:.06em; text-transform:uppercase; color:var(--text-2); }
+.tag.rec { color:var(--now-word); }
+h2 { font:600 19px/1.25 var(--sans); margin:0; text-wrap:balance; }
+.opt ul { margin:0; padding-left:20px; display:flex; flex-direction:column; gap:4px; font-size:15px; color:var(--text-2); min-height:9.5em; }
+.phone { width:100%; max-width:395px; height:760px; border:1px solid var(--separator); border-radius:24px; overflow:hidden; background:var(--surface); }
+.phone iframe { width:393px; max-width:100%; height:100%; border:0; display:block; }
+.open { font-size:14px; }
+@media (max-width: 1720px) { .phones { grid-template-columns:repeat(2, minmax(0, 395px)); } }
+@media (max-width: 860px) { .phones { grid-template-columns:minmax(0, 1fr); } .opt ul { min-height:0; } }
+</style>
+<main>
+  <div class="lede">
+    <h1>Home as a map: more room, no old cards</h1>
+    <p>Your answer on the pop-ups:</p>
+    <blockquote>"I like 1 - but in general I think the map needs more space and I don’t like the existing old cards sticking around there."</blockquote>
+    <p>So the pop-ups stay tied to their rows in Needs you, and each option below gives the map more room and drops the project cards. Each lane now carries what its card said: the project's name, what waits on you, and its one line. Tapping a lane opens the project, and tapping a pop-up goes to its row. Every phone is live, so scroll and tap. The activity before today is an example. Earlier questions on this page: <a href="round1.html">the first three ideas</a> and <a href="popups.html">the pop-ups</a>.</p>
+  </div>
+  <div class="phones">
+    <section class="opt">
+      <span class="tag">As it is</span><h2>Option 1, as you chose it</h2>
+      <ul><li>The map is pinned but tight: five lanes in about 180 points, with names only.</li>
+        <li>The old project cards are still under Needs you.</li></ul>
+      <div class="phone"><iframe src="live-row.html" title="As it is: option 1, live" loading="lazy"></iframe></div>
+      <a class="open" href="live-row.html" target="_blank" rel="noopener">Open full screen</a>
+    </section>
+    <section class="opt">
+      <span class="tag">Option A</span><h2>A taller pinned map</h2>
+      <ul><li>Lanes nearly twice as tall. Each lane shows its name, what waits on you, and its one line.</li>
+        <li>It stays pinned the whole time, so it takes about 40% of the screen while you read Needs you.</li>
+        <li>No cards.</li></ul>
+      <div class="phone"><iframe src="space-tall.html" title="Option A: a taller pinned map, live" loading="lazy"></iframe></div>
+      <a class="open" href="space-tall.html" target="_blank" rel="noopener">Open full screen</a>
+    </section>
+    <section class="opt">
+      <span class="tag rec">Option B · recommended</span><h2>Opens large, folds slim as you scroll</h2>
+      <ul><li>The page opens on the map at full size, with each lane's name, line and pop-ups.</li>
+        <li>Once you scroll down to Needs you, the map folds to slim lanes with names and pop-ups, and stays pinned. Scroll back up and it opens again.</li>
+        <li>The map gets the room when you're looking at it, and gives it back when you're reading. No cards.</li></ul>
+      <div class="phone"><iframe src="space-fold.html" title="Option B: opens large and folds as you scroll, live" loading="lazy"></iframe></div>
+      <a class="open" href="space-fold.html" target="_blank" rel="noopener">Open full screen</a>
+    </section>
+    <section class="opt">
+      <span class="tag">Option C</span><h2>The map fills the page, Needs you pulls up</h2>
+      <ul><li>The map takes the whole page, with the tallest lanes, and each lane shows the phase and repository too.</li>
+        <li>Needs you becomes a sheet that peeks at the bottom. Tap its top to pull it up. Tapping a pop-up pulls it up at that row.</li>
+        <li>This gives the map the most room. Your list sits one tap away. No cards.</li></ul>
+      <div class="phone"><iframe src="space-drawer.html" title="Option C: the map fills the page and Needs you pulls up, live" loading="lazy"></iframe></div>
+      <a class="open" href="space-drawer.html" target="_blank" rel="noopener">Open full screen</a>
+    </section>
+  </div>
+</main>

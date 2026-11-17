@@ -1,0 +1,15 @@
+<!-- @dsCard group="Headings" height=200 -->
+<!doctype html>
+<html lang="en">
+<head><meta charset="utf-8"><title>SectionHeading</title></head>
+<body>
+<div class="dk-stage col" style="width:361px">
+  <h2 class="dk-head"><span>Needs you</span><svg class="chev" aria-hidden="true" focusable="false" viewBox="0 0 256 256" fill="currentColor"><path d="M184.49,136.49l-80,80a12,12,0,0,1-17-17L159,128,87.51,56.49a12,12,0,1,1,17-17l80,80A12,12,0,0,1,184.49,136.49Z"/></svg><span class="grow"></span><svg class="more" aria-hidden="true" focusable="false" viewBox="0 0 256 256" fill="currentColor"><path d="M144,128a16,16,0,1,1-16-16A16,16,0,0,1,144,128ZM60,112a16,16,0,1,0,16,16A16,16,0,0,0,60,112Zm136,0a16,16,0,1,0,16,16A16,16,0,0,0,196,112Z"/></svg></h2>
+  <h2 class="dk-head" role="button" tabindex="0" id="fold"><span>Projects</span><svg class="more" aria-hidden="true" focusable="false" viewBox="0 0 256 256" fill="currentColor"><path d="M144,128a16,16,0,1,1-16-16A16,16,0,0,1,144,128ZM60,112a16,16,0,1,0,16,16A16,16,0,0,0,60,112Zm136,0a16,16,0,1,0,16,16A16,16,0,0,0,196,112Z"/></svg><span class="grow"></span><svg class="fold" aria-hidden="true" focusable="false" viewBox="0 0 256 256" fill="currentColor"><path d="M216.49,104.49l-80,80a12,12,0,0,1-17,0l-80-80a12,12,0,0,1,17-17L128,159l71.51-71.52a12,12,0,0,1,17,17Z"/></svg></h2>
+  <p class="dk-note">Drill-in heading with its menu at the right (ref 11); collapsible heading with its menu beside the word (ref 12). Tap the second.</p>
+</div>
+<script>
+var f = document.getElementById('fold'); f.addEventListener('click', function () { f.classList.toggle('closed'); });
+</script>
+</body>
+</html>

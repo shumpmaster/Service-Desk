@@ -1,0 +1,49 @@
+<title>One Order</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<style>/* Layout: the question, then v25 as it is and one live phone side by side; they wrap to two, then one, column. Tokens follow the Desk Element Library (v17). */
+:root { --ground:#f2f3f7; --surface:#ffffff; --text-1:#1c1d21; --text-2:#6b6d71; --separator:#e7e9ed; --now-word:#0868bc;
+  --sans:-apple-system,BlinkMacSystemFont,"SF Pro Text","Inter","Segoe UI",Roboto,sans-serif; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --ground:#000000; --surface:#1c1c1e; --text-1:#f2f2f7; --text-2:#98989f; --separator:#38383a; --now-word:#9fd0ff; color-scheme:dark } }
+:root[data-theme="dark"] { --ground:#000000; --surface:#1c1c1e; --text-1:#f2f2f7; --text-2:#98989f; --separator:#38383a; --now-word:#9fd0ff; color-scheme:dark }
+body { background:var(--ground); color:var(--text-1); font:400 17px/1.4 var(--sans);
+  padding-left:max(16px, env(safe-area-inset-left, 0px)); padding-right:max(16px, env(safe-area-inset-right, 0px)); padding-block:24px 48px; }
+main { max-width:1680px; margin:0 auto; display:flex; flex-direction:column; gap:32px; }
+h1 { font:700 27px/1.15 var(--sans); margin:0; text-wrap:balance; }
+p { margin:0; max-width:70ch; }
+a { color:var(--now-word); }
+.lede { display:flex; flex-direction:column; gap:10px; } .lede p { color:var(--text-2); font-size:15px; }
+.lede blockquote { margin:0; padding:10px 14px; border-radius:12px; background:var(--surface); font-size:15px; max-width:70ch; }
+.phones { display:grid; grid-template-columns:repeat(2, minmax(0, 395px)); gap:20px; align-items:start; }
+.opt { display:flex; flex-direction:column; gap:10px; min-width:0; }
+.tag { font:600 13px/1 var(--sans); letter-spacing:.06em; text-transform:uppercase; color:var(--text-2); }
+.tag.rec { color:var(--now-word); }
+h2 { font:600 19px/1.25 var(--sans); margin:0; text-wrap:balance; }
+.opt ul { margin:0; padding-left:20px; display:flex; flex-direction:column; gap:4px; font-size:15px; color:var(--text-2); min-height:9.5em; }
+.phone { width:100%; max-width:395px; height:760px; border:1px solid var(--separator); border-radius:24px; overflow:hidden; background:var(--surface); }
+.phone iframe { width:393px; max-width:100%; height:100%; border:0; display:block; }
+.open { font-size:14px; }
+@media (max-width: 1300px) { .phones { grid-template-columns:repeat(2, minmax(0, 395px)); } }
+@media (max-width: 860px) { .phones { grid-template-columns:minmax(0, 1fr); } .opt ul { min-height:0; } }
+</style>
+<main>
+  <div class="lede">
+    <h1>One order of operations</h1>
+    <p>Your answer:</p>
+    <blockquote>"I think I’m over working it, all I really want is an established order of operations basically so I can read things in the order they occurred or were meant to I guess?"</blockquote>
+    <p>So, one plain order, top down, at every level: each thing where it happened, or, if it hasn't yet, where it's meant to. The numbers follow that same order, so they never jump: 2.1, 2.2, 2.3, then Now, then what's next. A standard milestone's own id (Design-5) is hidden here, so only one number shows; the project's own M6 keeps its name. Inside M6, S-010 comes before S-011, and S-011's events run from "New spec" to the planned freeze. Nothing else is added: no bars, no goals strip, no headings. Start times are examples, as no record carries them yet.</p>
+  </div>
+  <div class="phones">
+    <section class="opt">
+      <span class="tag">As it is</span><h2>v25</h2>
+      <ul><li>Newest first, and the numbers jump: 2.5, 2.3, 2.6, Now, 2.7, 2.1.</li></ul>
+      <div class="phone"><iframe src="now.html" title="As it is: v25, live" loading="lazy"></iframe></div>
+      <a class="open" href="now.html" target="_blank" rel="noopener">Open full screen</a>
+    </section>
+    <section class="opt">
+      <span class="tag rec">Proposed</span><h2>In the order it happened, or is meant to</h2>
+      <ul><li>2.1 Done defined, 2.2 M6, 2.3 The design fits together, Now, 2.4 A plan that passed review, 2.5 Every unknown has a test.</li></ul>
+      <div class="phone"><iframe src="seq.html" title="Proposed, live" loading="lazy"></iframe></div>
+      <a class="open" href="seq.html" target="_blank" rel="noopener">Open full screen</a>
+    </section>
+  </div>
+</main>

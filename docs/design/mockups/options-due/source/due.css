@@ -28,3 +28,4 @@
 /* C: the shared axis takes the whole row; the words go under it */
 .du-row .du-line:has(.du-bar.axis) { flex-wrap: wrap; row-gap: 4px; }
 .du-row .du-bar.axis { flex: 1 0 100%; }
+.v13gr .l1 b.du-hid { display: none; }

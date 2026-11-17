@@ -5,6 +5,8 @@
      opens the reason. Due dates, starts and reasons are EXAMPLES: no record carries them yet. The mockup's clock is 14 Nov 17:25.
      A: a bar on each row: the planned span to a due tick, then the drag past it in the soft status tint, with "11 h 25 min over".
      B: words only: "Due 14 Nov 06:00" and a tinted "11 h 25 min over" tag, no bar.
+     N (round 6, answer 13): one plain order, no drag shown: milestones by when their work began or is meant to begin, numbers
+        following that order, nothing added; a standard milestone's own id (Design-5) is hidden, so only one number shows.
      C: one shared time axis: every milestone's bar on the same days, the planned window outlined, the actual span filled, the drag
         tinted, and a Now line through every row. */
   var DU_NOW = 2 * 1440 + 17 * 60 + 25;   /* minutes from 12 Nov 00:00 to 14 Nov 17:25 */
@@ -18,7 +20,8 @@
     'Design-2': { s: dm(15, '18:00'), due: dm(16, '12:00'), end: null },
     'Design-4': { s: dm(16, '09:00'), due: dm(16, '18:00'), end: null }
   };
-  var DU_ORDER = Object.keys(DUE).sort(function (a, b) { return DUE[a].due - DUE[b].due; });
+  var DU_KEY = function (x) { return DUE_OPT === 'N' ? x.s : x.due; };
+  var DU_ORDER = Object.keys(DUE).sort(function (a, b) { return DU_KEY(DUE[a]) - DU_KEY(DUE[b]); });
   var DU_NUM = {};   /* old number -> new number, by due order */
   var DU_OLD = { 'Design-1': '2.1', 'Design-2': '2.2', 'Design-3': '2.3', 'Design-4': '2.4', 'Design-5': '2.5', 'Design-6': '2.6', 'M6': '2.7' };
   DU_ORDER.forEach(function (id, j) { DU_NUM[DU_OLD[id]] = '2.' + (j + 1); });
@@ -43,7 +46,7 @@
   }
   var DU_A = 0, DU_B = DU_NOW + 2 * 1440;   /* the shared axis for C: 12 Nov to 16 Nov 17:25 */
   function duRow(id) {
-    var i = duInfo(id); if (!i) return '';
+    var i = duInfo(id); if (!i || DUE_OPT === 'N') return '';
     var why = i.why ? '<button type="button" class="du-why" data-du-why="' + id + '">Why</button>' : '';
     var tag = '<span class="du-tag ' + i.st + '">' + esc(i.word) + '</span>';
     if (DUE_OPT === 'B') return '<span class="du-line"><span class="du-due">Due ' + esc(fmtT(i.x.due)) + '</span>' + tag + why + '</span>';
@@ -62,13 +65,14 @@
     var ms = [].slice.call(ph.children).filter(function (c) { return c.classList.contains('v13ms'); });
     var now = ph.querySelector(':scope > .v13now'), tail = [].slice.call(ph.children).filter(function (c) { return c.classList.contains('v13unhide'); });
     var idOf = function (m) { var b = m.querySelector(':scope > button.v13gr .l1 b'); return b ? b.textContent : ''; };
-    ms.sort(function (a, b) { return (DUE[idOf(a)] || { due: 1e9 }).due - (DUE[idOf(b)] || { due: 1e9 }).due; });
+    ms.sort(function (a, b) { return DU_KEY(DUE[idOf(a)] || { s: 1e9, due: 1e9 }) - DU_KEY(DUE[idOf(b)] || { s: 1e9, due: 1e9 }); });
     var placed = false;
     ms.forEach(function (m) {
       var x = DUE[idOf(m)];
-      if (now && !placed && x && x.due > DU_NOW) { ph.appendChild(now); placed = true; }
+      if (now && !placed && x && DU_KEY(x) > DU_NOW) { ph.appendChild(now); placed = true; }
       ph.appendChild(m);
-      var hb = m.querySelector(':scope > button.v13gr'); if (hb && !m.querySelector(':scope > .du-row')) hb.insertAdjacentHTML('afterend', '<div class="du-row">' + duRow(idOf(m)) + '</div>');
+      if (DUE_OPT === 'N') { var bb = m.querySelector(':scope > button.v13gr .l1 b'); if (bb && /^(Discovery|Design|Build|Launch)-\d+$/.test(bb.textContent)) bb.classList.add('du-hid'); }
+      var hb = m.querySelector(':scope > button.v13gr'); if (hb && DUE_OPT !== 'N' && !m.querySelector(':scope > .du-row')) hb.insertAdjacentHTML('afterend', '<div class="du-row">' + duRow(idOf(m)) + '</div>');
     });
     if (now && !placed) ph.appendChild(now);
     tail.forEach(function (c) { ph.appendChild(c); });

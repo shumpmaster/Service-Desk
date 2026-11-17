@@ -5,7 +5,8 @@
      B: newest first, everywhere: the order inside stays as it is, and each heading (phase, milestone, sprint) moves to the foot of
         what it holds, as its root, so every level reads upward from where it began. */
   function ordFix() {
-    var L = document.getElementById('v13list'); if (!L) return;
+    var L = document.getElementById('v13list'); if (!L || !L.firstElementChild || L.firstElementChild.dataset.ordDone) return;
+    L.firstElementChild.dataset.ordDone = '1';
     if (ORD === 'A') {
       [].slice.call(L.querySelectorAll('.v13body')).forEach(function (b) {
         var kids = [].slice.call(b.children), tail = kids.filter(function (c) { return c.classList.contains('v13unhide'); });
@@ -21,4 +22,6 @@
     L.classList.add('ord-' + ORD);
   }
   var _renderProjectOrd = renderProject;
-  renderProject = function () { var r = _renderProjectOrd.apply(this, arguments); ordFix(); return r; };
+  /* the list is also redrawn in place (folding, bubbles); sort each fresh drawing once */
+  var ordObs = new MutationObserver(function () { ordFix(); if (typeof ord2Fix === 'function') ord2Fix(); });
+  renderProject = function () { var r = _renderProjectOrd.apply(this, arguments); ordFix(); var L = document.getElementById('v13list'); if (L) { ordObs.disconnect(); ordObs.observe(L, { childList: true }); } return r; };

@@ -1,0 +1,64 @@
+<title>Milestone Order</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<style>/* Layout: the question, then v25 as it is and three live phones side by side; they wrap to two, then one, column. Tokens follow the Desk Element Library (v17). */
+:root { --ground:#f2f3f7; --surface:#ffffff; --text-1:#1c1d21; --text-2:#6b6d71; --separator:#e7e9ed; --now-word:#0868bc;
+  --sans:-apple-system,BlinkMacSystemFont,"SF Pro Text","Inter","Segoe UI",Roboto,sans-serif; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --ground:#000000; --surface:#1c1c1e; --text-1:#f2f2f7; --text-2:#98989f; --separator:#38383a; --now-word:#9fd0ff; color-scheme:dark } }
+:root[data-theme="dark"] { --ground:#000000; --surface:#1c1c1e; --text-1:#f2f2f7; --text-2:#98989f; --separator:#38383a; --now-word:#9fd0ff; color-scheme:dark }
+body { background:var(--ground); color:var(--text-1); font:400 17px/1.4 var(--sans);
+  padding-left:max(16px, env(safe-area-inset-left, 0px)); padding-right:max(16px, env(safe-area-inset-right, 0px)); padding-block:24px 48px; }
+main { max-width:1680px; margin:0 auto; display:flex; flex-direction:column; gap:32px; }
+h1 { font:700 27px/1.15 var(--sans); margin:0; text-wrap:balance; }
+p { margin:0; max-width:70ch; }
+a { color:var(--now-word); }
+.lede { display:flex; flex-direction:column; gap:10px; } .lede p { color:var(--text-2); font-size:15px; }
+.lede blockquote { margin:0; padding:10px 14px; border-radius:12px; background:var(--surface); font-size:15px; max-width:70ch; }
+.phones { display:grid; grid-template-columns:repeat(4, minmax(0, 395px)); gap:20px; align-items:start; }
+.opt { display:flex; flex-direction:column; gap:10px; min-width:0; }
+.tag { font:600 13px/1 var(--sans); letter-spacing:.06em; text-transform:uppercase; color:var(--text-2); }
+.tag.rec { color:var(--now-word); }
+h2 { font:600 19px/1.25 var(--sans); margin:0; text-wrap:balance; }
+.opt ul { margin:0; padding-left:20px; display:flex; flex-direction:column; gap:4px; font-size:15px; color:var(--text-2); min-height:9.5em; }
+.phone { width:100%; max-width:395px; height:760px; border:1px solid var(--separator); border-radius:24px; overflow:hidden; background:var(--surface); }
+.phone iframe { width:393px; max-width:100%; height:100%; border:0; display:block; }
+.open { font-size:14px; }
+@media (max-width: 1720px) { .phones { grid-template-columns:repeat(2, minmax(0, 395px)); } }
+@media (max-width: 860px) { .phones { grid-template-columns:minmax(0, 1fr); } .opt ul { min-height:0; } }
+</style>
+<main>
+  <div class="lede">
+    <h1>Milestones that don't look out of order</h1>
+    <p>Your answer on the reading direction:</p>
+    <blockquote>"Where I struggle with this is that it looks like milestones were performed out of order? So neither options really work for me"</blockquote>
+    <p>Why it happens: the milestones are numbered in the plan's order, 2.1 to 2.7, but they aren't worked in that order, and two run at once. Design-1 is done, M6 (2.7) and Design-5 (2.5) are both under way, Design-6 is next and Design-3 is planned. So any list by time makes the numbers jump. Below: v25 as it is, then three fixes. In all three the inside of a sprint reads top down, oldest first. Fold M6 in each phone to see the milestones together.</p>
+  </div>
+  <div class="phones">
+    <section class="opt">
+      <span class="tag">As it is</span><h2>v25: 2.5, 2.3, 2.6, 2.7, 2.1</h2>
+      <ul><li>Newest first, so the numbers jump about.</li></ul>
+      <div class="phone"><iframe src="now.html" title="As it is: v25, live" loading="lazy"></iframe></div>
+      <a class="open" href="now.html" target="_blank" rel="noopener">Open full screen</a>
+    </section>
+    <section class="opt">
+      <span class="tag">Option 1</span><h2>The plan's order</h2>
+      <ul><li>2.1 to 2.7, top down, each with its state; Now sits under M6.</li>
+        <li>The numbers read in order, but a planned milestone (2.3) sits above work under way.</li></ul>
+      <div class="phone"><iframe src="o2-1.html" title="Option 1, live" loading="lazy"></iframe></div>
+      <a class="open" href="o2-1.html" target="_blank" rel="noopener">Open full screen</a>
+    </section>
+    <section class="opt">
+      <span class="tag rec">Option 2 · recommended</span><h2>Grouped by state</h2>
+      <ul><li>Done, In progress, Next, Planned, each under a small heading, in the plan's order inside each group. Now sits under M6.</li>
+        <li>"In progress · side by side" shows that M6 and Design-5 run at once, so nothing looks skipped.</li></ul>
+      <div class="phone"><iframe src="o2-2.html" title="Option 2, live" loading="lazy"></iframe></div>
+      <a class="open" href="o2-2.html" target="_blank" rel="noopener">Open full screen</a>
+    </section>
+    <section class="opt">
+      <span class="tag">Option 3</span><h2>Order of work, no numbers</h2>
+      <ul><li>The same order as 2, without the headings, and the milestone numbers go, so nothing reads as a sequence it isn't.</li>
+        <li>The calmest list, but you lose the numbers you cite (M6 keeps its name).</li></ul>
+      <div class="phone"><iframe src="o2-3.html" title="Option 3, live" loading="lazy"></iframe></div>
+      <a class="open" href="o2-3.html" target="_blank" rel="noopener">Open full screen</a>
+    </section>
+  </div>
+</main>

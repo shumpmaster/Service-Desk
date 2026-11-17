@@ -402,3 +402,17 @@ button:focus-visible { outline: 2px solid var(--accent-select); outline-offset: 
 .dk-bub .then { margin-top: 4px; padding-top: 6px; border-top: 1px solid var(--separator); font-size: 13px; color: var(--text-2); } .dk-bub .then b { color: var(--text-1); }
 .dk-tree { margin: -6px 0 8px 12px; padding-left: 22px; border-left: 1.5px solid var(--text-3); }
 .dk-ev-ico.ring { box-shadow: 0 0 0 1.5px var(--text-3); } .dk-ev-ico.chain { box-shadow: 0 0 0 2px var(--accent-select); }
+/* EventWeight (round 6, answers 3 and 6) */
+.dk-ev.wt-1 { padding: 12px 0 10px; }
+.dk-ev.wt-1 > .dk-ev-ico { width: 34px; height: 34px; margin-left: -4px; }
+.dk-ev.wt-1 > .dk-ev-ico > .i { width: 19px; height: 19px; }
+.dk-ev.wt-1 .l2 { font: 600 17px/22px var(--font-sans); white-space: normal; }
+.dk-ev.wt-3 { padding: 3px 0; align-items: center; }
+.dk-ev.wt-3 > .dk-ev-ico { width: 20px; height: 20px; margin: 0 3px; background: transparent; box-shadow: inset 0 0 0 1px var(--text-4); color: var(--text-2); }
+.dk-ev.wt-3 > .dk-ev-ico > .i { width: 12px; height: 12px; }
+.dk-ev.wt-3 > .dk-ev-ico .dk-mark { display: none; }
+.dk-ev.wt-3 .tx { display: flex; align-items: baseline; gap: 6px; }
+.dk-ev.wt-3 .l2 { order: 0; flex: 1; min-width: 0; font-size: 14px; color: var(--text-2); }
+.dk-ev.wt-3 .l1 { order: 1; flex: none; }
+.dk-ev.wt-3 .l1 > b, .dk-ev.wt-3 .l1 > .dk-tag:not(.wait):not(.bad), .dk-ev.wt-3 .l3 { display: none; }
+.dk-ev.wt-3 .tm { font-size: 12px; }

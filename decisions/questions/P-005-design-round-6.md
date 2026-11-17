@@ -40,3 +40,5 @@ The session's worker restarted before it was answered, so it was not asked.
 6. A comment on the options page (https://claude.ai/artifact/KF6cNjABjSB8gPwsYBf2kY), on option A's phone, sent at 12:27 UTC on 17 November: "I want to go with Option A. What i want to change is the labels that are shown. Any situation where something touches main branch should get a label. Anything not on main should only get labels if it is inside the blue box."
 
 Read by the Chief of Staff as: option A (three sizes) is taken for the list. The labels are the words on the floating branch map: every event that touches main (a merge onto main, and anything else drawn on the main line) carries its words wherever it sits on the map; an event on a sprint's branch carries words only while it is inside the blue window, as now. To be shown live on the map before it is built, since main's labels outside the window must find room among squeezed icons.
+
+Carried out, the first half of answer 6: option A, three sizes, built into the library (EventWeight, version 20) and mockup v24 (https://claude.ai/artifact/3BpztpWcFsYrLULCjT5nse). The second half, the labels on the map, is drawn two ways next.

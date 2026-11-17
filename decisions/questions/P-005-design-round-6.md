@@ -33,3 +33,5 @@ Asked by the question tool: "The words in the blue box (your comment on v21). On
 Carried out: in the map's window, each event in view loses its kind word (its icon already says it), and its short title wraps by whole words onto up to three tighter lines, in the kind's place; the map keeps its height. To be built into the library (MilestoneMap) and then mockup v23 over v22.
 
 Shown in chat: the library with MilestoneMap's words wrapped (https://claude.ai/artifact/UqdAH5E4nwtSJdxcATBp3W, version 19) and mockup v23 (https://claude.ai/artifact/4vRgmS5kZR9tVNHNhYt2vm).
+
+Asked by the question tool: "Each event as heavy as it is (your comment on S-011's events). On https://claude.ai/artifact/KF6cNjABjSB8gPwsYBf2kY: v23 as it is, where every event gets the same row; then three live phones. Each event gets a weight by rule: turning points (stop, decision, gate, merge, anything waiting on you), checks (reviews), routine (commits). Scroll S-011 inside each. Which one?" Options: "A: three sizes (Recommended)"; "B: sizes, and the between folds"; "C: turning points on cards"; "Mix or none". Pictures: docs/design/mockups/options-weight/ (now, wt-A to wt-C).

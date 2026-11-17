@@ -1,0 +1,67 @@
+<title>Event Weight</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<style>/* Layout: the question, then v23 as it is and three live phones side by side; they wrap to two, then one, column. Tokens follow the Desk Element Library (v17). */
+:root { --ground:#f2f3f7; --surface:#ffffff; --text-1:#1c1d21; --text-2:#6b6d71; --separator:#e7e9ed; --now-word:#0868bc;
+  --sans:-apple-system,BlinkMacSystemFont,"SF Pro Text","Inter","Segoe UI",Roboto,sans-serif; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --ground:#000000; --surface:#1c1c1e; --text-1:#f2f2f7; --text-2:#98989f; --separator:#38383a; --now-word:#9fd0ff; color-scheme:dark } }
+:root[data-theme="dark"] { --ground:#000000; --surface:#1c1c1e; --text-1:#f2f2f7; --text-2:#98989f; --separator:#38383a; --now-word:#9fd0ff; color-scheme:dark }
+body { background:var(--ground); color:var(--text-1); font:400 17px/1.4 var(--sans);
+  padding-left:max(16px, env(safe-area-inset-left, 0px)); padding-right:max(16px, env(safe-area-inset-right, 0px)); padding-block:24px 48px; }
+main { max-width:1680px; margin:0 auto; display:flex; flex-direction:column; gap:32px; }
+h1 { font:700 27px/1.15 var(--sans); margin:0; text-wrap:balance; }
+p { margin:0; max-width:70ch; }
+a { color:var(--now-word); }
+.lede { display:flex; flex-direction:column; gap:10px; } .lede p { color:var(--text-2); font-size:15px; }
+.lede blockquote { margin:0; padding:10px 14px; border-radius:12px; background:var(--surface); font-size:15px; max-width:70ch; }
+.phones { display:grid; grid-template-columns:repeat(4, minmax(0, 395px)); gap:20px; align-items:start; }
+.opt { display:flex; flex-direction:column; gap:10px; min-width:0; }
+.tag { font:600 13px/1 var(--sans); letter-spacing:.06em; text-transform:uppercase; color:var(--text-2); }
+.tag.rec { color:var(--now-word); }
+h2 { font:600 19px/1.25 var(--sans); margin:0; text-wrap:balance; }
+.opt ul { margin:0; padding-left:20px; display:flex; flex-direction:column; gap:4px; font-size:15px; color:var(--text-2); min-height:9.5em; }
+.phone { width:100%; max-width:395px; height:760px; border:1px solid var(--separator); border-radius:24px; overflow:hidden; background:var(--surface); }
+.phone iframe { width:393px; max-width:100%; height:100%; border:0; display:block; }
+.open { font-size:14px; }
+@media (max-width: 1720px) { .phones { grid-template-columns:repeat(2, minmax(0, 395px)); } }
+@media (max-width: 860px) { .phones { grid-template-columns:minmax(0, 1fr); } .opt ul { min-height:0; } }
+</style>
+<main>
+  <div class="lede">
+    <h1>Each event as heavy as it is</h1>
+    <p>Your comment on v21, on S-011's events:</p>
+    <blockquote>"This entire flow here is solid, but in its current visual format every single event has the same weight and means nothing unique, can we change that"</blockquote>
+    <p>Today a routine commit, a failed review and a stop that waits on you all get the same row. Below: v23 as it is, then three live ways to weigh them. The order and the tree stay, and so do the Needs and Why tags. Each event gets a weight from what it is:</p>
+    <p><b>Turning points</b>: a stop, a decision, a gate, a merge to main, or anything waiting on you. <b>Checks</b>: a review or a check, passed or failed. <b>Routine</b>: a commit (a draft or a revision). If that sorting is wrong, say so; it's a rule, not a choice per event.</p>
+    <p>Each phone opens on the timeline at S-011. Scroll inside it. No new colours: only the soft status ones.</p>
+  </div>
+  <div class="phones">
+    <section class="opt">
+      <span class="tag">As it is</span><h2>v23: every event alike</h2>
+      <ul><li>Same icon, same three lines, same spacing for every event.</li>
+        <li>The stop reads no louder than "Spec revised again".</li></ul>
+      <div class="phone"><iframe src="now.html" title="As it is: v23, live" loading="lazy"></iframe></div>
+      <a class="open" href="now.html" target="_blank" rel="noopener">Open full screen</a>
+    </section>
+    <section class="opt">
+      <span class="tag rec">Option A · recommended</span><h2>Three sizes</h2>
+      <ul><li>Turning points get a larger icon and their title in 17 bold, with more air around them.</li>
+        <li>Checks stay as they are. Routine shrinks to one quiet grey line: a small outlined icon, the title, the time.</li></ul>
+      <div class="phone"><iframe src="wt-A.html" title="Option A, live" loading="lazy"></iframe></div>
+      <a class="open" href="wt-A.html" target="_blank" rel="noopener">Open full screen</a>
+    </section>
+    <section class="opt">
+      <span class="tag">Option B</span><h2>Sizes, and the between folds</h2>
+      <ul><li>As A, and the checks and routine between two turning points fold into one line: "2 steps between", with how many reviews failed in soft red.</li>
+        <li>Tap the line to open them in place. The list gets much shorter, but failures sit one tap away.</li></ul>
+      <div class="phone"><iframe src="wt-B.html" title="Option B, live" loading="lazy"></iframe></div>
+      <a class="open" href="wt-B.html" target="_blank" rel="noopener">Open full screen</a>
+    </section>
+    <section class="opt">
+      <span class="tag">Option C</span><h2>Turning points on cards</h2>
+      <ul><li>Turning points sit on a white card, their title in 17 bold. Checks become compact two-line rows; routine is one quiet line, as in A.</li>
+        <li>The strongest contrast, but it adds boxes to a list that has been plain rows.</li></ul>
+      <div class="phone"><iframe src="wt-C.html" title="Option C, live" loading="lazy"></iframe></div>
+      <a class="open" href="wt-C.html" target="_blank" rel="noopener">Open full screen</a>
+    </section>
+  </div>
+</main>

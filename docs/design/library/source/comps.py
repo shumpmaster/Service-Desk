@@ -713,7 +713,7 @@ def milestone_map(view=("15:14", "15:23", "15:36", "15:42"), vw=393):
     for j in range(a, b + 1): evs[j]["x"] = start + M * (j - a) / max(1, b - a)
     for j in range(a): evs[j]["x"] = PAD + (start - 30 - PAD) * j / max(1, a - 1)
     for j in range(b + 1, n): evs[j]["x"] = start + M + 30 + (vw - PAD - start - M - 30) * (j - b - 1) / max(1, n - b - 2)
-    YM = 26 + LANE; y = YM - LANE; H = YM + 40
+    YM = 26 + LANE; y = YM - LANE; H = YM + 54                               # +14: the strip of words under main (round 6, answer 7)
     p = f'<path class="g main" d="M0 {YM} H{vw}"/>'; st_ = ""; lb = ""; fl = ""
     for si, (lab, _) in enumerate(sp):
         es = [e for e in evs if e["sp"] == si]; on = [e for e in es if e["k"] != "merge"]
@@ -734,6 +734,11 @@ def milestone_map(view=("15:14", "15:23", "15:36", "15:42"), vw=393):
                 ls = wrap_words(e["ttl"], ch, 3)                                    # round 6, answer 5: the title alone, wrapped
                 fl += f'<text class="fl wr" x="{e["x"]:.1f}" y="{cy + 21}">' + "".join(f'<tspan x="{e["x"]:.1f}"{" dy=&quot;10.5&quot;" if i else ""}>{l}</tspan>' for i, l in enumerate(ls)).replace("&quot;", '"') + '</text>'
         lb += f'<text class="lb" x="{x0:.1f}" y="{y - 9}">{lab}</text>'
+    lo = 40.0                                                                # every event on main carries its words, spread along main
+    for e in sorted([e for e in evs if e["k"] == "merge"], key=lambda e: e["x"]):
+        w = len(e["ttl"]) * 5.4 + 8; lx = max(e["x"], lo + w / 2); lo = lx + w / 2
+        fl += (f'<path class="ml-lead" d="M{e["x"]:.1f} {YM + 11} C{e["x"]:.1f} {YM + 15} {lx:.1f} {YM + 11} {lx:.1f} {YM + 15}"/>'
+               f'<text class="fl ml" x="{lx:.1f}" y="{YM + 24}">{e["ttl"]}</text>')
     vis = [e for e in evs if e["sp"] == 1 and e["hm"] in view]; a, b = vis[0]["x"] - 30, vis[-1]["x"] + 30
     win = f'<rect class="win" x="{a:.1f}" y="{y - 22}" width="{b - a:.1f}" height="{LANE + 44}" rx="10"/>'
     chip = f'<button class="dk-mapchip" aria-label="Show the whole phase on the map">2.7 M6{ic("x", "bold")}</button>'
@@ -741,7 +746,7 @@ def milestone_map(view=("15:14", "15:23", "15:36", "15:42"), vw=393):
             f'{win}{p}{st_}{lb}{fl}<text class="lb main" x="6" y="{YM + 19}">main</text></svg>{chip}</div></div>')
 TITLES = [["First draft", "Failed", "Spec revised", "Failed", "Stop card 4", "PR #443", "Write a new spec", "PR #444"],
           ["New spec S-011", "First draft", "Failed, round 1", "Spec revised", "PR #446", "Failed, round 2", "Spec revised again", "Failed, round 3", "Stop card 5"]]
-comp("MilestoneMap", "Desk", 290,
+comp("MilestoneMap", "Desk", 320,
  '<div class="dk-stage col" style="max-width:393px;padding:16px 0">' + milestone_map() + '<p class="dk-note" style="padding:0 16px">M6 selected: its two sprints fill the width, every event an icon, the three planned ones as open rings at the right. The four events in view below spread apart under the window, in the centre, each with its short title wrapped onto up to three lines (round 6); what came before squeezes to the left, the planned events to the right. The chip&#8217;s cross brings back the whole phase.</p></div>',
  """# MilestoneMap
 
@@ -751,6 +756,7 @@ The BranchMap fitted to one milestone. Chosen by the owner on 16 November 2026 (
 - **Fitted**: only the selected milestone's sprints, across the full width with nothing to pan; lanes 50 apart, so words fit under the icons. Every event wears its icon on a disc; planned events sit at the right as open rings (`text-3` ring on `ground`).
 - **Spread what is in view**: the events shown in the list below spread 68 apart under the soft window, each with its short title in 9.5 medium `text-1`, wrapped by whole words onto up to three lines 10.5 apart, under the icon; no kind word, since the icon says it (17 November 2026, decisions/questions/P-005-design-round-6.md: answer 2, a comment on v21, "Can we wrap text within the blue box?"; answer 5, "B: only the title, wrapped (Recommended)"). The map keeps its height. As the list scrolls, the spread follows.
 - **The window in the centre**: it sits in the middle of the map; what came before is spread evenly over the left side and what comes after over the right, so you always see both. At either end of the milestone it slides to that edge, so no half sits empty (round 5, answer 6: "What are your thoughts on always pulling the highlighted section to the center of the slider so you can see the before and after?"; answer 7, "2: centred, except at ends"). Where it sits no longer says how far along the milestone you are; an icon closer than 20 to its neighbour shrinks to 72%.
+- **Words on main** (17 November 2026, decisions/questions/P-005-design-round-6.md: answer 6, "Any situation where something touches main branch should get a label. Anything not on main should only get labels if it is inside the blue box."; answer 7, "option 2 please"): every event on main carries its short title wherever it sits, in one row in a 14-high strip under main, in 9.5 medium `text-1`; each label sits as near its icon as it can without touching the one before (from x 40, clear of the word "main"), joined to it by a thin 1.2 `text-3` line. A sprint's events carry words only inside the window.
 - **The chip**: the milestone's number and id in 11.5 semibold on `fill`, bottom right of the map, with a cross.
 - Colour as in BranchMap and StatusMark: red failed, yellow waiting on you, Now blue, main dark.
 - {SRC}

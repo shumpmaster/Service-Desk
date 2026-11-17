@@ -416,3 +416,6 @@ button:focus-visible { outline: 2px solid var(--accent-select); outline-offset: 
 .dk-ev.wt-3 .l1 { order: 1; flex: none; }
 .dk-ev.wt-3 .l1 > b, .dk-ev.wt-3 .l1 > .dk-tag:not(.wait):not(.bad), .dk-ev.wt-3 .l3 { display: none; }
 .dk-ev.wt-3 .tm { font-size: 12px; }
+/* MilestoneMap: words on main (round 6, answers 6 and 7) */
+.dk-map .fl.ml { font-weight: 500; fill: var(--text-1); }
+.dk-map .ml-lead { fill: none; stroke: var(--text-3); stroke-width: 1.2; }

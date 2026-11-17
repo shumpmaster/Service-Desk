@@ -64,3 +64,8 @@ Asked by the question tool: "What an event needs, as part of the event. I took B
 12. "I love the bubble as a way to link to the next layer - but i dont like the current format that is showing once you click it"
 
 Carried out: the "Needs" tag and its bubble (option A) are kept as the way into the next layer. What the bubble shows is drawn three new ways, each opening a requirement's own needs as the next layer inside the same bubble, with a trail back, for the owner to pick.
+
+Asked by the question tool: "What the needs bubble shows. On https://claude.ai/artifact/5xCUr5RjE3rH1vN5duvdLK: the bubble as it is (the tree), then three live formats. In each, a chevron opens a requirement's own needs inside the same bubble, with a trail back. Tap "Needs 3" on Spec revised, round 4, then a chevron. Which one?" Options: "1: a plain checklist (Recommended)"; "2: grouped by who acts"; "3: a small flow"; "Mix or none". Pictures: docs/design/mockups/options-bubble/ (now, bubble-1 to bubble-3).
+13. "I love 1 - the only thing im wanting is to show the visual connection as the chain is selected on the branch list"
+
+Carried out: option 1, the plain checklist, is taken for the bubble. "The branch list" may mean the floating branch map or the list of events below it, so the connection is drawn both ways and together, live, for the owner to pick: as the bubble opens and its chain is followed, the events in the chain light up and are joined.

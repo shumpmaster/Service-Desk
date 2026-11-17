@@ -1,0 +1,65 @@
+<title>Home Floating Header</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<style>/* Layout: the question, then v15 as it is and three live phones side by side; they wrap to two, then one, column. Tokens follow the Desk Element Library (v17). */
+:root { --ground:#f2f3f7; --surface:#ffffff; --text-1:#1c1d21; --text-2:#6b6d71; --separator:#e7e9ed; --now-word:#0868bc;
+  --sans:-apple-system,BlinkMacSystemFont,"SF Pro Text","Inter","Segoe UI",Roboto,sans-serif; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --ground:#000000; --surface:#1c1c1e; --text-1:#f2f2f7; --text-2:#98989f; --separator:#38383a; --now-word:#9fd0ff; color-scheme:dark } }
+:root[data-theme="dark"] { --ground:#000000; --surface:#1c1c1e; --text-1:#f2f2f7; --text-2:#98989f; --separator:#38383a; --now-word:#9fd0ff; color-scheme:dark }
+body { background:var(--ground); color:var(--text-1); font:400 17px/1.4 var(--sans);
+  padding-left:max(16px, env(safe-area-inset-left, 0px)); padding-right:max(16px, env(safe-area-inset-right, 0px)); padding-block:24px 48px; }
+main { max-width:1680px; margin:0 auto; display:flex; flex-direction:column; gap:32px; }
+h1 { font:700 27px/1.15 var(--sans); margin:0; text-wrap:balance; }
+p { margin:0; max-width:70ch; }
+a { color:var(--now-word); }
+.lede { display:flex; flex-direction:column; gap:10px; } .lede p { color:var(--text-2); font-size:15px; }
+.lede blockquote { margin:0; padding:10px 14px; border-radius:12px; background:var(--surface); font-size:15px; max-width:70ch; }
+.phones { display:grid; grid-template-columns:repeat(4, minmax(0, 395px)); gap:20px; align-items:start; }
+.opt { display:flex; flex-direction:column; gap:10px; min-width:0; }
+.tag { font:600 13px/1 var(--sans); letter-spacing:.06em; text-transform:uppercase; color:var(--text-2); }
+.tag.rec { color:var(--now-word); }
+h2 { font:600 19px/1.25 var(--sans); margin:0; text-wrap:balance; }
+.opt ul { margin:0; padding-left:20px; display:flex; flex-direction:column; gap:4px; font-size:15px; color:var(--text-2); min-height:9.5em; }
+.phone { width:100%; max-width:395px; height:760px; border:1px solid var(--separator); border-radius:24px; overflow:hidden; background:var(--surface); }
+.phone iframe { width:393px; max-width:100%; height:100%; border:0; display:block; }
+.open { font-size:14px; }
+@media (max-width: 1720px) { .phones { grid-template-columns:repeat(2, minmax(0, 395px)); } }
+@media (max-width: 860px) { .phones { grid-template-columns:minmax(0, 1fr); } .opt ul { min-height:0; } }
+</style>
+<main>
+  <div class="lede">
+    <h1>A floating header on home too</h1>
+    <p>Your comment on v21, on home's large "Timeline" title:</p>
+    <blockquote>"Floating Header here too"</blockquote>
+    <p>Today home's whole header scrolls away: the title, the live line, the bell and the search. A project's page has had one slim floating bar since v16. Below: home as it is, then three live ways to float it, built on v21. Scroll inside each phone. In each, the bar is the same one a project's page uses, without Back.</p>
+  </div>
+  <div class="phones">
+    <section class="opt">
+      <span class="tag">As it is</span><h2>v21's home</h2>
+      <ul><li>The large title, the live line, the bell and the search take the top 203 points.</li>
+        <li>All of it scrolls away. Nothing floats on home.</li></ul>
+      <div class="phone"><iframe src="now.html" title="As it is: v21's home, live" loading="lazy"></iframe></div>
+      <a class="open" href="now.html" target="_blank" rel="noopener">Open full screen</a>
+    </section>
+    <section class="opt">
+      <span class="tag rec">Option A · recommended</span><h2>The slim bar only</h2>
+      <ul><li>"Timeline" in 17 with "Live · as of 17:25 UTC" under it, then the bell and More: the same bar as a project's page.</li>
+        <li>It floats at 57 points, the smallest. The search stays at the top of the list and scrolls away.</li></ul>
+      <div class="phone"><iframe src="home-A.html" title="Option A, live" loading="lazy"></iframe></div>
+      <a class="open" href="home-A.html" target="_blank" rel="noopener">Open full screen</a>
+    </section>
+    <section class="opt">
+      <span class="tag">Option B</span><h2>The bar and the search</h2>
+      <ul><li>The slim bar, with a slimmer search under it, floating together.</li>
+        <li>You can search from anywhere on home, but the band takes 109 points.</li></ul>
+      <div class="phone"><iframe src="home-B.html" title="Option B, live" loading="lazy"></iframe></div>
+      <a class="open" href="home-B.html" target="_blank" rel="noopener">Open full screen</a>
+    </section>
+    <section class="opt">
+      <span class="tag">Option C</span><h2>The bar and the project pills</h2>
+      <ul><li>The slim bar with the project pills under it, as on a project's page, none selected. Tap a pill to open that project.</li>
+        <li>Home and a project then share one header shape. 103 points; the search scrolls away.</li></ul>
+      <div class="phone"><iframe src="home-C.html" title="Option C, live" loading="lazy"></iframe></div>
+      <a class="open" href="home-C.html" target="_blank" rel="noopener">Open full screen</a>
+    </section>
+  </div>
+</main>

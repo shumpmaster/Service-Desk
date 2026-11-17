@@ -1,0 +1,17 @@
+/* round 5, answer 15: home's header floats too (options-home-header) */
+.hh-band { position: sticky; top: 0; z-index: 6; margin: 0 -20px 10px; padding: env(safe-area-inset-top, 0px) 4px 6px; background: var(--v13-glass); -webkit-backdrop-filter: blur(20px) saturate(1.8); backdrop-filter: blur(20px) saturate(1.8); border-bottom: 1px solid var(--rule); }
+.hh-band .hd-bar { padding: 6px 16px 0; }
+.hh-band .asof > span:last-child { display: none; }
+.hh-2 .hd-bar { align-items: flex-end; flex-wrap: wrap; transition: min-height .3s; }
+.hh-2:not(.slim) { border-bottom-color: transparent; background: var(--ground); -webkit-backdrop-filter: none; backdrop-filter: none; }
+.hh-2:not(.slim) .hd-bar { min-height: 0; }
+.hh-2:not(.slim) .hd-tx { order: 3; flex-basis: 100%; padding: 14px 0 2px; }
+.hh-2:not(.slim) .hd-tx h1 { font-size: 27px; line-height: 32px; }
+.hh-2:not(.slim) .hd-tx .asof { font-size: 13px; line-height: 18px; }
+.hh-2:not(.slim) .asof > span:last-child { display: inline; }
+.hh-2:not(.slim) .capsule { transform: none; }
+.hh-2 .hd-tx h1, .hh-2 .hd-tx .asof { transition: font-size .3s, line-height .3s; }
+.hh-2.slim .hd-bar { align-items: center; }
+.hh-sum { margin: 6px 20px 2px; font-size: 15px; line-height: 20px; }
+.sg-sum.hh-gone { display: none; }
+@media (prefers-reduced-motion: reduce) { .hh-2 .hd-bar, .hh-2 .hd-tx h1, .hh-2 .hd-tx .asof { transition: none; } }

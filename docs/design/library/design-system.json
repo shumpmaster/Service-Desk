@@ -18,8 +18,8 @@
  },
  "lastChange": {
   "by": "Claude",
-  "at": "2026-11-16T20:00:00Z",
+  "at": "2026-11-17T03:00:00Z",
   "via": "Claude Code",
-  "note": "Round 5, the window in the centre: MilestoneMap keeps the window over the events in view in the middle of the map, before on the left and after on the right, sliding to an edge only at either end of the milestone. decisions/questions/P-005-design-round-5.md, answers 6 and 7."
+  "note": "Round 5, the event's tags and bubble: new card EventBubble (the tree with ringed icons that fold, a Needs tag and a Why tag on the event that open a bubble, the Needs bubble a plain checklist opening the next layer in place, its chain ringed and joined on the map and in the list). NeedsList and WhyLine replaced, kept for the record. decisions/questions/P-005-design-round-5.md, answers 10 to 14."
  }
 }

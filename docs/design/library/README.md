@@ -8,6 +8,10 @@ This library holds every element seen in the owner's seven Craft screenshots (re
 
 The colour hold is lifted for status only (decisions/questions/P-005-design-round-3.md, answers 4 to 13). Status takes soft green, yellow and red (`status-ok`, `status-wait`, `status-bad` and their tinted forms) on gauges, event marks, tags and the branch map. Everything else stays neutral, with the one blue. The shapes for milestones and sprints are still on hold. New cards: Gauge, StatusMark, BranchMap and PhaseRow. On the timeline, BranchMap replaces LaneGraph.
 
+## Change, 17 November 2026 (round 5, the event's tags and bubble)
+
+A project's list is a tree, and every ringed icon folds what sits under it. What an event needs and why it happened leave the space under the event: a "Needs" tag (tinted by the worst state) and a "Why" tag on its first line each open a bubble. The Needs bubble is a plain checklist; a chevron opens the next layer inside it, and nothing moves the page. While it is open, its chain is ringed and joined on the map and in the list (EventBubble; decisions/questions/P-005-design-round-5.md, answers 10 to 14). NeedsList and WhyLine are kept for the record.
+
 ## Change, 16 November 2026 (round 5, the window in the centre)
 
 On the fitted map (MilestoneMap) the window over the events in view sits in the middle, what came before on the left and what comes after on the right; at either end of the milestone it slides to that edge (decisions/questions/P-005-design-round-5.md, answers 6 and 7).

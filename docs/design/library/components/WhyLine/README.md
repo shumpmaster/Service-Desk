@@ -1,5 +1,7 @@
 # WhyLine
 
+Replaced by EventBubble on 17 November 2026 (round 5, answers 10 and 11); kept for the record.
+
 Why an event happened, in one plain sentence under it, so the plan reads as a story while you scroll. Chosen by the owner on 16 November 2026 (decisions/questions/P-005-design-round-4.md, answer 17: "the one thing I always struggle understanding is how actions task events feed into one another. So when I’m perusing the plan I will want to see the context behind how or why things are happening the way they are?"; decisions/questions/P-005-design-round-5.md, answer 5, "C: the story between events").
 
 - **Under each event that happened**, after its "by" line: an elbow arrow turned upward in `text-2`, then the sentence on a 1.5 dotted `text-3` line that runs down toward the event before it.

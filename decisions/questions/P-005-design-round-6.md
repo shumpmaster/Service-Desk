@@ -11,3 +11,5 @@ Asked by the question tool: "Mockup v21 as a whole (https://claude.ai/artifact/L
 1. A comment on mockup v21, written at 03:39 UTC on 17 November, on the home page's header (the large title "Timeline", the live line and the search): "Floating Header here too"
 
 Read by the Chief of Staff as: the home page should get a floating header like a project's page has had since v16 (one slim bar that stays at the top as the page scrolls), instead of the large title that scrolls away. To be shown live, as home is now and with options, and asked.
+
+Asked by the question tool: "Home's floating header (your comment on v21). On https://claude.ai/artifact/3vSPggQGUmXqFkuVDQkyK3: v21's home as it is, where the title, live line, bell and search all scroll away; then three live phones where home's header floats like a project's slim bar. Scroll inside each. Which one?" Options: "A: the slim bar only (Recommended)"; "B: the bar and the search"; "C: the bar and the project pills"; "Mix or none". Pictures: docs/design/mockups/options-home-header/ (now, home-A to home-C).

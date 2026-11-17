@@ -1,0 +1,12 @@
+/* Home's floating header (round 6, answer 1: "Floating Header here too"). The same glass band and slim bar as a project's page (v16). */
+.hm-band { margin-top: 0; padding-top: env(safe-area-inset-top, 0px); }
+.hm-band .hd-bar { padding-left: 20px; }
+.hm-band .hd-tx h1 { font-size: 17px; }
+/* B: the search rides in the band, slimmer */
+.hm-band .search { height: 36px; margin: 6px 16px 10px; border-radius: 18px; font-size: 15px; }
+.hm-band .search svg { width: 16px; height: 16px; }
+/* C: the project pills ride in the band; none is selected on home */
+.hm-band .pl-row { padding: 2px 16px 4px; }
+.hm-band .chips { overflow-x: auto; scrollbar-width: none; }
+.hm-band .chips::-webkit-scrollbar { display: none; }
+#view.hm-on .desk, #view.hm-on > section:first-of-type { margin-top: 14px; }

@@ -42,3 +42,5 @@ The session's worker restarted before it was answered, so it was not asked.
 Read by the Chief of Staff as: option A (three sizes) is taken for the list. The labels are the words on the floating branch map: every event that touches main (a merge onto main, and anything else drawn on the main line) carries its words wherever it sits on the map; an event on a sprint's branch carries words only while it is inside the blue window, as now. To be shown live on the map before it is built, since main's labels outside the window must find room among squeezed icons.
 
 Carried out, the first half of answer 6: option A, three sizes, built into the library (EventWeight, version 20) and mockup v24 (https://claude.ai/artifact/3BpztpWcFsYrLULCjT5nse). The second half, the labels on the map, is drawn two ways next.
+
+Shown on the page, as a reply on the comment: v24 and the options page for the labels on main (https://claude.ai/artifact/NNscwEgNkcYsp5prha2ZwE): v24 as it is, then "1: under each icon" and "2: spread along main" (recommended). Pictures: docs/design/mockups/options-main-labels/ (now, ml-1, ml-2).

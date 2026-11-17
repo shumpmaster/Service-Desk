@@ -1,0 +1,3 @@
+/* round 6, answer 6: every event on main carries its words (options-main-labels) */
+.v13map .fl.ml { fill: var(--ink-2); font-weight: 500; }
+.v13map .ml-lead { fill: none; stroke: var(--ink-4); stroke-width: 1.2; }

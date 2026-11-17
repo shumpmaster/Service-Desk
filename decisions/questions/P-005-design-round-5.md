@@ -69,3 +69,10 @@ Asked by the question tool: "What the needs bubble shows. On https://claude.ai/a
 13. "I love 1 - the only thing im wanting is to show the visual connection as the chain is selected on the branch list"
 
 Carried out: option 1, the plain checklist, is taken for the bubble. "The branch list" may mean the floating branch map or the list of events below it, so the connection is drawn both ways and together, live, for the owner to pick: as the bubble opens and its chain is followed, the events in the chain light up and are joined.
+
+Asked by the question tool: "The chain, connected as you follow it. I took 1, the plain checklist, for the bubble. I wasn't sure whether "the branch list" meant the floating branch map or the list of events, so on https://claude.ai/artifact/6Vgvt26arHLKrn1iCieWYA the connection is drawn on each and on both, live. Tap "Needs 3" on Spec revised, round 4, then a chevron. Which one?" Options: "C: both (Recommended)"; "A: on the branch map"; "B: in the list"; "Mix or none". Pictures: docs/design/mockups/options-chain/ (now, chain-A to chain-C).
+14. "C: both (Recommended)"
+
+Carried out, with answers 10 to 13: a project's list is a tree, every ringed icon folding what sits under it. The why is a small "Why" on the event's first line that opens its sentence in a bubble (answer 11). What an event needs is a "Needs" tag on its first line, tinted by the worst state, that opens a bubble with a plain checklist: "Before this can happen" and how many are done, one line each with a mark, plain words and who or what it waits on, and what it lets happen at the foot; a chevron opens a requirement's own needs inside the bubble, with a trail back; nothing moves the page (answers 11 and 12). While the bubble is open, its chain lights up on the branch map (ringed icons joined by dotted arcs) and in the list (ringed rows joined by a dotted line in the margin), the rest fading (answers 13 and 14). To be built into the library and then mockup v21 over v20.
+
+Shown in chat: the library with EventBubble (https://claude.ai/artifact/UqdAH5E4nwtSJdxcATBp3W, version 17) and mockup v21 (https://claude.ai/artifact/LQopLKr9MHfN8vd35oNmeu).

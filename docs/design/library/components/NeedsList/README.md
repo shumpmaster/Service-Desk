@@ -1,5 +1,7 @@
 # NeedsList
 
+Replaced by EventBubble on 17 November 2026 (round 5, answers 10 to 14); kept for the record.
+
 What an event still needs before it can happen, and what it then unlocks, hung from the event as a short checklist. Chosen by the owner on 16 November 2026 (decisions/questions/P-005-design-round-5.md: answer 1, "option C is close, we just need to show it in a slightly different more consistent and easily graspable manner"; answer 2, "I think we mix c1 and c2. I like the look of c1, I like the checklist feel of c2"; answer 3, "Yes, take the mix").
 
 - **Only where something is unmet.** An event whose requirements are all done shows nothing extra; why done things happened is a separate question.

@@ -737,6 +737,8 @@ WHYC = ('<div class="dk-stage col" style="max-width:393px"><div>'
 comp("WhyLine", "Desk", 560, WHYC,
  """# WhyLine
 
+Replaced by EventBubble on 17 November 2026 (round 5, answers 10 and 11); kept for the record.
+
 Why an event happened, in one plain sentence under it, so the plan reads as a story while you scroll. Chosen by the owner on 16 November 2026 (decisions/questions/P-005-design-round-4.md, answer 17: "the one thing I always struggle understanding is how actions task events feed into one another. So when I’m perusing the plan I will want to see the context behind how or why things are happening the way they are?"; decisions/questions/P-005-design-round-5.md, answer 5, "C: the story between events").
 
 - **Under each event that happened**, after its "by" line: an elbow arrow turned upward in `text-2`, then the sentence on a 1.5 dotted `text-3` line that runs down toward the event before it.
@@ -744,6 +746,41 @@ Why an event happened, in one plain sentence under it, so the plan reads as a st
 - **With the plan**: the ActionPlan stays where it is, between the two events, as the detail of how; the WhyLine above it says why in one line.
 - **Planned events** carry a NeedsList instead: what must happen first. Together the two say what led here and what comes next.
 - Reasons are not yet on record; until an agent writes its own "why" with each event, a mockup's sentences are examples, marked so.
+- {SRC}
+""".replace("{SRC}", SRC))
+
+# the event's tags and bubble (round 5, answers 10 to 14): Needs and Why on the event, a checklist bubble, the tree, the chain
+def ev_tags(kind, st, tag, t, title, who, tags, ring=False, chain=False):
+    cls = " ring" if ring else ""; cls += " chain" if chain else ""
+    return (f'<div class="dk-ev"><span class="dk-ev-ico{cls}">{ic(EVI[kind])}' + (f'<span class="dk-mark {st}">{MK[st]}</span>' if st in MK else '') + '</span>'
+            f'<div class="tx"><div class="l1"><b>{kind.title()}</b><span class="dk-tag {st if st in ("wait", "bad") else ""}">{tag}</span>{tags}<span class="tm">{t}</span></div>'
+            f'<div class="l2">{title}</div><div class="l3">by {who}</div>')
+def bub_item(st, words, state, deep=False):
+    mk = {"ok": ic("check", "bold"), "wait": ic("hourglass-medium", "fill"), "bad": ic("warning", "fill")}.get(st, '<span style="width:10px;height:10px;border-radius:5px;box-shadow:inset 0 0 0 1.5px var(--text-3)"></span>')
+    return f'<div class="it {st}"><span class="mk">{mk}</span><span class="w">{words}</span><span class="s">{state}</span>' + (ic("caret-right", "bold", "i chev") if deep else '') + '</div>'
+LINK = ic("link", "bold")
+EVB = ('<div class="dk-stage col" style="max-width:393px"><div>'
+  + ev_tags("commit", "", "Planned", "", "Spec revised, round 4", "spec writer · planned · an example", f'<span class="dk-tg bad on">{LINK}Needs 3</span>', ring=True, chain=True)
+  + '<div class="dk-bub"><div class="hd">Before this can happen <span>0 of 3 done</span></div>'
+  + bub_item("wait", "Your answer to stop card 5", "on you", True) + bub_item("wait", "Your answers to PR #446&#8217;s three questions", "on you", True)
+  + bub_item("bad", "The experiments moved to S-011", "blocked") + '<div class="then">Then: <b>Plan review, round 4</b></div></div></div></div>'
+  + ev_tags("stop", "wait", "Waiting on you", "15:42", "Stop card 5", "orchestrator", '<span class="dk-tg">Why</span>', chain=True) + '</div></div>'
+  + ev_tags("review", "bad", "Failed", "15:36", "Plan review failed, round 3", "reviewer (plan)", '<span class="dk-tg on">Why</span>')
+  + '<div class="dk-bub"><b>Why:</b> Review again. The experiments still hadn&#8217;t moved, because the spec writer was never given them.</div></div></div>'
+  + '<p class="dk-note">The Needs bubble open on a planned event: a checklist, the chevrons open the next layer in the bubble. Its chain (here Stop card 5) is ringed in blue in the list, and on the map. Below, a Why bubble open. Requirements and reasons are examples.</p></div>')
+comp("EventBubble", "Desk", 620, EVB,
+ """# EventBubble
+
+What an event needs and why it happened, carried on the event itself as two small tags that open a bubble, inside a list drawn as a tree. Chosen by the owner on 16 and 17 November 2026 (decisions/questions/P-005-design-round-5.md: answer 10, "I like the tree, but I don’t like the format of the whys being embedded into everything like a step"; answer 11, "I like what you did with the whhy but originally i was asking about the needs first and such. I dont want clicking on this type of card to move the flow back"; answer 12, "I love the bubble as a way to link to the next layer - but i dont like the current format that is showing once you click it"; answer 13, "I love 1 - the only thing im wanting is to show the visual connection as the chain is selected on the branch list"; answer 14, "C: both"). It replaces NeedsList and WhyLine.
+
+- **The tree**: one 1.5 `text-3` line runs down from an event's icon with a short elbow into each row under it; rows a level down are a size smaller and the event's title semibold. An icon with a ring (`text-3`, 1.5) has something under it: tapping it folds or opens that; folded, one quiet line says what is there.
+- **Needs tag**: on the event's first line after its state, "Needs" and how many are still to happen, with a link icon. Tinted by the worst of them: `status-bad-tag` on `status-bad-tag-bg` if one is blocked, `status-wait-tag` if one waits on you, otherwise an outlined grey tag. Only on events with something unmet.
+- **Why tag**: an outlined grey "Why" in 12 on events with a reason. Tapping it opens the sentence in the bubble, "Why:" in semibold.
+- **The bubble**: `surface`, radius 12, a hairline and a soft shadow, a small pointer toward its tag; it opens under the event's title, one at a time; tapping elsewhere closes it. Nothing in it moves the page.
+- **The checklist inside**: "Before this can happen" in 14 semibold with "0 of 3 done" at the right (for an event whose needs are all done, "What came first"), then a line each: the ActionPlan's mark (check done, yellow hourglass on you, red warning blocked, open ring not started), the need in plain words, and who or what it waits on in 12 at the right ("on you", "blocked", "done"), tinted to match. "Then:" and what it lets happen close it.
+- **The next layer**: a need with needs of its own has a chevron; tapping it opens that layer inside the same bubble, with a trail at the top (the earlier layers in `accent-text`, tappable) to step back.
+- **The chain**: while the bubble is open, the event, the layers opened and what the current layer needs are ringed in `accent-select` on the MilestoneMap, joined by dotted arcs over the lanes, and in the list, joined by a dotted line in the left margin; everything else fades. Closing the bubble clears it.
+- Requirements and reasons are not yet on record; until agents write them, a mockup's are examples, marked so.
 - {SRC}
 """.replace("{SRC}", SRC))
 
@@ -794,6 +831,8 @@ NEEDS = ('<div class="dk-stage col" style="max-width:393px"><div>'
   '<p class="dk-note">A planned event with three things still to happen first: two wait on you, one is an action of the plan that is blocked. Done events show nothing extra. Requirements are examples until the records carry them.</p></div>')
 comp("NeedsList", "Desk", 690, NEEDS,
  """# NeedsList
+
+Replaced by EventBubble on 17 November 2026 (round 5, answers 10 to 14); kept for the record.
 
 What an event still needs before it can happen, and what it then unlocks, hung from the event as a short checklist. Chosen by the owner on 16 November 2026 (decisions/questions/P-005-design-round-5.md: answer 1, "option C is close, we just need to show it in a slightly different more consistent and easily graspable manner"; answer 2, "I think we mix c1 and c2. I like the look of c1, I like the checklist feel of c2"; answer 3, "Yes, take the mix").
 

@@ -54,3 +54,8 @@ Asked by the question tool: "A clearer hierarchy, and every icon folds (your com
 10. "I like the tree, but I don’t like the format of the whys being embedded into everything like a step. I thought I would but I want it represented slightly differently"
 
 Carried out: the tree (option 2) is taken, with every ringed icon folding what sits under it. The why sentences come out of the tree; three other ways to carry them are drawn live on the tree, after the event as it is now, for the owner to pick.
+
+Asked by the question tool: "The why, shown differently. On https://claude.ai/artifact/R9vKQDXdxq9m2VpTWeJGmd: the tree you chose with the why as a block (as it is), then three live phones where the why leaves the tree and becomes part of the event. Scroll to S-011's stop and reviews and tap. Which one?" Options: "B: a Why you tap (Recommended)"; "A: part of the event's line"; "C: a Why switch"; "Mix or none". The session's worker restarted before it was answered. Pictures: docs/design/mockups/options-why2/ (now, why2-A to why2-C).
+11. A comment on that page, on option B's phone: "I like what you did with the whhy but originally i was asking about the needs first and such. I dont want clicking on this type of card to move the flow back"
+
+Read by the Chief of Staff as: option B is taken for the why (a small "Why" on the event's first line, the sentence in a bubble). Answer 10 was about the "Needs first" lists, not the why: they are what should not be embedded under every event like a step. And tapping a requirement should not scroll the page back to that event. Carried out: three ways to carry what an event needs as part of the event, the tree kept inside, where tapping a requirement opens what it needs in place and never moves the page.

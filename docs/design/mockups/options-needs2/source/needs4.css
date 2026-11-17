@@ -1,0 +1,19 @@
+/* round 5, answer 11: what an event needs, as part of the event (options-needs2) */
+.n4-tag { all: unset; cursor: pointer; display: inline-flex; align-items: center; gap: 3px; font-size: 12px; line-height: 18px; padding: 0 7px; border-radius: 6px; color: var(--text-2); box-shadow: inset 0 0 0 1px var(--ink-5); white-space: nowrap; }
+.n4-tag svg { width: 11px; height: 11px; }
+.n4-tag.wait { color: var(--status-wait-tag); background: var(--status-wait-tag-bg); box-shadow: none; font-weight: 600; }
+.n4-tag.bad { color: var(--status-bad-tag); background: var(--status-bad-tag-bg); box-shadow: none; font-weight: 600; }
+.n4-tag.on { box-shadow: inset 0 0 0 1.5px var(--now-word); }
+.n4-tag:focus-visible, .n4-chip:focus-visible { outline: 2px solid var(--now-word); outline-offset: 2px; }
+.n4-bub { position: relative; margin: 8px 0 2px; padding: 4px 10px 6px 4px; border-radius: 12px; background: var(--surface); box-shadow: 0 2px 10px rgba(0,0,0,.08), 0 0 0 1px var(--rule); white-space: normal; }
+.n4-bub::before { content: ""; position: absolute; top: -6px; right: 70px; width: 10px; height: 10px; background: var(--surface); transform: rotate(45deg); box-shadow: -1px -1px 0 var(--rule); }
+.n4-bub .hk-kids, #n4-sheet .hk-kids { margin: 0 0 0 12px; }
+.n4-chips { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 4px; }
+.n4-chip { all: unset; cursor: pointer; display: inline-flex; align-items: center; gap: 4px; max-width: 100%; padding: 1px 7px 1px 5px; border-radius: 6px; font-size: 12px; line-height: 18px; background: var(--fill); color: var(--ink-2); }
+.n4-chip span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+.n4-chip svg { width: 11px; height: 11px; flex: none; }
+.n4-chip i { width: 8px; height: 8px; border-radius: 4px; box-shadow: inset 0 0 0 1.5px var(--ink-5); flex: none; }
+.n4-chip.wait { background: var(--status-wait-tag-bg); color: var(--status-wait-tag); font-weight: 600; }
+.n4-chip.bad { background: var(--status-bad-tag-bg); color: var(--status-bad-tag); font-weight: 600; }
+#n4-sheet { position: fixed; left: 8px; right: 8px; bottom: 90px; max-height: 62vh; overflow: auto; z-index: 60; padding: 12px 14px; border-radius: 20px; background: var(--surface); box-shadow: var(--float-shadow, 0 8px 30px rgba(0,0,0,.18)); display: flex; flex-direction: column; gap: 6px; }
+#n4-sheet .nd-ex { font-size: 12px; color: var(--text-2); }

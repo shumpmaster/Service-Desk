@@ -74,3 +74,5 @@ Asked by the question tool, to confirm the reading above before drawing: "... So
 12. "Yes, maybe the issue is that I’m picturing the fluid milestones as rigid fixed steps."
 
 Read by the Chief of Staff as: yes, the two numberings; and underneath, the milestones are outcomes that can be worked side by side, not steps in a fixed order, so the page should stop presenting them as numbered steps. To be drawn: rows with one naming only, in due order with the drag (as in due option A), and milestones shown as the phase's goals, apart from the flow of time.
+
+Asked by the question tool: "Milestones as goals, not steps. On https://claude.ai/artifact/LiEd3RgzZQSJdkvCvokYCL: the due-date order as it was, then two live phones with no step numbers anywhere, each milestone by its name only, keeping the due order and drag bars. Which one?" Options: "2: names only, goals up front (Recommended)"; "1: names only"; "Mix or none". Pictures: docs/design/mockups/options-fluid/ (now = options-due's due-A, fl-1, fl-2).

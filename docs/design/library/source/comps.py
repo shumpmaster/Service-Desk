@@ -508,6 +508,29 @@ How heavy an event looks in a project's list comes from what it is, so the few t
 - {SRC}
 """.replace("{SRC}", SRC))
 
+# one order of operations (round 6, answers 8 to 14): top down, where it happened or is meant to, numbers in that order
+RO = ('<div class="dk-stage col" style="max-width:393px"><div>'
+  + grow(14, "wait", '<span class="pn">2</span>', "", "Design", "14%", "1 of 7 milestones reached · 4 things wait on you", "Design phase")
+  + '<div style="padding-left:12px">'
+  + grow(100, "ok", MS_IC, "2.1", "Done defined in real scenarios", "", "Reached · 100%", "Milestone 2.1")
+  + grow(30, "bad", OWN_IC, "2.2", "M6 · The records can carry the timeline", "", "Stopped: three plan reviews failed · 30%, example", "Milestone 2.2, M6")
+  + grow(40, "ok", MS_IC, "2.3", "The design fits together", "", "Mockups under way · 40%, example", "Milestone 2.3")
+  + f'<div class="dk-nowwrap" style="margin:6px 0"><div class="dk-now">{TH}<div class="hx"><div class="t">Stop card 5</div><div class="c">Now · waits on you</div></div><span class="dk-radio on"></span></div></div>'
+  + grow(0, "", MS_IC, "2.4", "A plan that passed review", "", "Next · not started", "Milestone 2.4")
+  + grow(0, "", MS_IC, "2.5", "Every unknown has a test", "", "Planned", "Milestone 2.5")
+  + '</div></div><p class="dk-note">Read down: what happened, Now, then what is meant to come. The numbers follow that order, so they never jump.</p></div>')
+comp("ReadingOrder", "Desk", 520, RO,
+ """# ReadingOrder
+
+One order of operations for a project's list, at every level. Chosen by the owner on 17 and 18 November 2026 (decisions/questions/P-005-design-round-6.md: answer 8, "The Phase reads top down, then the milestones read bottom up - that needs to be fixed"; answer 13, "all I really want is an established order of operations basically so I can read things in the order they occurred or were meant to I guess?"; answer 14, "Yes, that's it (Recommended)").
+
+- **Top down, everywhere**: the phase, its milestones, a sprint's events and a plan's actions all read from the earliest to the latest. Something that has happened sits where it happened; something that has not sits where it is meant to happen.
+- **Milestones** are placed by when their work began, or is meant to begin. Now sits at the clock: after what has begun, before what is still to come.
+- **One number**: the numbers (2.1, 2.2, 2.2.1, 2.2.2.5) follow that same order, so they never jump. A standard milestone's own id from the operating model (Design-5) is not shown in the row, since it carries a different order; its plain name is. A project's own milestone keeps its name (M6).
+- Nothing else is added for order: no bars, no group headings. When work began or is meant to begin is not yet in the records; mockups use examples.
+- {SRC}
+""".replace("{SRC}", SRC))
+
 # the branch map, drawn from the Design phase's real sprints (timeline mockup v12's records, 13 and 14 November 2026)
 def _t(d, hm): h, m = hm.split(":"); return (d - 13) * 1440 + int(h) * 60 + int(m)
 MAP_SP = [("2.7.1 S-010", [(13, "21:32", "commit", ""), (13, "21:44", "review", "bad"), (13, "23:45", "commit", ""), (13, "23:51", "review", "bad"), (14, "01:05", "stop", ""), (14, "04:56", "merge", ""), (14, "04:58", "decision", ""), (14, "12:04", "merge", "")]),

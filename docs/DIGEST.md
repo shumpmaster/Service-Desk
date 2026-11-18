@@ -1,5 +1,5 @@
 # DIGEST — generated from docs/LEDGER.md; do not edit by hand
-As of 2026-11-15: 48 active rulings and 0 kills, from 51 ledger entries.
+As of 2026-11-18: 49 active rulings and 0 kills, from 52 ledger entries.
 
 ## Active rulings
 
@@ -8,6 +8,7 @@ As of 2026-11-15: 48 active rulings and 0 kills, from 51 ledger entries.
 | --- | --- | --- | --- |
 | L-0054 | S-010 superseded | 2026-11-14 | never |
 | L-0056 | S-011 superseded | 2026-11-15 | never |
+| L-0057 | S-012 superseded | 2026-11-18 | never |
 
 ### P-001 (specs/S-001.md)
 | ID | Decision | Since | Expires |

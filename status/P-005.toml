@@ -1,16 +1,16 @@
 # Written only by the Orchestrator (model S-012 AC1).
 kind = "project"
 stage = 3
-state = "waiting-owner"
-role = "critic-triage"
+state = "ready"
+role = "critic-gate"
 last_verdict = "none"
-plan_round = 3
+plan_round = 0
 build_round = 0
 confirm_used = false
 attempts = 0
-sessions = 6
-gate = "stop"
+sessions = 0
 card = 6
-gate_n = 2
-spec = "S-012"
-superseded = ["S-010", "S-011"]
+next_gate = "criteria"
+gate_n = 1
+spec = "S-013"
+superseded = ["S-010", "S-011", "S-012"]

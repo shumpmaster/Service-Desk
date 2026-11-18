@@ -84,3 +84,5 @@ Asked by the question tool: "One order of operations. On https://claude.ai/artif
 14. "Yes, that's it (Recommended)"
 
 Carried out: one order of operations, top down at every level (phase, milestones, a sprint's events, a plan's actions): each thing where it happened, or where it is meant to; milestones placed by when their work began or is meant to begin, with Now at the clock; the numbers follow that order; a standard milestone's own id (Design-5) is hidden so only one number shows; nothing else added. Start times are examples until the records carry them. To be built into the library and then mockup v26 over v25.
+
+Shown in chat: the library with ReadingOrder (https://claude.ai/artifact/UqdAH5E4nwtSJdxcATBp3W, version 22) and mockup v26 (https://claude.ai/artifact/WZtRzxpycyXM4gkf8esKqK).

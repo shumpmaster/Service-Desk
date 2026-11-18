@@ -8,6 +8,10 @@ This library holds every element seen in the owner's seven Craft screenshots (re
 
 The colour hold is lifted for status only (decisions/questions/P-005-design-round-3.md, answers 4 to 13). Status takes soft green, yellow and red (`status-ok`, `status-wait`, `status-bad` and their tinted forms) on gauges, event marks, tags and the branch map. Everything else stays neutral, with the one blue. The shapes for milestones and sprints are still on hold. New cards: Gauge, StatusMark, BranchMap and PhaseRow. On the timeline, BranchMap replaces LaneGraph.
 
+## Change, 18 November 2026 (round 6, one order of operations)
+
+A project's list reads top down at every level, each thing where it happened or where it is meant to; milestones are placed by when their work began or is meant to begin, with Now at the clock, and the numbers follow that order, so they never jump. A standard milestone's own id (Design-5) is not shown in the row (ReadingOrder; decisions/questions/P-005-design-round-6.md, answers 8 to 14).
+
 ## Change, 17 November 2026 (round 6, words on main)
 
 On the fitted map (MilestoneMap) every event on main carries its words wherever it sits: one row in a strip under main, each label as near its icon as it can sit without touching the one before, joined to it by a thin line. A sprint's events carry words only inside the window (decisions/questions/P-005-design-round-6.md, answers 6 and 7).

@@ -13,11 +13,12 @@ RISK CLASS: R3 (approval leads to a rewrite of tests/acceptance/**)   REVERSIBIL
 DEFAULT: none — an R3 ruling never defaults   TIMEOUT: none
 
 ## Context
-- The new spec, S-013, extends the frozen S-009 and changes only how the record holds notices, AC14's test, and the comparisons and coverage on that form; every other line is carried word for word (source: specs/S-013.md:11, :18)
-- Its number was drawn by the operating model's rule: one past the highest spec id on main and every item branch, which was S-012 on 18 November (source: specs/S-013.md:3; Personal-Org-Operating-Model docs/LESSONS.md LL-053)
-- Plan review round 1 failed: the push is encrypted, AC14's test could not be run by any case kind, and the list of affected checks was incomplete (source: reviews/S-013/plan.md, round 1)
-- Plan review round 2 failed on one point: the sender sends a card's own notice for items not on the run just before, not items on no earlier run (source: reviews/S-013/plan.md, round 2)
-- Plan review round 3 passed, with three non-blocking points (source: reviews/S-013/plan.md, round 3, N1 to N3)
-- On a whole-desk test the sender's notices are compared by count, words and address; card by card only in the sender tests; the built code's per-card sender tests are by count (source: specs/S-013.md:57, :164, :173, :289)
-- The new coverage rules rest on the sender's code and one probe run (source: specs/S-013.md:169, :242, :290; docs/handoff/2026-11-13-chief-of-staff-p002-51.md, the Builder's return)
-- Today's test cases already meet every rule as worded (source: reviews/S-013/plan.md, round 3, check 4)
+- The new spec, S-014, extends the frozen S-009 and changes only how the record holds notices, AC14's test, and the comparisons and coverage on that form; every other line is carried word for word (source: specs/S-014.md:11, :18)
+- The spec was drawn as S-013 when the highest id on main and every item branch was S-012; the loop then gave S-013 to the timeline's new spec, so this one became S-014 (source: specs/S-014.md:3, :11; status/P-005.toml; Personal-Org-Operating-Model docs/LESSONS.md LL-053)
+- This question was first filed and put as questions/P-003-S-013-criteria.md, under the spec's earlier number; only the number changed (source: docs/handoff/2026-11-18-chief-of-staff-p002-56.md)
+- Plan review round 1 failed: the push is encrypted, AC14's test could not be run by any case kind, and the list of affected checks was incomplete (source: reviews/S-014/plan.md, round 1)
+- Plan review round 2 failed on one point: the sender sends a card's own notice for items not on the run just before, not items on no earlier run (source: reviews/S-014/plan.md, round 2)
+- Plan review round 3 passed, with three non-blocking points (source: reviews/S-014/plan.md, round 3, N1 to N3)
+- On a whole-desk test the sender's notices are compared by count, words and address; card by card only in the sender tests; the built code's per-card sender tests are by count (source: specs/S-014.md:57, :164, :173, :289)
+- The new coverage rules rest on the sender's code and one probe run (source: specs/S-014.md:169, :242, :290; docs/handoff/2026-11-13-chief-of-staff-p002-51.md, the Builder's return)
+- Today's test cases already meet every rule as worded (source: reviews/S-014/plan.md, round 3, check 4)

@@ -1,40 +1,39 @@
-I've revised specs/S-012.md to fix the two blocking defects the second plan review found in AC41. The third blocking item, the join-up review rows, isn't something this spec can close. I haven't committed anything: the folder isn't a git repository, so the edit sits in the working copy only.
+I've written S-013 as a draft, marked S-012 superseded, and pointed both experiment registrations at S-013. Nothing is committed: this folder is not a git repository, so I couldn't commit to `build/definer/<task>`.
 
 **1. What I changed**
-- **AC41, the causes of a repeat:** I added cause (d), "a return seen by a run". It applies when the second sender's `from_run` names the first sender or a later run, and that run's `true` line doesn't hold the step's (`id`, `changed_at`). The four causes are now tried in a fixed order, (a), (b), (c), (d), and the first one that holds is the cause. So a repeat where both (a) and (b) hold is listed as (a). I also simplified (c), since the fixed order now does the work its extra condition did.
-- **AC41, the matching key:** a wait is matched to `shown` lines and to notice lines by `id`, together with `project`, whatever the `changed_at`. Repeats are found in the notice lines alone, on (`project`, `id`, `changed_at`).
-- **AC41's test** gains:
-  - a case for cause (d);
-  - a case where (a) and (b) both hold;
-  - a step of each of the five waiting kinds, matched by its `id` from AC40.
-- **J4** now has an id rule for each kind:
-  - card or gate card: `<item>-<gate>-<n>`
-  - owner question: `question:<name>`
-  - pull request: `pr:<number>`
+- **`specs/S-013.md` (new, draft).** It is S-012's text with only these changes, each listed at the top of the spec:
+  - **AC40, which pull requests count.** A pull request now counts if the desk's code would have listed it as waiting on you at any moment while it was open (your ruling in `P-005-s012-pr-counted.md`). The count tries each record time in the project while the pull request was open, plus the window's end if it is still open. Before, a finished pull request was never counted.
+  - **AC40, a return to ready is a second wait** (your ruling in `P-005-s012-pr-return.md`). Each spell, from ready for review to back to draft, merged or closed, is timed as its own wait. Both spells share the id `pr:<number>` and are told apart by their start.
+  - **AC41, dating.** A notice or a "shown" record counts for a wait only if it is dated at or after the wait's start and before its end.
+  - **So a second spell can be sent and shown at all:**
+    - In the waiting list (J4), a pull request's "last changed" time is never earlier than the start of its current spell, so the alert route (J5) sends it again when it comes back to ready.
+    - The device log (J9) writes a new "shown" line for each new (project, id, last changed) and now carries the project. S-012's "shown" line had no project, although an id is only unique within its project.
+  - **AC41, new cause (e) "notified set not readable".** This covers a repeat where the run named by `from_run` has its log past keeping or missing, or has no `true` line for the project. It is listed apart, naming that run, and never as "unexplained". (e) is tried after (b) and before (c), because (c) and (d) both need that line.
+  - **AC41, repeats across the window's start.** The earlier notice is now looked for in every log still kept, including before the window, so a first send before the window and a second inside it is found.
+  - **Tests.** The tests for AC40, AC41, J4, J5 and J9 gain all of these cases.
+  - **Other sections.** The M8 note, AC23, AC26, J11, the known limits, the risks and the open questions follow these changes. I kept, as asked: cause (d), the order (a)–(d), and the waiting-list id as the join key. All `join-test` labels now say S-013.
+- **`specs/S-012.md`:** only the status word changed, to `superseded`.
+- **`experiments/P-005-E1.md`:** every "S-012" now reads "S-013". The pull-request row (line 23) and line 26 now state your two rulings. Line numbers are unchanged. E1 has not run.
+- **`experiments/P-005-E2.md`:** every "S-012" now reads "S-013" (lines 3 and 14).
 
-  These three are the forms S-009 gives at specs/S-009.md:154. The fourth is new: a deploy awaiting the owner's review is `deploy:<run id>/<run attempt>`, because a re-run is a new wait. Each id is built from the step's own records. J4's test now checks one id of each kind.
-- **AC40** now lists each wait's waiting-list `id`, and its test checks it.
-- **AC23** says a return that a run saw is resent by its own rule, not as an exception. **J5** points to cause (d).
-- I added a revision note in the header, a Known limit on where the ids come from, two Risks, and a sentence under open question 1.
-
-**2. Why**
-- Under the old AC41, a return that AC23 and J5 require to be resent would have been reported to the owner as a fault of the route.
-- AC40's output had no field that could be joined to J5's and J9's lines, which use the waiting-list id. Without one, AC41's test couldn't be written.
-- (a) and (b) could both hold with no rule for which one wins.
+**2. Why:** your "criteria-wrong" ruling in `decisions/P-005/stop-6.md`, and the two pull-request rulings behind it.
 
 **3. What I verified**
-- I checked that `grep` finds (d), the id rule and the exception wording where they should be, consistent across AC23, AC41, J5, Risks and the open questions.
-- I read specs/S-009.md:154 to confirm the three id forms. They are the forms S-009 uses in its own records, from its reading of src/ at its base commit. I worded the spec to claim only that, not that the desk uses them today.
-- A Python replace confirmed each corrected sentence appeared exactly once. No tests were run, since this lane doesn't write or run any.
+- I compared S-012 and S-013 with `grep -oE` on the criterion lines. All 36 criteria trace to a value target with matching numbers.
+- The `join-test` labels are the same set in both specs (J1–J10 and J12; J11 had no test in S-012 either), and no S-012 label is left in S-013.
+- Every text replacement was checked to match exactly once. Line 3 of S-012 now reads `status: superseded`.
+- I did not run any spec checks (such as `v3_checks trace`); they are not in this folder.
 
 **4. What is undone**
-- **Join-up review rows 1, 2, 3 and 5** stay blocking until the mockups and E2's result exist. Both the spec and the review agree it can't close them.
-- **E1's output** (experiments/P-005-E1.md line 31) has an `id` field but doesn't say what form it takes. I left it alone, because the review didn't ask for it and E1 hasn't run. Aligning it with J4's id rule would be a small follow-up.
+- No commit, so no `Agent-Session:` trailer.
+- `frozen_at` is not set; that happens at the freeze gate.
+- The Critic's plan review has not been done.
 
-**5. What is needed outside my lane**
-- In Build, the Builder's reading of src/ has to confirm the desk still forms ids as S-009 recorded. If it doesn't, that contradicts J4, which the stop rule makes a stop and a revision of this spec.
-- The spec then goes back to the Critic for another plan review.
+**5. Needed outside my lane**
+- Someone with the repository needs to commit this work.
+- **S-012 was not frozen in this copy.** Its status read `draft` with no freeze commit, while the brief said "frozen". I changed that word to `superseded` anyway; someone should confirm this matches the version on main.
 
 **6. Open questions**
-- **The deploy id:** a re-run with a raised attempt now counts as a new wait. Should the owner see this at the scenario card, or only if E2's records show something different?
-- **Aligning E1:** should E1's `id` be set to J4's id rule now, or left until E1 runs?
+- **New question 4:** your ruling doesn't say which version of the desk's code decides whether a pull request "would have been listed". I used the code on main at the window's end, so re-running the count gives the same figures. The other reading is the code as it stood at each moment. If you prefer that, AC40 and E1 line 26 change before freeze.
+- **Question 1 is narrower now:** only a pull request moves its "last changed" time on a return; other kinds that leave and come back between two runs are still not re-sent.
+- **Questions 2 and 3 are carried over unchanged:** where the weekly value record lives, and a week with no device log counting nothing as shown.

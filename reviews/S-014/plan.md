@@ -1,4 +1,6 @@
-# Plan review of S-013 — the Critic's returns, verbatim
+# Plan review of S-014 (run as S-013) — the Critic's returns, verbatim
+
+*Renumbered: these reviews were run when the spec was numbered S-013, and are kept unchanged below. The Orchestrator gave S-013 to P-005 at 13:33:06Z on 18 November, so the spec became S-014 at the owner's word, "yes, renumber to S-014" (specs/S-014.md:3, :11). The file moved here from reviews/S-013/plan.md, and the Critics' words still say S-013.*
 
 *Recorded by the Chief of Staff (session_01QBwHGHvmB1hNt9ywcps1NX). Each round's return is copied unchanged below its heading. The Critic ran read-only in a fresh session, outside the loop, as S-009's rounds did.*
 

@@ -1,4 +1,5 @@
 // join-test: S-009/J7
+// join-test: S-014/J7
 // S-009 line 23's locked check (spec line 173): the baseline record, its note, its hashes and
 // coverage, the poison run, then the adapter run on the built code and compared with the record.
 // Covers: AC9 (gate cards, questions, pull-request cards as today, with each read failing),
@@ -9,6 +10,9 @@
 //         baseline run with the same failure, or with the log failing for a notes failure).
 // It reads the record and note in place (reviews/S-009/baseline/), and no branch history.
 // Until the record exists the first step fails with "baseline record not there yet"; that is right.
+// Rewritten under specs/S-014.md (it supersedes S-009; line numbers are S-014's) and
+// decisions/questions/P-003-S-009-adapter-stop.md (:19): `notices` in J7's notice form (lines 154-155),
+// compared as lines 164 and 166 say, with line 169's coverage rules on that form; base commit, line 23.
 
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
@@ -18,8 +22,10 @@ import path from 'node:path';
 import {
   ROOT, ADAPTER, RECORD, NOTE, BASE_COMMIT, loadRecord, loadBaselineCases, validateOutput, sha256File,
   runAdapterRaw, run, twinOf, logTargetOf, deskProjection, openProjection, isDecisionId, isCantReadLine,
-  withCards, openCase, normHashes, HASH_KEY_FORM, adapterTestImports,
+  withCards, openCase, normHashes, HASH_KEY_FORM, adapterTestImports, readNotice, senderInfos,
 } from './s009-lib.mjs';
+
+const noticeText = (ns) => ns.map((n) => ({ words: n.words, opens: n.opens }));
 
 const cases = loadBaselineCases();
 const all = cases.map((c) => c.data);
@@ -74,8 +80,12 @@ test('S-009 line 23 locked check', { concurrency: false }, async (t) => {
       for (const id of want) assert.ok(ids.has(id), `${c.case}: record has no cards entry for ${id}`);
       if (c.fail.length === 0) {
         for (const e of r.cards.filter((e) => !isDecisionId(e.id))) assert.ok(e.on_list, `${c.case}: ${e.id} is not on_list in a no-failure result`);
-        // rule (b)
-        assert.ok(r.notices.length > 0, `${c.case}: rule (b), no-failure result sends no notice`);
+        // rule (b): one summary opening Home whose count is at least the number of its open cards
+        const open = Object.keys(c.records.queue).length + c.records.questions.length + c.records.pulls.length;
+        assert.equal(r.notices.length, 1, `${c.case}: rule (b), a no-failure result's notices are not one summary: ${JSON.stringify(r.notices)}`);
+        const s0 = readNotice(r.notices[0], { firstRun: true });
+        assert.equal(s0.kind, 'summary', `${c.case}: rule (b), its notice is not a summary opening Home: ${JSON.stringify(r.notices[0])}`);
+        assert.ok(s0.count >= open, `${c.case}: rule (b), the summary counts ${s0.count}, fewer than its ${open} open cards`);
         assert.ok(!r.lines.some(isCantReadLine), `${c.case}: rule (b), no-failure result has a can't-read line`);
         // the gate case's mark
         for (const [dor, word] of Object.entries(c.records.cases)) {
@@ -96,8 +106,35 @@ test('S-009 line 23 locked check', { concurrency: false }, async (t) => {
       }
     }
     for (const c of all.filter((c) => c.kind === 'sender')) {
-      assert.ok(res(c).result.notices.some((n) => n.length > 0), `${c.case}: sender case sends no notice`);
+      // the `sender` rule: the first run sends exactly one notice, a summary opening Home whose count
+      // is at least the number of items on that run's list
+      const first = res(c).result.notices[0];
+      assert.equal(first.length, 1, `${c.case}: the first run does not send exactly one notice: ${JSON.stringify(first)}`);
+      const s0 = readNotice(first[0], { firstRun: true });
+      assert.equal(s0.kind, 'summary', `${c.case}: the first run's notice is not a summary opening Home: ${JSON.stringify(first[0])}`);
+      assert.ok(s0.count >= c.runs[0].length, `${c.case}: the first run's summary counts ${s0.count}, fewer than the ${c.runs[0].length} items on its list`);
     }
+    // the rules on every notice in the record (line 169, read as line 155 says)
+    for (const c of all.filter((c) => c.kind === 'desk' || c.kind === 'sender')) {
+      const r = res(c).result;
+      const desks = new Set();
+      const infos = c.kind === 'desk' ? [r.notices.map((n) => readNotice(n, { firstRun: true }))] : senderInfos(r);
+      const raw = c.kind === 'desk' ? [r.notices] : r.notices;
+      infos.forEach((run, i) => run.forEach((n, j) => {
+        assert.ok(n.kind !== 'other', `${c.case}: a notice opens neither the desk's Home address nor /?open=<project>|<kind>|<id>: ${JSON.stringify(raw[i][j])}`);
+        desks.add(n.desk);
+        if (n.kind === 'summary' || n.kind === 'group') assert.ok(n.hasDigits, `${c.case}: a ${n.kind}'s words hold no whole number in digits: ${JSON.stringify(raw[i][j])}`);
+      }));
+      // "the desk's address, as the adapter gives it to the sender" (line 155) is one address within a
+      // case: every notice in one case's result opens from the same one (Critic round 1, N1: held per
+      // case, since no line says the adapter gives one address to every case)
+      assert.ok(desks.size <= 1, `${c.case}: its notices open from more than one desk address: ${JSON.stringify([...desks])}`);
+      if (c.kind === 'desk') {
+        assert.ok(r.notices.length === 0 || (r.notices.length === 1 && infos[0][0].kind === 'summary'), `${c.case}: a desk result's notices are neither empty nor one summary: ${JSON.stringify(r.notices)}`);
+      }
+    }
+    assert.ok(all.filter((c) => c.kind === 'sender').some((c) => senderInfos(res(c).result).some((run, i) => i > 0 && run.some((n) => n.kind === 'item'))),
+      'no sender case has an item notice on a run after its first, so the record shows no card named and no state handed back between runs');
     for (const c of all.filter((c) => c.kind === 'open' && c.open.via === 'notice' && c.fail.includes('log'))) {
       const a = res(c).result, b = res(twinOf(c, all)).result;
       assert.ok(a.shows !== b.shows || a.lands !== b.lands, `${c.case}: rule (c), same shows and lands as its no-failure twin`);
@@ -132,6 +169,9 @@ test('S-009 line 23 locked check', { concurrency: false }, async (t) => {
 
   const ready = (st) => gate(st, 'record', 'hashes', 'coverage', 'poison');
 
+  // line 164: non-decision cards field by field, Home's count and the summary's count each less the
+  // result's decision cards on the list, `lines` without the AC16/AC17 lines, and `notices` with their
+  // words' count written <n> (deskProjection in s009-lib.mjs); line 165 for a notes-failing case.
   await t.test('AC9, AC12, AC16, AC17: desk cases on the built code equal the record (non-decision cards)', async (st) => {
     if (!ready(st)) return;
     for (const c of all.filter((c) => c.kind === 'desk')) {
@@ -147,7 +187,8 @@ test('S-009 line 23 locked check', { concurrency: false }, async (t) => {
     if (!ready(st)) return;
     for (const c of all.filter((c) => c.kind === 'sender')) {
       const built = run(c, { caseFile: path.join(ROOT, cases.find((x) => x.data === c).file) });
-      assert.deepEqual(built.notices, rec.byCase.get(c.case).result.notices, `${c.case}: notices differ from the baseline run`);
+      // line 166: run by run, the same notices in the same order, each with the same words and opens, as text
+      assert.deepEqual(built.notices.map(noticeText), rec.byCase.get(c.case).result.notices.map(noticeText), `${c.case}: notices differ from the baseline run`);
     }
   });
 

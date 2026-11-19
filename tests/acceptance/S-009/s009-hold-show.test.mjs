@@ -1,11 +1,13 @@
 // S-009: holding and showing (D1, D2), run on the built code through the adapter (J7 forms).
 // Covers: AC1, AC2, AC3, AC4, AC5, AC6, AC7, AC8, AC19.
 // Until the build exists these fail with "output does not exist yet" (no adapter); that is right.
+// Rewritten under specs/S-014.md and decisions/questions/P-003-S-009-adapter-stop.md (:19): the
+// notice checks of AC1, AC2, AC4, AC6 and AC7 read a card's count difference (S-014 line 173).
 
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import {
-  run, deskCase, openCase, background, withCards, entry, stateOf, assertViewsAgree,
+  run, deskCase, openCase, background, withCards, entry, stateOf, assertViewsAgree, countDifference,
   MARK, NEW_LINES, GATE_WORDS,
 } from './s009-lib.mjs';
 
@@ -18,11 +20,12 @@ const baseCount = () => run(deskCase('S009-X-bg', M, BG)).home_count;
 
 test('AC1: a decision card with no notes, raised less than a day ago, is held everywhere', () => {
   const id = 'P-201-stop-1';
-  const r = run(deskCase('S009-X-ac1', M, withCards(BG, [{ id, raised: before(3) }])));
+  const c1 = deskCase('S009-X-ac1', M, withCards(BG, [{ id, raised: before(3) }]));
+  const r = run(c1);
   const e = entry(r, id);
   assert.deepEqual([e.on_list, e.on_board, e.buttons, e.marked], [false, false, false, null], `${id} not held: ${JSON.stringify(e)}`);
   assert.equal(r.home_count, baseCount(), 'a held card is in Home\'s count');
-  assert.ok(!r.notices.includes(id), 'a notice is sent for a held card');
+  assert.equal(countDifference(c1, id), 0, 'a held card is counted in the sender\'s first-run summary (count difference, S-014 line 173)');
   noNewLines(r);
   // its link opens no answer buttons (what the desk opens for a card not on its list: AC15, J7 test)
   const o = run(openCase('S009-X-ac1-link', M, withCards(BG, [{ id, raised: before(3) }]), { id, via: 'link' }));
@@ -34,11 +37,12 @@ test('AC1: a decision card with no notes, raised less than a day ago, is held ev
 test('AC2: notes with a recommended word show the card with that word, and only that button, marked', () => {
   const id = 'P-202-failure-1';
   const recs = withCards(BG, [{ id, raised: before(3), notes: 'Recommendation: `re-specify`\n' }]);
-  const r = run(deskCase('S009-X-ac2', M, recs));
+  const c2 = deskCase('S009-X-ac2', M, recs);
+  const r = run(c2);
   const e = entry(r, id);
   assert.deepEqual([e.on_list, e.on_board, e.buttons, e.marked], [true, true, true, 're-specify'], JSON.stringify(e));
   assert.equal(r.home_count, baseCount() + 1, 'a shown card is not in Home\'s count once');
-  assert.ok(r.notices.includes(id), 'no notice at first showing (AC14)');
+  assert.equal(countDifference(c2, id), 1, 'a card at its first showing is not counted once in the sender\'s first-run summary (AC14; count difference, S-014 line 173)');
   const o = run(openCase('S009-X-ac2-link', M, recs, { id, via: 'link' }));
   assert.equal(o.buttons, true);
   assert.ok(o.shows.includes('re-specify'), 'the card sheet does not name the recommended word');
@@ -58,10 +62,11 @@ test('AC4: a day or more with no notes shows the card with the mark and no marke
   const id = 'P-205-stop-1';
   const raised = '2026-11-11T12:00:00Z';
   const recs = withCards(BG, [{ id, raised }]);
-  const at = run(deskCase('S009-X-ac4-24h', '2026-11-12T12:00:00Z', recs));
+  const c4 = deskCase('S009-X-ac4-24h', '2026-11-12T12:00:00Z', recs);
+  const at = run(c4);
   const e = entry(at, id);
   assert.deepEqual([e.on_list, e.on_board, e.buttons, e.marked], [true, true, true, null], `at exactly 24 hours: ${JSON.stringify(e)}`);
-  assert.ok(at.notices.includes(id), 'no notice at first showing (AC14)');
+  assert.equal(countDifference(c4, id), 1, 'a card at its first showing is not counted once in the sender\'s first-run summary (AC14; count difference, S-014 line 173)');
   const o = run(openCase('S009-X-ac4-link', '2026-11-12T12:00:00Z', recs, { id, via: 'link' }));
   assert.equal(o.buttons, true);
   assert.ok(o.shows.includes(MARK), `the card sheet lacks "${MARK}": ${o.shows}`);
@@ -90,23 +95,26 @@ test('AC6: notes with no recommended word count as no notes', () => {
     'Some text\n\nThe Recommendation: is `drop` (mentioned in prose)\n',
   ];
   const cards = variants.map((notes, i) => ({ id: `P-21${i}-stop-1`, notes }));
-  const young = run(deskCase('S009-X-ac6-young', M, withCards(BG, cards.map((c) => ({ ...c, raised: before(2) })))));
-  const old = run(deskCase('S009-X-ac6-old', M, withCards(BG, cards.map((c) => ({ ...c, raised: before(25) })))));
+  const youngCase = deskCase('S009-X-ac6-young', M, withCards(BG, cards.map((c) => ({ ...c, raised: before(2) }))));
+  const oldCase = deskCase('S009-X-ac6-old', M, withCards(BG, cards.map((c) => ({ ...c, raised: before(25) }))));
+  const young = run(youngCase);
+  const old = run(oldCase);
   for (const c of cards) {
     assert.equal(stateOf(young, c.id), 'off', `${c.id} (${JSON.stringify(c.notes)}) not held within its first day`);
     assert.equal(stateOf(old, c.id), 'norec', `${c.id} (${JSON.stringify(c.notes)}) not shown with the mark after a day`);
-    assertViewsAgree(young, c.id);
-    assertViewsAgree(old, c.id);
+    assertViewsAgree(young, c.id, { of: youngCase });
+    assertViewsAgree(old, c.id, { of: oldCase });
   }
 });
 
 test('AC7: a card with no card entry in the log that was read is shown at once', () => {
   const a = 'P-220-stop-1', b = 'P-221-failure-1';
-  const r = run(deskCase('S009-X-ac7', M, withCards(BG, [{ id: a }, { id: b, notes: 'Recommendation: `drop`\n' }])));
+  const c7 = deskCase('S009-X-ac7', M, withCards(BG, [{ id: a }, { id: b, notes: 'Recommendation: `drop`\n' }]));
+  const r = run(c7);
   assert.equal(stateOf(r, a), 'norec', 'a card raised before the log that is read is not shown at once with the mark');
   assert.equal(stateOf(r, b), 'rec:drop', 'as AC2 when its notes are there');
   noNewLines(r);
-  assertViewsAgree(r, a); assertViewsAgree(r, b);
+  assertViewsAgree(r, a, { of: c7 }); assertViewsAgree(r, b, { of: c7 });
 });
 
 test('AC8 (partial; the rest is rubric R3): a card whose notes are named only in a pull request\'s title is held', () => {

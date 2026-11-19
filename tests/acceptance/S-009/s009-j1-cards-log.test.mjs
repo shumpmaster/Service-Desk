@@ -1,4 +1,5 @@
 // join-test: S-009/J1
+// join-test: S-014/J1
 // J1: queue/ and the dispatch log on the main branch -> the rule. Run on the built code through the
 // adapter (J7 forms). Covers: AC1, AC4, AC7, AC9 (dor-fail is not a dor gate card), AC17.
 

@@ -1,4 +1,5 @@
 // join-test: S-009/J2
+// join-test: S-014/J2
 // J2: the main branch's tree and a notes file -> the rule: each of J2's examples, run on the built
 // code through the adapter (J7 forms). Covers: AC2, AC6, AC16 (a listed notes file not read).
 

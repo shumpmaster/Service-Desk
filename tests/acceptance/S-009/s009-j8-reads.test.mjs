@@ -1,4 +1,5 @@
 // join-test: S-009/J8
+// join-test: S-014/J8
 // J8: the read places -> the rule. On the built desk and sender, a card file, a notes file and a
 // log file fail in turn in the `path` form (the fake server's `blobNull`, the checkout's throwing
 // `blobs`), and the check reads which records the rule was handed as not got from the flags' lines,

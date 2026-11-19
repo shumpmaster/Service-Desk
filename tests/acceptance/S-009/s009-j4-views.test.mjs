@@ -3,6 +3,8 @@
 // views and the sender handed the same records and one moment, at several moments around a card's
 // raise time plus 24 hours, give each decision card one state. Built code, through the adapter.
 // Covers: AC1, AC2, AC4, AC11, AC15 (held card's sheet = sheet for a card not on the list), AC16, AC17.
+// Rewritten under specs/S-014.md and decisions/questions/P-003-S-009-adapter-stop.md (:19): the
+// sender's part of AC11 is read by each card's count difference (S-014 line 173).
 
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
@@ -27,11 +29,12 @@ const want = { before: { [noNotes]: 'off', [withWord]: 'rec:resubmit', [unlogged
 
 for (const m of Object.keys(moments)) {
   test(`AC11, J4: views, card sheet and sender agree on every decision card (${m} raise + 24h)`, () => {
-    const r = run(deskCase(`S009-X-j4-${m}`, moments[m], recs));
+    const cm = deskCase(`S009-X-j4-${m}`, moments[m], recs);
+    const r = run(cm);
     let shown = 0;
     for (const id of [noNotes, withWord, unlogged]) {
       assert.equal(stateOf(r, id), want[m][id], `${id} at ${moments[m]}`);
-      assertViewsAgree(r, id); // queue, board, buttons, and the sender's first run
+      assertViewsAgree(r, id, { of: cm }); // queue, board, buttons, and the sender's first run (count difference)
       if (entry(r, id).on_list) shown += 1;
       const o = run(openCase(`S009-X-j4-${m}-${id}`, moments[m], recs, { id, via: 'link' }));
       assert.equal(o.buttons, entry(r, id).on_list, `${id}: the card sheet's buttons disagree with the queue`);

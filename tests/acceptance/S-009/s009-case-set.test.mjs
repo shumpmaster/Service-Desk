@@ -2,6 +2,9 @@
 // record nor the build, so they pass as soon as the cases are committed, and they lock the case set:
 // J7's list of cases, the twin rule and the open-card rule.
 // Covers: AC9, AC14, AC15, AC16, AC17 (the cases their baseline comparisons need).
+// Rewritten under specs/S-014.md and decisions/questions/P-003-S-009-adapter-stop.md (:19): line
+// 169's new case-set rules (two open cards that are not decision cards in each no-failure desk case;
+// a sender case's first run not empty; a later run with one or two items new to it).
 
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
@@ -42,6 +45,29 @@ test('J7 line 169: open-card rule, every no-failure desk case holds at least one
     const n = Object.keys(c.records.queue).length + c.records.questions.length + c.records.pulls.length;
     assert.ok(n > 0, `${c.case} holds no open card`);
   }
+});
+
+test('S-014 line 169: every no-failure desk case holds at least two open cards that are not decision cards', () => {
+  // a summary counting one says "1 thing waits on you now", a larger one "<n> things wait on you now"
+  for (const c of desk.filter((c) => c.fail.length === 0)) {
+    const n = Object.keys(c.records.queue).filter((id) => !isDecisionId(id)).length + c.records.questions.length + c.records.pulls.length;
+    assert.ok(n >= 2, `${c.case} holds ${n} open cards that are not decision cards, fewer than two`);
+  }
+});
+
+test('S-014 line 169: every sender case\'s first run\'s list holds at least one item', () => {
+  // a first run on an empty list sends a summary whose body writes no digit
+  for (const c of sender) assert.ok(c.runs.length > 0 && c.runs[0].length > 0, `${c.case}: its first run's list is empty`);
+});
+
+test('S-014 line 169: a sender case has a run after its first with one or two items not on the run just before\'s list', () => {
+  // so that run has one or two items to send, as item notices (every push being accepted, line 148)
+  const ok = sender.some((c) => c.runs.some((run, i) => {
+    if (i === 0) return false;
+    const fresh = run.filter((x) => !c.runs[i - 1].some((y) => y.id === x.id)).length;
+    return fresh >= 1 && fresh <= 2;
+  }));
+  assert.ok(ok, 'no sender case has a run after its first holding one or two items that were not on the run just before\'s list');
 });
 
 test('J7 line 160 (AC9, AC16, AC17): the records and failures J7 lists', () => {

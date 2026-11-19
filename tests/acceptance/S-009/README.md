@@ -3,6 +3,16 @@
 Written by the Check author from specs/S-009.md (frozen), before any work exists. Locked: never
 edited once committed; a new spec supersedes them.
 
+**Rewritten under specs/S-014.md** (frozen; it supersedes S-009 and changes only how J7 records the
+sender's notices), by the owner's ruling decisions/questions/P-003-S-009-adapter-stop.md (:19). Only
+the checks S-014 line 173 names changed: `notices` is now a list of notices `{ "words", "opens" }`
+(for `sender`, one list per run), read as line 155 says (item, summary or group; its card; its
+count); `desk` notices are compared by count (line 164) and `sender` notices as text (line 166);
+line 169's coverage and case-set rules are added; AC1, AC2, AC4, AC6, AC7, AC11 and J5 read a
+decision card's place on the sender's list by its **count difference** (line 173); and the base
+commit is S-014 line 23's. No baseline case file changed. Line numbers in the checks are S-014's
+(its lines 1-288 are numbered as S-009's).
+
 - `cases/baseline/*.json`: the **baseline cases** (spec line 23, J7 lines 149-162). These, and only
   these, are the cases the session runs the adapter on at the base commit to make
   reviews/S-009/baseline/record.json; the record must hash each of them, by its path from the
@@ -45,5 +55,13 @@ until the record exists line 23's check fails with "baseline record not there ye
    the built desk must show a can't-read line (line 165); with queue/ and the notes both failing,
    both AC16 lines must show; the poison run fails if any run writes a result in J7's form, whatever
    its exit code; the files under tests/ the adapter reads are found from its relative imports.
+   Under S-014's notice form: the checks are not told the desk's address the adapter gives the
+   sender, so `opens` ending `/?open=<key>` (key decoding to `<project>|<kind>|<id>`) is an item
+   notice and `opens` ending `/` is Home, the desk's address being what comes before, and every
+   notice in the record must open from one desk address; a notice with any field but `words` and
+   `opens` is not in the form; a card's key `<project>|card|queue/<id>.md` (or `gate`) names `<id>`,
+   and a question's or pull request's key names the list id `<kind>:<id>`; on `sender` cases built
+   in the checks, a first run's summary must count exactly the items on its list ("counts every item
+   on that run's list", line 57), while the record is held only to "at least" (line 169).
 8. AC18: the test asks only that the notes exist and name the mark; the rest is the rubric
    (checks/S-009/AC18-rubric.md).

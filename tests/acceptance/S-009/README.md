@@ -5,7 +5,7 @@ edited once committed; a new spec supersedes them.
 
 **Rewritten under specs/S-014.md** (frozen; it supersedes S-009 and changes only how J7 records the
 sender's notices), by the owner's ruling decisions/questions/P-003-S-009-adapter-stop.md (:19). Only
-the checks S-014 line 173 names changed: `notices` is now a list of notices `{ "words", "opens" }`
+the checks S-014 line 173 names changed (and every join file gains a `join-test: S-014/J<n>` comment beside its S-009 mark, for the governance join check; line 11's S-009 marks are kept): `notices` is now a list of notices `{ "words", "opens" }`
 (for `sender`, one list per run), read as line 155 says (item, summary or group; its card; its
 count); `desk` notices are compared by count (line 164) and `sender` notices as text (line 166);
 line 169's coverage and case-set rules are added; AC1, AC2, AC4, AC6, AC7, AC11 and J5 read a
@@ -18,7 +18,7 @@ commit is S-014 line 23's. No baseline case file changed. Line numbers in the ch
   reviews/S-009/baseline/record.json; the record must hash each of them, by its path from the
   repository root (for example `tests/acceptance/S-009/cases/baseline/S009-B-desk-ok.json`), and hold
   one result for each.
-- `s009-j7-baseline.test.mjs`: line 23's locked check (`join-test: S-009/J7`): the record and note,
+- `s009-j7-baseline.test.mjs`: line 23's locked check (`join-test: S-009/J7` and `join-test: S-014/J7`): the record and note,
   hashes, coverage, the poison run, then the built code against the record.
 - `s009-case-set.test.mjs`: J7's list, the twin rule and the open-card rule, on the case set.
 - the other `*.test.mjs`: the criteria and join sheets on the built code, through the adapter with

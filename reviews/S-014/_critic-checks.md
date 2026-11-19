@@ -2,6 +2,41 @@
 
 *Recorded by the Chief of Staff (session_01QBwHGJoFFZQjbMT7zK1HWJ) as `orchestrator`. The owner's ruling, decisions/questions/P-003-S-009-adapter-stop.md (:19): "The Check author, in a sparse worktree, rewrites only the affected baseline cases and checks. A fresh Critic reviews them, for up to three rounds, then a fresh Reviewer, then the owner's verdict". Each round's Critic return, verbatim under its heading; the latest round first, as reviews/S-009/_critic-checks.md does. Each Critic ran read-only in a fresh session, given the diff and the files whole, and not src/**.*
 
+## Round 3, the last — brief critic-10, 2026-11-19, the fix for the Reviewer's N1 only, at build/check-author/S-014-r2 b5e06577 (on 492a22c7)
+
+*The fix's brief: read a question's item-notice key `<project>|question|questions/<name>.md` as card `<name>`, leave every other reading, correct the README, and add one built-side test. Recorder's note: this was the last round the ruling allows, so its two non-blocking findings are carried as known limits, not sent back.*
+
+Verdict: PASS
+
+I checked commit b5e06577 against /tmp/claude-0/fix-n1.diff and the full files in /home/user/wt-review/tests/acceptance/S-009/. The diff touches 3 files, +14 −3: README +3 −1, s009-lib.mjs +4 −2 (two of the added lines are comments), test +7.
+
+**The fix (s009-lib.mjs:232-235, 244-246)**
+- The new line is `const q = /^queue\/(.+)\.md$/.exec(k[3]) || (k[2] === 'question' ? /^questions\/(.+)\.md$/.exec(k[3]) : null);`
+- The `questions/<name>.md` pattern is tried only when the kind is `question`, and only after the `queue/` pattern fails. So `<project>|question|questions/N-open.md` now gives card `N-open` with kind `question`, and `names(info, 'question:N-open')` is true. That fixes N1.
+- No other reading changed:
+  - Cards `<project>|card|queue/<id>.md` and gate cards `<project>|gate|queue/<id>.md` still match the `queue/` pattern first, as before.
+  - A pull request's key, and any other kind, still takes its id as written.
+  - `names()` did not change, apart from its comment.
+  - A question key without the `questions/` prefix still reads as before.
+- The README (:66-69) now describes this reading correctly and matches line 155's `<project>|<kind>|<id>` form.
+
+**The new test (s009-j5-sender.test.mjs:61-66)**
+- The lists are `[[G], [G, Q], [G]]`.
+- Run 2 has one item not on run 1's list, Q. So check (3) applies there, and the test asserts that `checkSenderCard` returns `[1]`. This means it fails if (3) never ran, so it is not vacuous.
+- Check (1) runs on runs 1 and 3, where Q is not on the list. With the fix, (1) now really tests a question; before the fix it could never fail on one.
+- Check (2) requires run 1's summary to count exactly 1 item, which is what "counts every item on that run's list" in line 57 asks for on built cases.
+- The test follows line 57's three checks, uses the existing helper in the same style as the two tests above it, and is consistent with line 169. The Check author's report that a fake naming Q on run 3 fails it is what check (1) would do.
+
+Nothing else changed.
+
+**Blocking findings:** none.
+
+**Non-blocking findings:**
+1. The comment above `readNotice` (s009-lib.mjs:215-216) still mentions only `queue/<id>.md`. The new inline comment at :232-233 covers questions, but the older comment is incomplete.
+2. A question's card is now the bare `<name>`. `names()` also matches when the card equals the list id directly, so a question whose name looked like a card id (`<item>-<gate>-<n>`) would name that card too. Before the fix the card was `questions/<name>.md`, so this could not happen. No case has a name like that, so it does not matter today.
+
+Files: /home/user/wt-review/tests/acceptance/S-009/s009-lib.mjs, /home/user/wt-review/tests/acceptance/S-009/s009-j5-sender.test.mjs, /home/user/wt-review/tests/acceptance/S-009/README.md, /tmp/claude-0/fix-n1.diff, /tmp/claude-0/critic8/S-014.md
+
 ## Round 2 — brief critic-9, 2026-11-19, the follow-up commit only, at build/check-author/S-014-r2 4d03a328 (on a7b9567a)
 
 *The follow-up's brief: S-014 marks beside every S-009 join mark, for the governance join check (`v3_checks joins`); round 1's N1 (the desk address held per case); round 1's N2 and N4 recorded in the README. Recorder's note on finding 3: the orchestrator read `readNotice` at 4d03a328 (s009-lib.mjs:225-241): `desk` is the regular expression's address capture for item notices (:231, :233) and Home notices (:238), and `null` only for kind `other` (:240), which fails coverage before its address is added (s009-j7-baseline.test.mjs:124). A README-only commit for findings 1 and 2 followed.*

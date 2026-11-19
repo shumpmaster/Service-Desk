@@ -2,6 +2,59 @@
 
 *Recorded by the Chief of Staff (session_01QBwHGJoFFZQjbMT7zK1HWJ) as `orchestrator`. The owner's ruling, decisions/questions/P-003-S-009-adapter-stop.md (:19): "A fresh Critic reviews them, for up to three rounds, then a fresh Reviewer, then the owner's verdict". The Reviewer ran read-only in a fresh session, in a full checkout detached at build/check-author/S-014-r2 492a22c7, with a shell for runs and scratch output outside the repository. Each return is verbatim under its heading; the latest first.*
 
+## Review 2 — brief reviewer-1 (the same Reviewer, re-reading), 2026-11-19, the fix for its N1 only, at build/check-author/S-014-r2 b5e06577 (on 492a22c7)
+
+Verdict: PASS
+
+The N1 fix in b5e06577 is correct. With the real sender, a question's item notice now reads as `question:<name>`, and cards, gate cards and pull requests read as before. The new j5 test matches line 57, and the suite and the governance checks give the expected results.
+
+**Blocking findings:** none.
+
+**Non-blocking findings:**
+- **A bare question name also matches.** `names(info, 'N-open')` is true for the question as well as `question:N-open`, because `names()` compares `info.card === id` first. No list id takes that bare form (cards are `P-<n>-<gate>-<n>`, questions `question:<name>`), so it is harmless.
+- **The fix touches nothing line 173 does not name.** b5e06577 is by check-author, with `Agent-Session: session_01QBwHGJoFFZQjbMT7zK1HWJ/check-author-1` and `Spec: S-014`. It changes only README.md, s009-lib.mjs (`readNotice` and the comment on `names`) and s009-j5-sender.test.mjs (+14 −3). No case file changed.
+- My earlier N2 (the join marks) and N3 (any address ending `/` counts as Home) still stand.
+
+**The new j5 test against line 57** (s009-j5-sender.test.mjs:61-66) runs lists `[[G], [G, Q], [G]]` with `Q = question:N-open` and expects `checkSenderCard` to return `[1]`. Each part of line 57 is covered:
+- **Run 1:** the first run's summary must count every item on its list, here 1. The real body is "1 thing waits on you now", which reads as count 1, so the exact-count check passes on right output.
+- **Run 2:** Q is the only item not on the run before's list, so an item notice must name Q. The real sender sends that item notice.
+- **Runs 1 and 3:** Q is not on the list, so no item notice may name it. That check is no longer empty for questions, so a wrong notice would now fail.
+
+The question is an item on the sender's list (line 151 lists `question` as a kind), so line 57's "card" wording covers it.
+
+**What I ran:**
+
+1. **Probe** (/tmp/claude-0/reviewer-scratch/probe2.mjs). It runs the real `runSender` through the tests/desk/notify-helpers.mjs `harness`, which decrypts each caught push with `decryptPush`. Each push became a notice `{words, opens}`, read with `senderInfos` and `names`. The six runs were: card; + question; question off; + gate card; + card; + pull request.
+
+   | Run | What is new | Real `opens` | Read as |
+   |---|---|---|---|
+   | 1 | first run | `https://desk.example.invalid/` | summary, count 1 |
+   | 2 | question | `…/?open=Service-Desk%7Cquestion%7Cquestions%2FN-open.md` | item, card `N-open`, `keyKind` question |
+   | 3 | question off | no push | – |
+   | 4 | gate card | `…%7Cgate%7Cqueue%2FP-952-criteria-1.md` | item, card `P-952-criteria-1` |
+   | 5 | card | `…%7Ccard%7Cqueue%2FP-955-failure-1.md` | item, card `P-955-failure-1` |
+   | 6 | pull request | `…%7Cpr%7C7` | item, card `7`, `keyKind` pr |
+
+   Which runs `names()` is true for, by id:
+   - `question:N-open`: run 2 only (it was false before the fix)
+   - `P-952-criteria-1`: run 4 only
+   - `P-955-failure-1`: run 5 only
+   - `pr:7`: run 6 only
+   - `P-951-stop-1`: none, since it was on the first run's list and so only counted in the summary
+
+2. **`node --test tests/acceptance/S-009/*.test.mjs`:** 66 tests, 10 pass, 49 fail, 7 skipped, as expected. The 49 failures are:
+   - 46 × "the adapter tests/desk/baseline/adapter.mjs is not there yet"
+   - 1 × "baseline record not there yet"
+   - 1 × "docs/handover/P-003/ does not exist yet"
+   - 1 × the j7 parent test's "1 subtest failed"
+
+3. **`governance/checks/check_all.sh . 0870a470`:** exit 0, "OK: all governance checks passed." The record_checks merges check passed (4 first-parent commits, 0 merges), so the known local finding did not appear.
+
+Files are in /tmp/claude-0/reviewer-scratch/:
+- probe2.mjs
+- suite2.txt
+- checkall2.txt
+
 ## Review 1 — brief reviewer-1, 2026-11-19, the rewrite at build/check-author/S-014-r2 492a22c7 (0870a470..492a22c7)
 
 *Recorder's note: N1 was sent back to the Check author to close before the lock, since a locked check cannot be edited; the verdict line's bold marks are removed so that the desk's verdict parser reads it; its fix is checked by the Critic's round 3 and the Reviewer's re-read below it.*

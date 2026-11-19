@@ -58,6 +58,13 @@ test('AC14, AC15: nothing is sent while a card is off the list after it was noti
   checkSenderCard(c, run(c), X.id);
 });
 
+test('AC14: a question new on a later run is named by its item notice, and only on that run', () => {
+  // check (1) and (3) of checkSenderCard on a question's key, `<project>|question|questions/<name>.md`
+  const Q = { id: 'question:N-open', kind: 'question', content: 'q1' };
+  const c = senderCase('S009-X-j5-question', M, [[G], [G, Q], [G]]);
+  assert.deepEqual(checkSenderCard(c, run(c), Q.id), [1], 'the question\'s first showing, on run 2, was not checked by name');
+});
+
 test('AC14: the baseline sender cases run on the built code', () => {
   for (const c of loadBaselineCases().filter((c) => c.data.kind === 'sender')) run(c.data);
 });

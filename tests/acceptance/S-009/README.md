@@ -64,7 +64,9 @@ until the record exists line 23's check fails with "baseline record not there ye
    the part of `words` after the first newline, as line 155's "from which its count is read" says
    (Critic N2); a notice with any field but `words` and
    `opens` is not in the form; a card's key `<project>|card|queue/<id>.md` (or `gate`) names `<id>`,
-   and a question's or pull request's key names the list id `<kind>:<id>`; on `sender` cases built
+   a question's key `<project>|question|questions/<name>.md` (the real sender's form, as the
+   Reviewer read it) names the list id `question:<name>`, and a pull request's key
+   `<project>|<kind>|<id>` names `<kind>:<id>`; on `sender` cases built
    in the checks, a first run's summary must count exactly the items on its list ("counts every item
    on that run's list", line 57), while the record is held only to "at least" (line 169). New items
    on a later run are counted by id, so an item whose content changed is not new; a later run with

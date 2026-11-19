@@ -229,7 +229,9 @@ export function readNotice(n, { firstRun }) {
     try { key = decodeURIComponent(im[2]); } catch { key = null; }
     const k = key === null ? null : KEY_FORM.exec(key);
     if (!k) return { kind: 'other', desk: im[1], count: null };
-    const q = /^queue\/(.+)\.md$/.exec(k[3]);
+    // a card's <id> is `queue/<id>.md`; a question's is `questions/<name>.md` (the real sender's key,
+    // as the Reviewer read it), read as <name>; any other <id> is taken as written
+    const q = /^queue\/(.+)\.md$/.exec(k[3]) || (k[2] === 'question' ? /^questions\/(.+)\.md$/.exec(k[3]) : null);
     return { kind: 'item', desk: im[1], key, keyKind: k[2], card: q ? q[1] : k[3], count: 1 };
   }
   const hm = HOME_OPENS.exec(n.opens);
@@ -241,7 +243,7 @@ export function readNotice(n, { firstRun }) {
 }
 // An item notice names list item `id` when its key's <id> is that id (a card's `queue/<id>.md` read
 // as <id>), or, for a list id `<kind>:<rest>` (a question or pull request), when the key is
-// `<project>|<kind>|<rest>`.
+// `<project>|<kind>|<rest>` (a question's `<project>|question|questions/<rest>.md` read so).
 export function names(info, id) {
   return info.kind === 'item' && (info.card === id || `${info.keyKind}:${info.card}` === id);
 }

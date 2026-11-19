@@ -1,4 +1,4 @@
-# Plan review of S-014 (run as S-013) — the Critic's returns, verbatim
+# Plan review of S-014 (run as S-013 for rounds 1 to 3) — rounds 1 to 5, the Critic's returns, verbatim (the latest round is in plan.md)
 
 *Renumbered: these reviews were run when the spec was numbered S-013, and are kept unchanged below. The Orchestrator gave S-013 to P-005 at 13:33:06Z on 18 November, so the spec became S-014 at the owner's word, "yes, renumber to S-014" (specs/S-014.md:3, :11). The file moved here from reviews/S-013/plan.md, and the Critics' words still say S-013.*
 
@@ -240,3 +240,104 @@ Key files:
 - /home/user/sd-definer-S013/tests/acceptance/S-009/cases/baseline/ (the 12 case files)
 - /home/user/sd-definer-S013/tests/acceptance/S-009/s009-lib.mjs, s009-case-set.test.mjs, s009-hold-show.test.mjs, s009-j5-sender.test.mjs
 
+
+## Round 4 — brief critic-5, 2026-11-18, the lines changed under the owner's answer B only, against specs/S-014.md at build/definer/S-014 9014417d
+
+*Under the owner's criteria answer B (decisions/questions/P-003-S-014-criteria.md, "B: close points first (Recommended)"), a fresh Definer (definer-5) closed round 3's N1 to N3 without changing a criterion. This round is that answer's check of only those lines (11, 164, 173, 290 and 302), not a fourth plan review. The orchestrator confirmed mechanically that every other line is byte-identical to the spec at 38439671, and gave the Critic the before and after texts and both diffs as files. Recorded by the Chief of Staff (session_01QBwHGMaiXA5EjfDYaJQd9q); the return is copied unchanged below.*
+
+Verdict: PASS
+
+All three points are closed and no criterion changed. Every cited fact I checked holds. Two small citation slips are listed under non-blocking findings. Line numbers below are those of /tmp/claude-0/-home-user/d52842f0-260e-5a7f-ba91-f10465fa684b/scratchpad/S-014-after.md, which is the same text as /home/user/sd-definer-S014/specs/S-014.md.
+
+### 1. N1, line 290
+- **Its own clause: yes.** "with a case set written for that" now covers only the `sender` later-run rule. The `desk` rule comes after it in a separate clause, "and, for a reason of its own, every no-failure `desk` case must hold at least two open cards that are not decision cards". Its reason is its own: no compared summary counts one, "and line 164's comparison of `words` stays exact".
+- **Kept under option B: yes.** Option B now ends: "the `desk` rule of two open cards that are not decision cards stays under B too, because line 164's comparison is unchanged under either option."
+- **Nothing else changed.** Option A, its recommendation and its reason are word for word as before. B's own text ("keep rule (b) and the `sender` rule in S-009's form ... drop the others ...") is unchanged. The only addition to B is the clarification the owner's ruling asked for (decisions/questions/P-003-S-014-criteria.md:18).
+
+### 2. N2, line 173
+- **Zero now counts 0: yes.** The new sentence says a summary whose body is "Notifications are on: nothing waits on you now" writes no digit, and "its count here is 0". So the count difference is defined when the card left out was the only open card.
+- **The cited facts hold.**
+  - words.mjs:46: `n === 0 ? 'nothing waits on you now'`. The full body is put together at :47 as "Notifications are on: ...".
+  - sender.mjs:299-301: on a first run that reads its records and has nothing to send, the sender still sends `summaryWords(0, ...)`.
+  - Line 148 keeps `DESK_BILLING_TOKEN` out, so no cost line with digits is added to the body.
+- **No conflict with line 155.** Line 155 reads a count from the first number in digits. The new sentence only gives a value where line 155 gives none, and only for this one body.
+- **No conflict with line 169.** Line 169's digits rule is a coverage rule on summaries and groups in the record. The count difference works on built-code `desk` results, and a zero summary in the record is already ruled out by line 169's non-empty-list rule for `sender` cases.
+
+### 3. N3, line 164
+- **The reason now rests on rule (a) and line 165: yes.** For failing `desk` cases, line 164 now says no summary is compared, because rule (a) of line 169 leaves the record's `notices` empty when `queue` or `log` fails, and line 165 compares a `notes`-failing case with the `log`-failing record result, which is also empty.
+- **Both lines say that.**
+  - Line 169's (a): each `desk` case with `queue` or `log` failing "has empty `notices`".
+  - Line 165: the `notes`-failing built result is compared "with the record's result for the same records with `log` failing in the same form".
+- **Comparison and conclusion unchanged.** The text up to "Since each no-failure `desk` case ..." is identical, and so are the conclusion ("no summary so compared counts one ...") and everything after it. The only edit is the reason clause, which replaces the no-failure-twin argument.
+
+### 4. No criterion changed
+- Line 164 changes only the reason it gives.
+- Line 173 defines a value that was undefined. It adds no case-set rule and nothing a build must do: a correct build gives the same results.
+- Line 290 changes no option's substance and no recommendation. B's clarification is the owner's prescribed fix (criteria record :18), and the owner chose A in any case.
+- Line 302 is a file list, and line 11 is the change note.
+
+### 5. Line 11's Round 4 list and line 302
+- **The Round 4 list matches the diff.** The unified diff has four hunks, changing lines 11, 164, 173, 290 and 302. That is exactly what the list names, and its description of each line is true.
+- **The first list is still true.** It describes line 164 as "why no summary so compared counts one", line 173 as "a card's count difference" and line 290 as "question 15 naming the case-set rules". All three still fit.
+- **Line 302 is true.** reviews/S-014/plan.md holds rounds 1 to 3. Rounds 1, 2 and 3 are answered by line 11's Round 2, Round 3 and Round 4 lists. The criteria record is the owner's answer B.
+
+### Blocking findings
+None.
+
+### Non-blocking findings
+- **NB1. Line 308, the files list.** Line 173 now cites src/notify/words.mjs:46, but line 308's "cited at lines 155, 164, 169, 230, 242, 290" does not name 173. The file and its range (:19-48) are listed, so nothing is missing for a reader. Line 308 was not edited this round, so the list is now out of date.
+- **NB2. Lines 173 and 169, the citation.** Both quote "Notifications are on: nothing waits on you now" and cite words.mjs:46 only. The words "Notifications are on:" are at :47. Citing :46-47 would be exact.
+
+### Files you needed and did not have
+None. I did not open tests/acceptance/S-009/** or tests/desk/notify-helpers.mjs, because no changed line's claim needed them.
+
+Files read:
+- /tmp/claude-0/-home-user/d52842f0-260e-5a7f-ba91-f10465fa684b/scratchpad/S-014-round4-unified.diff
+- /tmp/claude-0/-home-user/d52842f0-260e-5a7f-ba91-f10465fa684b/scratchpad/S-014-after.md (lines 148-169, 298-316)
+- /home/user/sd-definer-S014/reviews/S-014/plan.md (Round 3)
+- /home/user/sd-definer-S014/decisions/questions/P-003-S-014-criteria.md
+- /home/user/sd-definer-S014/src/notify/words.mjs
+- /home/user/sd-definer-S014/src/notify/sender.mjs (lines 260-309)
+
+## Round 5 — brief critic-6, 2026-11-19, the freeze commit only, against specs/S-014.md at build/definer/S-014-freeze a100d788
+
+*The freeze commit (definer-6) changed lines 3, 11, 23, 169, 173 and 308: the status and freeze date, the base commit and its drift check, round 4's NB1 and NB2, and a Freeze list. This round checks only that commit against its brief. The Definer then amended that one commit (a second commit would change a spec after the commit that froze it), so a100d788 is not on any branch; its text is the "after" of this round's inputs.*
+
+Verdict: FAIL
+
+I checked only the freeze commit a100d788 on top of 68be2334, using the files in /tmp/claude-0/critic6/ and the worktree at /home/user/wt-definer. All six changed lines do what the brief asks and nothing more. The fail is for one sentence in line 11 that the freeze made untrue. The brief did not ask for it to be updated, so the root cause is the brief, not the Definer's work.
+
+**Blocking**
+
+B1. Line 11's first list ("What changed from S-009") is no longer true.
+- It still says "line 3 (status draft, and the id's re-check)". Line 3 now reads status frozen.
+- The list never names line 23, yet it ends: "No other line differs from S-009: every other criterion, join sheet, fact, risk and open question is carried over word for word". Line 23 now differs from S-009: the base commit fca41700 replaces 04b722e, the date is 2026-11-19, the drift check is on `-- src/ tests/desk/`, and there is the new tests/acceptance/ clause.
+- The Freeze list at the end of line 11 is correct, but the first list a reader uses to compare the spec with S-009 now says something false. Round 3 set the precedent: it "made true" the first list when lines changed.
+- Fix:
+  - line 3 becomes "(status and frozen_at, and the id's re-check)";
+  - add "line 23 (the base commit and its drift check)";
+  - line 308 needs no entry, because the first list's "new lines 298 to 316" already covers it;
+  - the Freeze list's "this note (this list)" becomes "(the first list made true of lines 3 and 23, and this list)".
+- Route: Orchestrator, as a fix to the brief, then the Definer.
+
+**Non-blocking**
+
+N1. Line 308 keeps "(with the zero summary at :46)". Lines 169 and 173 now cite the zero summary's words at :46-47, so :46-47 would agree with them. NB1 only asked for 173 to be added, which is done.
+
+N2. Line 173's closing sentence, "The Check author rewrites only these" (the checks that read `notices`), may stand in the way of updating tests/acceptance/S-009/s009-lib.mjs:21. That line holds `BASE_COMMIT = '04b722ec…'`, commented "// spec line 23". Line 23 now sets fca41700, so :21 must change for the check to match the spec. The spec text makes that change necessary but does not clearly allow it. It is not a defect of this commit, but the Check author's brief should say outright that :21 is rewritten under line 23. Or the Orchestrator should confirm that decisions/questions/P-003-S-009-adapter-stop.md:19 covers it.
+
+N3. I could not verify three git claims in line 23 (I have no git access): fca41700 is main's tip, its committer time is 2026-11-19T02:37:57Z, and tests/acceptance/ differs from 0ae6c8d only by S-009's locked checks. The empty drift output in drift.txt supports the src/ and tests/desk/ claim. The Orchestrator should confirm the other three mechanically.
+
+**Checked and correct**
+- **Line 3:** status frozen, frozen_at 2026-11-19, and "was re-checked … at the freeze, and it stands". Nothing else on the line changed.
+- **Line 23:**
+  - The full hash and time are as briefed.
+  - The drift command is now `0ae6c8d fca41700 -- src/ tests/desk/` (it was `0ae6c8d origin/main -- src/ tests/`). It is stated empty, with no fresh reading.
+  - The scope is narrowed to src/ and tests/desk/, with the tests/acceptance/ clause added.
+  - Every other word is the same.
+- **Lines 169 and 173:** only `words.mjs:46` changed to `:46-47`, at the empty-list summary. That is exact: "nothing waits on you now" is at :46 and "Notifications are on: " at :47 (words-40-50.txt). The other :46 citation in line 169, for "1 thing…" and "<n> things…", is correctly left at :46.
+- **Line 308:** 173 is added in order. The range :19-48 still covers :46-47.
+- **Freeze list:** it names exactly lines 3, 11, 23, 169, 173 and 308, and ends "No other line changed." That matches changed-lines.txt and identical.txt. Its claim that round 4 passed with NB1 and NB2 matches reviews/S-014/plan.md (lines 247, 287 and 288).
+- **Substance:** no criterion, join sheet, fact, risk or open question changed. The base commit change was briefed.
+
+Files: /tmp/claude-0/critic6/changed-lines.txt, /home/user/wt-definer/reviews/S-014/plan.md, /home/user/wt-definer/tests/acceptance/S-009/s009-lib.mjs (line 21).

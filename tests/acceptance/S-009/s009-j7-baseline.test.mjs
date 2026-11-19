@@ -1,4 +1,5 @@
 // join-test: S-009/J7
+// join-test: S-014/J7
 // S-009 line 23's locked check (spec line 173): the baseline record, its note, its hashes and
 // coverage, the poison run, then the adapter run on the built code and compared with the record.
 // Covers: AC9 (gate cards, questions, pull-request cards as today, with each read failing),
@@ -114,9 +115,9 @@ test('S-009 line 23 locked check', { concurrency: false }, async (t) => {
       assert.ok(s0.count >= c.runs[0].length, `${c.case}: the first run's summary counts ${s0.count}, fewer than the ${c.runs[0].length} items on its list`);
     }
     // the rules on every notice in the record (line 169, read as line 155 says)
-    const desks = new Set();
     for (const c of all.filter((c) => c.kind === 'desk' || c.kind === 'sender')) {
       const r = res(c).result;
+      const desks = new Set();
       const infos = c.kind === 'desk' ? [r.notices.map((n) => readNotice(n, { firstRun: true }))] : senderInfos(r);
       const raw = c.kind === 'desk' ? [r.notices] : r.notices;
       infos.forEach((run, i) => run.forEach((n, j) => {
@@ -124,12 +125,14 @@ test('S-009 line 23 locked check', { concurrency: false }, async (t) => {
         desks.add(n.desk);
         if (n.kind === 'summary' || n.kind === 'group') assert.ok(n.hasDigits, `${c.case}: a ${n.kind}'s words hold no whole number in digits: ${JSON.stringify(raw[i][j])}`);
       }));
+      // "the desk's address, as the adapter gives it to the sender" (line 155) is one address within a
+      // case: every notice in one case's result opens from the same one (Critic round 1, N1: held per
+      // case, since no line says the adapter gives one address to every case)
+      assert.ok(desks.size <= 1, `${c.case}: its notices open from more than one desk address: ${JSON.stringify([...desks])}`);
       if (c.kind === 'desk') {
         assert.ok(r.notices.length === 0 || (r.notices.length === 1 && infos[0][0].kind === 'summary'), `${c.case}: a desk result's notices are neither empty nor one summary: ${JSON.stringify(r.notices)}`);
       }
     }
-    // "the desk's Home address" is one address: every notice in the record opens from the same one
-    assert.ok(desks.size <= 1, `the record's notices open from more than one desk address: ${JSON.stringify([...desks])}`);
     assert.ok(all.filter((c) => c.kind === 'sender').some((c) => senderInfos(res(c).result).some((run, i) => i > 0 && run.some((n) => n.kind === 'item'))),
       'no sender case has an item notice on a run after its first, so the record shows no card named and no state handed back between runs');
     for (const c of all.filter((c) => c.kind === 'open' && c.open.via === 'notice' && c.fail.includes('log'))) {

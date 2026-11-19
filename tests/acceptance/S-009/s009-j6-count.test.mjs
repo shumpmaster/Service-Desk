@@ -1,4 +1,5 @@
 // join-test: S-009/J6
+// join-test: S-014/J6
 // J6 and AC13: the rule run at J6's check moments on sample records holding AC13's three cards,
 // J6's two figures worked out from the states, and J6's first worked example.
 // The spec fixes no entry point for the rule's handed-over list (id, raise time, state) other than

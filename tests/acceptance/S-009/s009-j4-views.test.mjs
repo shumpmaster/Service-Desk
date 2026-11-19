@@ -1,4 +1,5 @@
 // join-test: S-009/J4
+// join-test: S-014/J4
 // J4: the card list -> the views (queue, Home's count, board, card sheet), and AC11's test: the
 // views and the sender handed the same records and one moment, at several moments around a card's
 // raise time plus 24 hours, give each decision card one state. Built code, through the adapter.

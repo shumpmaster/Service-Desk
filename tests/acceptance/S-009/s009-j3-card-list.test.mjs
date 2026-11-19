@@ -1,4 +1,5 @@
 // join-test: S-009/J3
+// join-test: S-014/J3
 // J3: the rule -> the one card list every view reads: states from the records and the moment
 // alone, the flags, and J3's awkward cases. Run on the built code through the adapter (J7 forms).
 // Covers: AC2, AC5, AC11 (same records and moment, same state), AC16, AC17.

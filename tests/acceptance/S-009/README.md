@@ -58,10 +58,18 @@ until the record exists line 23's check fails with "baseline record not there ye
    Under S-014's notice form: the checks are not told the desk's address the adapter gives the
    sender, so `opens` ending `/?open=<key>` (key decoding to `<project>|<kind>|<id>`) is an item
    notice and `opens` ending `/` is Home, the desk's address being what comes before, and every
-   notice in the record must open from one desk address; a notice with any field but `words` and
+   notice in one case's result must open from one desk address (held per case, not across cases:
+   no line says the adapter gives one address to every case; Critic round 1, N1); a summary's or
+   group's count, and the rule that its words hold a number in digits, are read in its body only,
+   the part of `words` after the first newline, as line 155's "from which its count is read" says
+   (Critic N2); a notice with any field but `words` and
    `opens` is not in the form; a card's key `<project>|card|queue/<id>.md` (or `gate`) names `<id>`,
    and a question's or pull request's key names the list id `<kind>:<id>`; on `sender` cases built
    in the checks, a first run's summary must count exactly the items on its list ("counts every item
-   on that run's list", line 57), while the record is held only to "at least" (line 169).
+   on that run's list", line 57), while the record is held only to "at least" (line 169). New items
+   on a later run are counted by id, so an item whose content changed is not new; a later run with
+   one new id and two cards whose content changed might send a group and so fail check (3) of
+   s009-j5-sender's `checkSenderCard`, but no case has that shape, and none is added, since that
+   would mean counting changed content as new (Critic N4).
 8. AC18: the test asks only that the notes exist and name the mark; the rest is the rubric
    (checks/S-009/AC18-rubric.md).

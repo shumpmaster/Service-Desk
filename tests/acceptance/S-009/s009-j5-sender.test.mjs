@@ -1,4 +1,5 @@
 // join-test: S-009/J5
+// join-test: S-014/J5
 // J5: the card list -> the notification sender. Sender cases at J5's point (J7 line 151), and the
 // desk cases' first sender run (`notices`, J7 line 154), on the built code through the adapter.
 // The comparison with the baseline run (AC14's two cases) is in the J7 locked check.

@@ -1,1 +1,4 @@
 {"event": "start", "session": "session_01QBwHGLJhqD3tRfLqA4zdvm", "time": "2026-11-22T22:33:23Z", "doing": "P-003: check for other Chief of Staff sessions; the loop and weekly-proof reading; step 16, the Launch gate case and its Critic read; the plan's pull request 7"}
+{"event": "helper", "session": "session_01QBwHGLJhqD3tRfLqA4zdvm", "role": "critic", "started": "2026-11-22T22:39:00Z", "ended": "2026-11-22T22:41:00Z", "reported": {"tokens": 67581, "tool_uses": 21, "duration_ms": 136296}}
+{"event": "helper", "session": "session_01QBwHGLJhqD3tRfLqA4zdvm", "role": "critic", "started": "2026-11-22T22:43:00Z", "ended": "2026-11-22T22:45:00Z", "reported": {"tokens": 65488, "tool_uses": 22, "duration_ms": 127160}}
+{"event": "helper", "session": "session_01QBwHGLJhqD3tRfLqA4zdvm", "role": "critic", "started": "2026-11-22T22:47:00Z", "ended": "2026-11-22T22:50:00Z", "reported": {"tokens": 65556, "tool_uses": 21, "duration_ms": 140517}}

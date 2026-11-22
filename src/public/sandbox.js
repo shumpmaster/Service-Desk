@@ -34,7 +34,7 @@ import { projectCards, boardView, judgeMarks, markDone, undoMark, readMarks, noM
   stripEmptyParts, isNewCard, boardAge, SECTION_WORDS, SECTION_CHOICES_SHOWN, waitLaneEmpty, sectionMissingWords, sectionMeta, doneTime, HOLD_MS, KICK_BACK_MINUTES, kickReadSlot, kickReadsDue, MOUSE_DRAG_PX, FINGER_SLOP_PX, LANE_MARGIN_PX, oneProjectView, ONE_WORDS, everyProjectUnread, unreadLaneWords, quietTroubleWords, cantSince, shortNames, DRAFTS_KEY, readDrafts, draftsRecord, draftsToDrop, DRAFT_KEEP_DAYS, draftCard,
   PLACE_WORDS, heldBoard, BLOCK_WORDS } from './lib/board.js';
 import { waitKey } from './lib/waiting.js';
-import { canRecord } from './lib/model.js';
+import { canRecord, COS_NONE } from './lib/model.js';
 import { parseWorkflowRuns } from './lib/records.js';
 import { V25_RULING_NOTE } from './lib/links.js';
 import { runsContext, feedView, unblocksOf, GROUP_MARK, memberIcon, memberWork, itemFeeds,
@@ -772,7 +772,14 @@ function briefingNode(desk, built, bd) {
     v.sub ? h('span', { class: 'v2-bt3', key: 'brief-sub', live: () => view(Date.now()).sub || '' }) : null,
     // AC91 (c), from G7: each can't-read line under the first carries the ✕ in --bad before its words, as Waiting's line
     // does; where the first line is itself one, its mark (above) is that ✕, as built.
-    v.cant.map((w, i) => h('span', { class: 'v2-bt3 bad v2-bcant', key: `brief-cant:${i}` }, vi('bad', 'v2-k bad'), h('span', {}, w))));
+    v.cant.map((w, i) => h('span', { class: 'v2-bt3 bad v2-bcant', key: `brief-cant:${i}` }, vi('bad', 'v2-k bad'), h('span', {}, w))),
+    // S-014 (AC16, AC17): the decision cards' "not shown" lines, in the look of the briefing's line under its count.
+    decisionLines(built).map((w) => h('span', { class: 'v2-bt3', key: `brief-dec:${w}` }, w)));
+}
+
+/** S-014 (AC16, AC17): the "not shown" lines of these projects' failed reads (not of a first read still arriving), each once. */
+function decisionLines(built) {
+  return [...new Set(built.flatMap((b) => (b.model && b.box && b.box.read && b.box.read.read === 'cant-read' && b.model.decisionLines) || []))];
 }
 
 /** One line of "Since you last looked" (AC82, frame H1): its time in Plex Mono, its icon, the record's own words, then "<project> · <its codes>"; a tap opens where it happened. */
@@ -3152,6 +3159,9 @@ function renderWaiting(bd, built, only, sheetId, fresh = bd) {
     // state 2's "Can't read <project> in this opening: <reason>" (oneProjectView); from G8d's round 2, "Can't show <project>"
     // for a project the desk can read but can't draw, in the same place and look.
     if (one && one.cant) body.push(h('div', { class: 'v2-quiet', key: 'quiet-cant' }, h('p', { class: 'v2-ql still bad', key: `ql:${one.cantShow ? 'show' : 'cant'}:${name}` }, vi('bad'), h('span', {}, one.cant))));
+    // S-014 (AC16, AC17): the decision cards a read could not decide, in the can't-read line's look, on the queue only.
+    const dl = decisionLines(built.filter((b) => b.project.name === name));
+    if (dl.length) body.push(h('div', { class: 'v2-quiet', key: 'quiet-dec' }, dl.map((w) => h('p', { class: 'v2-ql still bad', key: `ql:dec:${w}` }, vi('bad'), h('span', {}, w)))));
     // AC94 (QW1; C, (c)): with one project shown, the section under the chip and its can't-read line, above the strip.
     body.push(questionsSection(bd, built, name));
   } else {
@@ -3701,7 +3711,7 @@ function cardSheet(bd, built, only, sheetId, backTo = null, places = bd.places, 
   }
   if (card.kind === 'card') {
     const rec = v.recommendation;
-    parts.push(h('p', { class: 'v2-body', key: 'rec-line' }, rec ? [h('span', { class: 'v2-rec' }, 'Recommended'), ' ', rec] : 'No recommendation given'));
+    parts.push(h('p', { class: 'v2-body', key: 'rec-line' }, rec ? [h('span', { class: 'v2-rec' }, 'Recommended'), ' ', rec] : v.cosNone ? COS_NONE : 'No recommendation given'));
   }
   // The buttons, in full: one per option, each opening a fully filled-in file (the box's words in it).
   let copyFiles = null;

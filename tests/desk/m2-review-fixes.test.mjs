@@ -29,6 +29,8 @@ const DAY = 86400e3;
 const H = 3600e3;
 const LOG = 'dispatch-log/2026-10.jsonl';
 const AT = Date.parse('2026-10-07T12:00:00Z');
+// S-014 (P-003): a decision card raised under a day ago shows only with its Chief of Staff notes (stop-6 raised 2026-10-06T18:51:54Z).
+const STOP6_NOTES = "# Chief of Staff notes: P-001 stop-6 (made up, NOT a real record)\n\nRecommendation: `re-scope`\n";
 const sha = (n) => n.toString(16).padStart(40, '0');
 const treeOf = (paths) => new Map(paths.map((p, i) => [p, { sha: sha(i + 1) }]));
 const om = (p) => fixture(`orchestrator-m2/${p}`);
@@ -269,7 +271,7 @@ const indexIn = (root, el) => sbFindAll(root, () => true).indexOf(el);
 test('Page N3 (AC18; the desk from stage 8): with webCommitsToDefault false the decision sheet shows the new-branch message before the links, which are unchanged', async () => {
   const closed = { ...CONFIG, projects: CONFIG.projects.map((p) => (p.name === 'Service-Desk' ? { ...p, webCommitsToDefault: false } : p)) };
   const repos = { 'Service-Desk': repo(sdFiles(), [], []), 'Personal-Org-Operating-Model': poomRepo() };
-  repos['Service-Desk'].commit({ 'decisions/P-001/stop-6.md': null });
+  repos['Service-Desk'].commit({ 'decisions/P-001/stop-6.md': null, 'decisions/P-001/stop-6-notes.md': STOP6_NOTES });
   const open = await loadSandbox({ config: CONFIG, repos, hash: CARD, now: AT });
   let hrefs;
   try {
@@ -335,7 +337,7 @@ test('N4 (J1): a compare body of megabytes is read only until its status, and th
 
 test('Page N5 (AC16, AC56; the desk from stage 8): while the note is being typed, the same note box is kept through a poll, and the answers still follow the records', async () => {
   const repos = { 'Service-Desk': repo(sdFiles(), [], []), 'Personal-Org-Operating-Model': poomRepo() };
-  repos['Service-Desk'].commit({ 'decisions/P-001/stop-6.md': null });
+  repos['Service-Desk'].commit({ 'decisions/P-001/stop-6.md': null, 'decisions/P-001/stop-6-notes.md': STOP6_NOTES });
   const app = await loadSandbox({ config: CONFIG, repos, hash: CARD, now: AT });
   try {
     await app.advance(1000);

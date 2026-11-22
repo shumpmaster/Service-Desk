@@ -451,7 +451,8 @@ export function answerButtons(project, f, linkCap, words = '', opts = {}) {
     const c = f.card;
     const gate = GATE_WORDS.includes(c.gate);
     const listed = c.parsed ? c.parsed.options.map((o) => o.word) : [];
-    const recWord = (gate ? caseWord(opts.caseRec) : null) || recommendedWord(c);
+    // S-014 (AC2, AC3): a decision card's mark is its notes' word alone (`cos`, from model.js's decisionStates).
+    const recWord = c.cos ? c.cos.word : (gate ? caseWord(opts.caseRec) : null) || recommendedWord(c);
     const wordsList = gate ? [...GATE_STANDARD_WORDS, ...listed.filter((w) => !GATE_STANDARD_WORDS.includes(w))] : listed;
     return wordsList.map((w) => {
       const a = answerText(f, w, words);

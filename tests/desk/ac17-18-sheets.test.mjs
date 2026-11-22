@@ -30,6 +30,8 @@ function sheets(change = {}) {
     'governance/ROUTING.toml': fixture('service-desk/governance/ROUTING.toml'),
     'dispatch-log/2026-10.jsonl': fixture('service-desk/dispatch-log/2026-10.jsonl'),
     'queue/P-001-stop-6.md': fixture('service-desk/queue/P-001-stop-6.md'),
+    // S-014 (P-003): a decision card raised under a day ago shows only with its Chief of Staff notes.
+    'decisions/P-001/stop-6-notes.md': "# Chief of Staff notes: P-001 stop-6 (made up, NOT a real record)\n\nRecommendation: `re-scope`\n",
   }, [], [{ name: 'governance', status: 'completed', conclusion: 'success' }]);
   const letters = { ...LETTERS, ...change };
   return [

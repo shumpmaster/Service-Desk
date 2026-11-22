@@ -13,6 +13,8 @@ import { repo, pr, fakeServer } from './fake-desk.mjs';
 const START = Date.parse('2026-10-06T19:00:00Z');
 const MIN = 60_000;
 const sd = (p) => fixture(`service-desk/${p}`);
+// S-014 (P-003): a decision card raised under a day ago shows only with its Chief of Staff notes (raised 18:51:54, read from 19:00).
+const STOP6_NOTES = "# Chief of Staff notes: P-001 stop-6 (made up, NOT a real record)\n\nRecommendation: `re-scope`\n";
 
 function sdRepo() {
   return repo({
@@ -67,7 +69,7 @@ test('AC1 + AC7 + AC8: a committed card is flagged within one poll and its box m
   await s.clock.runUntil(START + 1000);
   assert.equal(s.screen().text, 'Quiet');
   assert.deepEqual(orderBoxes(s.boxes()).map((b) => b.name), ['Personal-Org-Operating-Model', 'Service-Desk'], 'by name when nothing is wrong');
-  s.sd.commit({ 'queue/P-001-stop-6.md': sd('queue/P-001-stop-6.md') });
+  s.sd.commit({ 'queue/P-001-stop-6.md': sd('queue/P-001-stop-6.md'), 'decisions/P-001/stop-6-notes.md': STOP6_NOTES });
   const committedAt = s.clock.now();
   await s.clock.runUntil(committedAt + POLL_MS + 1000);
   const top = orderBoxes(s.boxes())[0];
@@ -269,7 +271,7 @@ test('The page\'s call: 403 → signed out; 5xx or a Cloudflare error page → c
 
 test('A card file deleted without an answer is no longer flagged and shows as "withdrawn"', async () => {
   const s = setup();
-  s.sd.commit({ 'queue/P-001-stop-6.md': sd('queue/P-001-stop-6.md') });
+  s.sd.commit({ 'queue/P-001-stop-6.md': sd('queue/P-001-stop-6.md'), 'decisions/P-001/stop-6-notes.md': STOP6_NOTES });
   s.desk.start();
   await s.clock.runUntil(START + 1000);
   assert.equal(s.desk.model('Service-Desk').flagged.length, 1);

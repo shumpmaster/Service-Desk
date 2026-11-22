@@ -7,6 +7,7 @@ import { repo, pr } from './fake-desk.mjs';
 import { loadSandbox, j11Files } from './sandbox-helpers.mjs';
 
 export const NOW = Date.parse('2026-10-14T15:00:00Z');
+export const Q020_NOTES = "# The Chief of Staff's notes: Q-020 stop-1 (made up, NOT a real record)\n\n**Recommendation:** `drop`\n";
 export const iso = (ms) => new Date(ms).toISOString().replace(/\.\d+Z$/, 'Z');
 export const md = (p) => fixture(`md-extremes/${p}`);
 export const om = (p) => fixture(`orchestrator-m2/${p}`);
@@ -39,6 +40,8 @@ export function fullRepo(tag, { long = false } = {}) {
     'queue/P-002-criteria-1.md': md('gate-card.md').replace(/P-002/g, 'P-002'),
     'docs/gates/P-002/build-gate-1-case.md': md('gate-case.md'),
     'queue/Q-020-stop-1.md': long ? md('long-card.md') : md('long-card.md').replace(/^Research Q-020 failed.*$/m, `Research Q-020 (${tag}) failed: re-specify, drop or retry?`),
+    // S-014 (P-003): the notes its section 5 points to, so the card shows at once with their word (made up, NOT a real record).
+    'decisions/Q-020/stop-1-notes.md': Q020_NOTES,
     [`questions/${tag}-pick.md`]: long ? md('long-question.md') : `# Ruling needed: ${tag}'s question\n\nWHY: a test.\nOPTIONS:\n  A. Yes.\n  B. No.\nRECOMMENDATION: B — no.\nRISK CLASS: R0\nREVERSIBILITY: reversible\nBLAST RADIUS: none\nDEFAULT: B\nTIMEOUT: 24\n`,
     'questions/_TEMPLATE.md': fixture('service-desk/questions/_TEMPLATE.md'),
     'queue/ci-hold-4a2448939173.md': om('queue/ci-hold-4a2448939173.md'),

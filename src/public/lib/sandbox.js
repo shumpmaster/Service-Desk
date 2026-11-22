@@ -952,7 +952,9 @@ export function sheetView(project, model, snap, j, row) {
     }
     const out = { ...base, what: p && p.title ? p.title : `card ${c.gate}-${c.n}`, why: cardSection(p && p.text, 2) || NOT_RECORDED,
       question: cardSection(p && p.text, 1) || (p && p.title) || NOT_RECORDED,
-      options, recommendation: cardSection(p && p.text, 5), gateCard, loading: !p,
+      // S-014 (AC2-AC5): a decision card's recommendation is the Chief of Staff's, or the mark that there is none yet.
+      options, recommendation: c.cos ? (c.cos.word ? `The Chief of Staff recommends ${c.cos.word}` : null) : cardSection(p && p.text, 5),
+      cosNone: Boolean(c.cos && !c.cos.word), gateCard, loading: !p,
       box: { form: 'card', path: c.answerPath, words: options.map((o) => o.value), gateCard },
       fullText: p ? p.text : null };
     out.links.push({ text: 'The card on GitHub', href: treeLink(project, tree, c.path) });

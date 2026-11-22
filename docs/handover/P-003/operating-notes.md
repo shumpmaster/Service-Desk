@@ -1,8 +1,5 @@
 # Decision cards wait for the Chief of Staff's notes: operating notes (P-003, M4)
 
-*The Builder's operating notes for the card fix (spec S-014, AC18; plan docs/projects/P-003.md §4). They sit beside the
-desk's own notes, docs/handover/desk-operations.md, and change none of them.*
-
 ## What this means for you
 
 A decision card (a stop, failure or failed-readiness card) no longer shows the moment it is raised. It waits until
@@ -11,6 +8,9 @@ such notes come within a day, it shows anyway, marked "No Chief of Staff recomme
 marked. A card's own Recommendation section never marks an answer any more. Gate cards, questions and pull
 requests are unchanged. While the desk cannot read the records, it hides the decision cards it cannot judge and
 says so on Waiting and Home. Nothing here is irreversible: rolling back is below.
+
+*The Builder's operating notes for the card fix (spec S-014, AC18; plan docs/projects/P-003.md §4). They sit beside the
+desk's own notes, docs/handover/desk-operations.md, and change none of them.*
 
 ## What a held decision card is, and when it shows
 

@@ -1,6 +1,6 @@
 # PR #464 — the Reviewer's round 1 (FAIL, on the body's form only), verbatim
 
-*reviewer-3, a fresh Reviewer, read-only, at the branch head 7e947fae on 2026-11-22 from about 18:10Z to 18:16Z, with the draft body. Recorded by the orchestrator. B1 and B2 were fixed in the body before the pull request was opened (the paragraph cut to 150 words, `governance_checks.py pr-body` OK on the new body; this verdict recorded before the last task was ticked); the handoff's N2 to N4 were fixed in the same commits. The re-read is reviews/464/reviewer.md.*
+*reviewer-3, a fresh Reviewer, read-only, at the branch head 7e947fae on 2026-11-22 from about 18:04Z to 18:09Z, with the draft body. Recorded by the orchestrator. B1 and B2 were fixed in the body before the pull request was opened (the paragraph cut to 150 words, `governance_checks.py pr-body` OK on the new body; this verdict recorded before the last task was ticked); the handoff's N2 to N4 were fixed in the same commits. The re-read is reviews/464/reviewer.md.*
 
 ---
 

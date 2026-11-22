@@ -210,8 +210,11 @@ test('AC89 (a), state 5: a failure after a success — "checked <age> ago" from 
     await app.advance(POLL_MS);
     assert.match(sub(app), /^checked 2 min ago$/, sub(app));
     assert.equal(aboveLanes(app), `Can't read Alpha since ${hhmm(new Date(failedAt), TZ)}: ${REASON_WORDS.network}`, 'since the first failure');
-    assert.deepEqual(cardsIn(app, 'wait').map((c) => c.dataset.k), ids, 'no card ever hides');
-    assert.equal(count(app, 'wait'), n);
+    // S-014 (AC16, J8): a read whose poll fails has not got queue/, so its decision cards hide; no other card ever hides.
+    const decision = (k) => /\|card\|queue\/[A-Z]+-[0-9]+-(dor-fail|stop|failure)-[0-9]+\.md$/.test(k);
+    assert.ok(ids.some(decision), 'the fixture holds a decision card');
+    assert.deepEqual(cardsIn(app, 'wait').map((c) => c.dataset.k), ids.filter((k) => !decision(k)), 'no other card ever hides');
+    assert.equal(count(app, 'wait'), String(Number(n) - ids.filter(decision).length));
     assert.equal(strip(app), 'Kicked back · none when last read', 'rewritten in G2: the strip in the state\'s words');
     assert.equal(smallLine(app), null, 'no counts under the lanes: the line above says it can\'t be read');
     noChecking(app, 'state 5');

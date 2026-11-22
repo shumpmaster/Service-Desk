@@ -153,7 +153,10 @@ test('AC53 (note 15) + AC80, on the page: a card\'s question from its "## 1. The
     const btns = byClass(sheet(app), 'v2-abtn').filter((x) => x.tag === 'a');
     assert.deepEqual(btns.map((c) => c.textContent), ['Answer: re-specify ↗', 'Answer: criteria-wrong ↗', 'Answer: confirm ↗', 'Answer: re-scope ↗', 'Answer: drop ↗']);
     assert.equal(findAll(sheet(app), (e) => e.attrs['aria-checked'] === 'true').length, 0, 'nothing picked');
-    assert.match(sheet(app).textContent, /Recommended The Chief of Staff's part/);
+    // S-014 (AC3, AC7): a decision card's own section 5 labels nothing; with no notes, and no `card` entry in the log
+    // that is read, it shows at once with the mark.
+    assert.match(sheet(app).textContent, /No Chief of Staff recommendation yet/);
+    assert.doesNotMatch(sheet(app).textContent, /Recommended The Chief of Staff's part/);
     assert.ok(words(app, 1), 'its own text box');
     assert.equal(fileOf(app, 'Answer: re-scope ↗'), 'Decision: re-scope\n\n', 'with the box empty, exactly AC80\'s file');
     type(words(app, 1), 'Go the lighter way.');

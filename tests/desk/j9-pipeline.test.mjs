@@ -124,7 +124,9 @@ test('AC9: dispatched — running now with role and how long; past its limit bec
 });
 
 test('AC9: waiting-owner — the card, flagged and linked; with no card file, the safety-net flag', () => {
-  let m = v3Model(status('def1e83'), new Date('2026-10-06T19:00:00Z'), ['queue/P-001-stop-6.md']);
+  // S-014 (P-003): a decision card raised under a day ago shows only with its Chief of Staff notes (raised 18:51:54, read at 19:00), and its card file read (J8).
+  let m = v3Model(status('def1e83'), new Date('2026-10-06T19:00:00Z'), ['queue/P-001-stop-6.md', 'decisions/P-001/stop-6-notes.md'], {
+    'queue/P-001-stop-6.md': parseRecord('card', fixture('service-desk/queue/P-001-stop-6.md')), 'decisions/P-001/stop-6-notes.md': parseRecord('notes', "# Chief of Staff notes: P-001 stop-6 (made up, NOT a real record)\n\nRecommendation: `re-scope`\n") });
   const item = m.items[0];
   assert.equal(item.waiting.path, 'queue/P-001-stop-6.md');
   assert.equal(item.waiting.answered, false);

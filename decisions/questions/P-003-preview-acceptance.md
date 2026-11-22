@@ -1,4 +1,4 @@
-Ruling: A — accept the card fix on the preview; M4 is reached on the preview
+Ruling: accept M4 (A) — the card fix on the preview; M4 is reached on the preview
 Proxy: done at the owner's request (the owner answered the Chief of Staff in session session_01QBwHGJWF4ev8Y9sdGjavWE on 2026-11-22, multiple choice; the question, the options as put and the selection are quoted verbatim below)
 Milestone: M4
 

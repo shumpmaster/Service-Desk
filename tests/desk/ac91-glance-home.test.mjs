@@ -308,7 +308,8 @@ test('AC91 (c), from `unread`: cards waiting and the read failing — the corner
     await app.advance(3 * POLL_MS);
     const t = tile(app, MIX_PROJECT);
     const corner = byClass(t, 'v2-wt')[0];
-    assert.equal(corner.textContent, before, 'what waits, from the last read');
+    // S-014 (AC16, J8): a read whose poll fails has not got queue/, so the last read's decision card (Q-020-stop-1) is not counted.
+    assert.equal(corner.textContent, before.replace(/^\d+/, (x) => String(Number(x) - 1)), 'what waits, from the last read, less its decision card');
     assert.equal(corner.className, 'v2-wt you');
     const red = byClass(t, 'v2-ln').filter((l) => / bad /.test(` ${l.className} `));
     assert.equal(red.length, 1);

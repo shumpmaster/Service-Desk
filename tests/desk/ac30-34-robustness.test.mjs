@@ -9,7 +9,7 @@ import { createStore } from '../../src/lib/store.js';
 import { safeBox, boxStateText, screenState, orderBoxes } from '../../src/lib/universe.js';
 import { guardRender, SIGNED_OUT_STATE } from '../../src/lib/page.js';
 import { parseStatus, parseLog } from '../../src/lib/records.js';
-import { buildModel } from '../../src/lib/model.js';
+import { buildModel, parseRecord } from '../../src/lib/model.js';
 import { fakeClock, fixture, CONFIG, SD } from './helpers.mjs';
 import { repo, fakeServer, BAD_PR, BAD_LOG_LINE, gitSha } from './fake-desk.mjs';
 
@@ -129,9 +129,12 @@ test('AC31: a skipped field shows "not recorded", never a wrong value or zero, a
   const mk = (files) => {
     const tree = new Map(Object.keys(files).map((p) => [p, { sha: gitSha(files[p]) }]));
     const records = new Map([['status/P-001.toml', parseStatus(status, 'status/P-001.toml')]]);
+    // S-014 (J8): the card file read, as a read that got queue/ has it.
+    for (const p of Object.keys(files)) if (p.startsWith('queue/')) records.set(p, parseRecord('card', files[p], p));
     return buildModel({ ...base, tree, records });
   };
   // With the card file on main: flagged through J2.
+  // S-014 (P-003): with no dispatch log in the tree the decision card has no `card` entry, so it shows at once (AC7).
   let m = mk({ 'status/P-001.toml': status, 'queue/P-001-stop-6.md': fixture('service-desk/queue/P-001-stop-6.md') });
   const item = m.items.find((i) => i.id === 'P-001');
   assert.equal(item.stage, 'not recorded');

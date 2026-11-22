@@ -122,8 +122,10 @@ function model(tree, texts, extra = {}) {
 }
 
 test('J2 + AC1: an open card is flagged with its title and raised time; AC7: its answer file unflags it', () => {
-  const tree = sdTree(['queue/README.md', 'queue/P-001-stop-6.md', 'dispatch-log/2026-10.jsonl', 'dispatch-log/2026-09.jsonl']);
-  const m = model(tree, { 'queue/P-001-stop-6.md': sd('queue/P-001-stop-6.md'), 'dispatch-log/2026-10.jsonl': LOG_LINES.split('\n')[0], 'dispatch-log/2026-09.jsonl': '' });
+  // S-014 (P-003): a decision card raised under a day ago shows only with its Chief of Staff notes (raised 18:51:54, read at 19:00).
+  const tree = sdTree(['queue/README.md', 'queue/P-001-stop-6.md', 'dispatch-log/2026-10.jsonl', 'dispatch-log/2026-09.jsonl', 'decisions/P-001/stop-6-notes.md']);
+  const m = model(tree, { 'queue/P-001-stop-6.md': sd('queue/P-001-stop-6.md'), 'dispatch-log/2026-10.jsonl': LOG_LINES.split('\n')[0], 'dispatch-log/2026-09.jsonl': '',
+    'decisions/P-001/stop-6-notes.md': "# Chief of Staff notes: P-001 stop-6 (made up, NOT a real record)\n\nRecommendation: `re-scope`\n" });
   const cards = m.flagged.filter((f) => f.kind === 'card');
   assert.equal(cards.length, 1);
   assert.equal(cards[0].title, 'P-001 stop-6: The work reached the stop rule. What happens next?');
@@ -150,10 +152,14 @@ test('J2 awkward cases: a card with no log entry, a misparse, an answer committe
   assert.equal(m.flagged.length, 1);
   assert.match(m.flagged[0].card.cantParse, /names decisions\/P-001\/elsewhere\.md/);
   assert.ok(m.activity.some((a) => a.kind === 'unparsed'));
-  // Unread card text (blob not fetched yet): still flagged by its path.
-  m = model(sdTree(['queue/Q-003-failure-1.md']), {});
+  // Unread card text (blob not fetched yet): a gate card is still flagged by its path; a decision card is not,
+  // since S-014 (J8, AC16): queue/ is not got, so no decision card gets a state, and the queue/ line says so.
+  m = model(sdTree(['queue/P-001-dor-2.md']), {});
   assert.equal(m.flagged.length, 1);
-  assert.equal(m.flagged[0].title, 'Q-003 failure-1: card failure-1');
+  assert.equal(m.flagged[0].title, 'P-001 dor-2: card dor-2');
+  m = model(sdTree(['queue/Q-003-failure-1.md']), {});
+  assert.equal(m.flagged.length, 0);
+  assert.deepEqual(m.decisionLines, ['Decision cards not shown: queue/ could not be read']);
   // The answer committed before the card: still answered.
   m = model(sdTree(['decisions/Q-003/failure-1.md', 'queue/Q-003-failure-1.md']), {});
   assert.equal(m.flagged.length, 0);

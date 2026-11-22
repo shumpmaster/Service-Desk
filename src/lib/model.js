@@ -51,6 +51,7 @@ export function isOwnerRuling(path, rec) {
 export function recordKind(path, model) {
   if (questionName(path)) return 'question';
   if (model === 'v3') {
+    if (NOTES_RE.test(path)) return 'notes'; // S-014 (J2, J8): a decision card's Chief of Staff notes
     if (STATUS_RE.test(path)) return 'status';
     if (path === ROUTING_PATH) return 'routing';
     if (LOG_RE.test(path)) return 'log';
@@ -95,6 +96,7 @@ export function parseRecord(kind, text, path) {
       return { entries, notes, rows };
     }
     case 'card': return { text, ...parseCard(text) };
+    case 'notes': return parseNotes(text);
     // reason: the first `Reason:` line's words (AC70: why a run began, from its boundary decision's record).
     case 'answer': return { verdict: parseAnswer(text), reason: answerReason(text) };
     case 'hold': return { text, ...parseHoldCard(text) };
@@ -143,6 +145,61 @@ function openCards(tree) {
     if (card && !tree.has(card.answerPath)) cards.push(card);
   }
   return cards;
+}
+
+// --- S-014 (P-003): the one rule that holds or shows a decision card (D1; J1, J2, J3, J8)
+export const DECISION_GATES = ['dor-fail', 'stop', 'failure'];
+export const NOTES_RE = /^decisions\/[A-Z]+-[0-9]+\/[^/]+-[0-9]+-notes\.md$/;
+export const COS_NONE = 'No Chief of Staff recommendation yet';
+export const DECISION_LINES = { queue: 'Decision cards not shown: queue/ could not be read',
+  notes: "Decision cards not shown: the Chief of Staff's notes could not be read",
+  log: 'Decision cards without Chief of Staff notes not shown: the dispatch log could not be read' };
+const notesPath = (c) => `decisions/${c.item}/${c.gate}-${c.n}-notes.md`;
+
+/** J2: the backquoted words on a notes file's first line that begins `Recommendation:` once its heading, bold and italic marks are stripped. */
+function parseNotes(text) {
+  const line = String(text == null ? '' : text).replace(/\r\n?/g, '\n').split('\n')
+    .find((l) => l.replace(/^#+ */, '').replace(/^[*_]+/, '').startsWith('Recommendation:'));
+  return { words: line ? [...line.matchAll(/`([^`]*)`/g)].map((m) => m[1]) : [] };
+}
+
+/**
+ * Each open decision card's state from the records a read got (keyed by path) and the moment `now` it is
+ * handed, never a clock (AC11, AC13). `queueRead: false`: the read did not get the tree (J8). Returns
+ * { cards: Map(path → { id, raised, state, word }), notRead: ['queue' | 'notes'], withoutNotes }: `state`
+ * is 'held', 'shown, recommended <word>' or 'shown, no recommendation yet'; `raised` the earliest `card`
+ * entry's time as recorded (J1), or 'not recorded'. A card the read cannot decide (AC16, AC17) is not in `cards`.
+ */
+export function decisionStates({ tree, records, now, queueRead = true }) {
+  const open = openCards(tree || new Map());
+  const dec = open.filter((c) => DECISION_GATES.includes(c.gate));
+  const out = { cards: new Map(), notRead: [], withoutNotes: false };
+  if (!queueRead || open.some((c) => !records.has(c.path))) out.notRead.push('queue');
+  if (dec.some((c) => tree.has(notesPath(c)) && !records.has(notesPath(c)))) out.notRead.push('notes');
+  if (out.notRead.length) return out;
+  let logGot = true;
+  const entries = [];
+  for (const m of logMonths(now)) {
+    const p = `dispatch-log/${m}.jsonl`;
+    if (!tree.has(p)) continue;
+    if (records.has(p)) entries.push(...records.get(p).entries);
+    else logGot = false;
+  }
+  for (const c of dec) {
+    const words = records.get(c.path).options.map((o) => o.word);
+    const n = records.get(notesPath(c));
+    const word = (n && n.words.find((w) => words.includes(w))) || null;
+    const raised = entries.filter((e) => e.shape === 'card' && e.item === c.item && e.gate === c.gate && e.card === c.n)
+      .reduce((a, e) => (a == null || Date.parse(e.time) < Date.parse(a) ? e.time : a), null);
+    if (!word && !logGot) {
+      out.withoutNotes = true;
+      continue;
+    }
+    const state = word ? `shown, recommended ${word}`
+      : raised == null || now - Date.parse(raised) >= DAY_MS ? 'shown, no recommendation yet' : 'held';
+    out.cards.set(c.path, { id: `${c.item}-${c.gate}-${c.n}`, raised: raised ?? NOT_RECORDED, state, word });
+  }
+  return out;
 }
 
 function openQuestions(tree, model) {
@@ -232,7 +289,10 @@ export function neededReads(project, tree, records, now, ctx = {}) {
     add(ROUTING_PATH);
     for (const m of logMonths(now)) add(`dispatch-log/${m}.jsonl`);
     add(OUTCOMES_PATH); // J10 (AC22, AC23)
-    for (const card of openCards(tree)) add(card.path);
+    for (const card of openCards(tree)) {
+      add(card.path);
+      if (DECISION_GATES.includes(card.gate)) add(notesPath(card)); // S-014 (J8): read only when in the tree
+    }
     // An answer committed before the Orchestrator logs it (J2): read its verdict. That covers a
     // waiting-owner status's card and any card raised in the two log months (AC16, AC20).
     const logged = new Set();
@@ -718,11 +778,14 @@ export function buildModel(input) {
     items.push(item);
   }
 
-  // --- Cards (J2, AC1, AC7, AC11)
+  // --- Cards (J2, AC1, AC7, AC11); a decision card only as S-014's rule lists it, with its notes' word (AC2-AC8, AC16, AC17)
+  const dstates = decisionStates({ tree, records, now, queueRead: input.queueRead !== false });
   for (const card of openCards(tree)) {
+    const ds = dstates.cards.get(card.path);
+    if (DECISION_GATES.includes(card.gate) && (!ds || ds.state === 'held')) continue;
     const rec = records.get(card.path);
     const raisedAt = cardTimes.get(`${card.item}/${card.gate}-${card.n}`) || null;
-    const row = { ...card, parsed: rec || null, raisedAt, link: blobUrl(project, card.path), cantParse: null };
+    const row = { ...card, parsed: rec || null, raisedAt, link: blobUrl(project, card.path), cantParse: null, cos: ds ? { word: ds.word } : undefined };
     if (rec) {
       const problems = [...rec.notes];
       if (rec.answerPath && rec.answerPath !== card.answerPath) {
@@ -839,6 +902,8 @@ export function buildModel(input) {
     sprint: null, answeredCards, rulings, timeAsked, logLoaded, v5Waits: v5Waits(askedCards, nowMs, config),
     sessions, timelines: timelines(sessions, askedCards, nowMs),
     allEntries: entries, // the two log months' entries, in order (the MD sandbox's tracker and Done today, AC52)
+    decisions: dstates, // S-014: the rule's list (AC13, J6) and its flags, and their lines for the queue and Home (AC16, AC17)
+    decisionLines: [...dstates.notRead.map((k) => DECISION_LINES[k]), ...(dstates.withoutNotes ? [DECISION_LINES.log] : [])],
   };
 }
 

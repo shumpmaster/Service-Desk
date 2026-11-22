@@ -970,7 +970,9 @@ test('AC89 (j): a decision card\'s whole record keeps the file\'s own list numbe
   const text = fixture('service-desk/queue/P-001-stop-6.md').replace('- spec: S-001\n', '- spec: S-001\n\n2. A made-up numbered line (NOT a real record).\n3. Another made-up line (NOT a real record).\n');
   assert.ok(text.includes('2. A made-up numbered line'));
   const sd = repo({ 'governance/ROUTING.toml': fixture('service-desk/governance/ROUTING.toml'), 'dispatch-log/2026-10.jsonl': fixture('service-desk/dispatch-log/2026-10.jsonl'),
-    'queue/P-001-stop-6.md': text }, [], [{ name: 'governance', status: 'completed', conclusion: 'success' }]);
+    'queue/P-001-stop-6.md': text,
+    // S-014 (P-003): a decision card raised under a day ago shows only with its Chief of Staff notes (raised 2026-10-06T18:51:54Z).
+    'decisions/P-001/stop-6-notes.md': "# Chief of Staff notes: P-001 stop-6 (made up, NOT a real record)\n\nRecommendation: `re-scope`\n" }, [], [{ name: 'governance', status: 'completed', conclusion: 'success' }]);
   const project = CONFIG.projects.find((p) => p.name === 'Service-Desk');
   const app = await openAt({ 'Service-Desk': sd }, Date.parse('2026-10-07T12:00:00Z'), route('Service-Desk|card|queue/P-001-stop-6.md'), { ...CONFIG, projects: [project] });
   try {

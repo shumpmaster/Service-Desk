@@ -913,6 +913,8 @@ export function createDesk(opts) {
     st.checkRaws = st.checksState === 'cant-read' ? [] : cl.raws;
     st.checksRead = true;
     const lost = pl.raws.includes(undefined) || cl.raws.includes(undefined);
+    // S-014 (J8): a poll that fails, or a moved head whose tree is not read, has not got queue/.
+    st.treeGot = false;
     if (r.head && r.head.sha !== st.head) {
       if (r.tree == null) return { ok: false, reason: 'github' };
       const tree = parseTree(r.tree);
@@ -930,6 +932,7 @@ export function createDesk(opts) {
       st.head = r.head.sha;
       st.headAt = r.head.committedAt || null; // AC71: the head commit's time, a movement
     }
+    st.treeGot = true;
     if (lost) {
       // A 304 for a page this window never held: forget the ETags so the next poll reads in full.
       st.etags = {};
@@ -1330,6 +1333,7 @@ export function createDesk(opts) {
       const owner = ownerChecksDue(st);
       if (owner) pollBody.ownerChecks = owner;
       res = await call('/api/poll', pollBody);
+      if (!res.ok || res.json.state === 'cant-read') st.treeGot = false;
       if (!res.ok) {
         outcome = res;
       } else if (res.json.state === 'cant-read') {
@@ -1463,7 +1467,7 @@ export function createDesk(opts) {
     return buildModel({
       project: st.project, config, tree: st.tree, records: recordsFor(st), history: historyFor(st),
       pullPages: st.pullRaws || [], checkPages: st.checksRead ? st.checkRaws : null, checksState: st.checksState,
-      now: new Date(clock.now()), withdrawn: st.withdrawn, compare: compareFor(st),
+      now: new Date(clock.now()), withdrawn: st.withdrawn, compare: compareFor(st), queueRead: st.treeGot !== false,
       asking: { files: st.files, recorded: st.asking.recorded, ended: st.asking.ended, hereInstead: st.asking.hereInstead, seen: st.asking.seen },
       jobs: st.jobs.verdicts,
     });

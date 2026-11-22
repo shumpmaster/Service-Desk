@@ -1,0 +1,1 @@
+{"time": "2026-11-22T21:02:52Z", "project": "Service-Desk", "target": "V6", "from": "2026-09-30", "to": "2026-11-22", "figure": "0 held too long of 39 past cards, before launch", "value": null, "state": "not measured", "source": "intake/v6/2026-11-22-past-records.json, intake/v6/count.mjs, dispatch-log/, queue/", "session": "session_01QBwHGKtgD8HDSTUVrwvdSi"}

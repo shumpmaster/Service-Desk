@@ -1,0 +1,2 @@
+{"event": "start", "session": "session_01QBwHGKtgD8HDSTUVrwvdSi", "time": "2026-11-22T20:59:50Z", "doing": "P-003: check for other Chief of Staff sessions; M4 reached line after the Critic; the past-records V6 count; the Builder completes the handover package; the Reviewer at stage 6; the plan's pull request 6"}
+{"event": "helper", "session": "session_01QBwHGKtgD8HDSTUVrwvdSi", "role": "critic", "started": "2026-11-22T21:03:00Z", "ended": "2026-11-22T21:04:00Z", "reported": {"tokens": 29582, "tool_uses": 12, "duration_ms": 35296}}

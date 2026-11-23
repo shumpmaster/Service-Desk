@@ -744,3 +744,18 @@ options_considered: No fix, so the registrations keep naming S-010, the answers 
 decided_by: owner ("Fix the pack (Recommended)", 2026-11-14, asked in session session_01QBwHGL7cLBqyQ4o1BxNuyh; recorded in decisions/questions/P-005-definer-pack.md)
 proposed_by: chief-of-staff
 reversibility: irreversible
+
+## L-0058 — The card fix goes live and passes to the desk's own running, by the owner's Launch gate ruling
+date: 2026-11-23
+type: ruling
+supersedes: []
+amends: [S-009]
+scope: project
+expires: never
+asked: The card fix (P-003, M4) was built outside the pipeline by the approved plan (L-0051), from S-009 and S-014, accepted on the preview (decisions/questions/P-003-preview-acceptance.md), and its handover package passed the stage-6 launch review (reviews/S-009/reviewer.md). Its Launch gate asked whether it goes live and passes to the desk's own running (questions/P-003-launch-gate.md, filed in #470, with its case and the gate Critic's view inside it; the Critic's three reads in reviews/P-003/).
+decision: Go live (Launch-1) on the owner's approval of the deploy, and pass the fix to the desk's own running (Launch-5), with the Chief of Staff's weekly V6 count from the week it goes live. The risks are carried as the case gives them: the desk notes it knows no target V6 and ignores the V6 lines (launch review N1); the count's watched code and count.mjs are fixed before the first weekly count (N3, N5). This entry also notes the build review's N1 (reviews/S-009/_reviewer-build.md, reviewer-4): S-014 narrows S-001's frozen wording for decision cards on a failed read (S-001 AC89 (a) state 5 and AC91 (c)), and formally supersedes only S-009; S-014 extends S-001 through its lineage, so the two do not conflict. The departures L-0051 allowed end with these launch records, as L-0051 says.
+licenses_next: The live deploy of main on the owner's approval (L-0004); the lessons for the operating model in its repository (Launch-5); the weekly V6 count in intake/value-checks.jsonl from launch to 2026-12-31, and the review card after it (docs/projects/P-003.md section 6).
+options_considered: B, proceed and file the design reviewer's two optional points as later work; C, hold and rewrite the case; D, kill, keeping the fix on the preview only and rolling it back there.
+decided_by: owner ("Yes A", 2026-11-23, asked in session session_01QBwHGLJhqD3tRfLqA4zdvm; recorded in decisions/questions/P-003-launch-gate.md)
+proposed_by: chief-of-staff
+reversibility: reversible

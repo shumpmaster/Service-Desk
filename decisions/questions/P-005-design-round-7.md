@@ -54,3 +54,5 @@ Asked by the question tool: "Your comment on v27: the list should run bottom up 
 7. "Yes, all bottom up"
 
 Carried out: to be drawn beside v27 and asked once, then built into the library (ReadingOrder) and mockup v28. Round 6's top-down order (answers 13 and 14) is superseded by this answer; the numbers still follow the order of time.
+
+Shown live: https://claude.ai/artifact/DnuLpuPHwn38rixAJRCv2V (docs/design/mockups/options-bottomup/: now, bu): v27 as it is, then the list read from the bottom at every level, each heading at the foot of what it holds, the Context view the same way. To be asked.

@@ -1,0 +1,51 @@
+<title>Bottom Up</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<style>/* Layout: the question, then v23 as it is and three live phones side by side; they wrap to two, then one, column. Tokens follow the Desk Element Library (v22). */
+:root { --ground:#f2f3f7; --surface:#ffffff; --text-1:#1c1d21; --text-2:#6b6d71; --separator:#e7e9ed; --now-word:#0868bc;
+  --sans:-apple-system,BlinkMacSystemFont,"SF Pro Text","Inter","Segoe UI",Roboto,sans-serif; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --ground:#000000; --surface:#1c1c1e; --text-1:#f2f2f7; --text-2:#98989f; --separator:#38383a; --now-word:#9fd0ff; color-scheme:dark } }
+:root[data-theme="dark"] { --ground:#000000; --surface:#1c1c1e; --text-1:#f2f2f7; --text-2:#98989f; --separator:#38383a; --now-word:#9fd0ff; color-scheme:dark }
+body { background:var(--ground); color:var(--text-1); font:400 17px/1.4 var(--sans);
+  padding-left:max(16px, env(safe-area-inset-left, 0px)); padding-right:max(16px, env(safe-area-inset-right, 0px)); padding-block:24px 48px; }
+main { max-width:1680px; margin:0 auto; display:flex; flex-direction:column; gap:32px; }
+h1 { font:700 27px/1.15 var(--sans); margin:0; text-wrap:balance; }
+p { margin:0; max-width:70ch; }
+a { color:var(--now-word); }
+.lede { display:flex; flex-direction:column; gap:10px; } .lede p { color:var(--text-2); font-size:15px; }
+.lede blockquote { margin:0; padding:10px 14px; border-radius:12px; background:var(--surface); font-size:15px; max-width:70ch; }
+.phones { display:grid; grid-template-columns:repeat(2, minmax(0, 395px)); gap:20px; align-items:start; }
+.opt { display:flex; flex-direction:column; gap:10px; min-width:0; }
+.tag { font:600 13px/1 var(--sans); letter-spacing:.06em; text-transform:uppercase; color:var(--text-2); }
+.tag.rec { color:var(--now-word); }
+h2 { font:600 19px/1.25 var(--sans); margin:0; text-wrap:balance; }
+.opt ul { margin:0; padding-left:20px; display:flex; flex-direction:column; gap:4px; font-size:15px; color:var(--text-2); min-height:9.5em; }
+.phone { width:100%; max-width:395px; height:760px; border:1px solid var(--separator); border-radius:24px; overflow:hidden; background:var(--surface); }
+.phone iframe { width:393px; max-width:100%; height:100%; border:0; display:block; }
+.open { font-size:14px; }
+@media (max-width: 1720px) { .phones { grid-template-columns:repeat(2, minmax(0, 395px)); } }
+@media (max-width: 860px) { .phones { grid-template-columns:minmax(0, 1fr); } .opt ul { min-height:0; } }
+</style>
+<main>
+  <div class="lede">
+    <h1>The whole list, bottom up</h1>
+    <p>Your comment on v27, and your answer:</p>
+    <blockquote>"I’m not sure if we touched on this before but the phases and milestones are not oriented bottom up. The timeline adjusts correctly as you scroll but the info below the physical timeline starts at 1 and requires you to scroll down instead of up"<br><br>"Yes, all bottom up"</blockquote>
+    <p>Below: v27 as it is, then the same page read from the bottom at every level. The phase's heading sits at the foot, with what came first just above it. A milestone's heading sits under its sprints, and a sprint's heading under its events, so each heading is the root of what grows above it. Later milestones, Now and what's still to come are higher up, and going forward in time is always scrolling up. The numbers still follow the order of time, so they never jump, and the page still opens on Now.</p>
+    <p>The Context view (hold the round button) reads the same way. Nothing else changes. Each phone opens on the timeline. Scroll inside it.</p>
+  </div>
+  <div class="phones">
+    <section class="opt">
+      <span class="tag">As it is</span><h2>v27: top down</h2>
+      <ul><li>Design's heading at the top, 2.1 under it; to go forward in time you scroll down, away from the map.</li></ul>
+      <div class="phone"><iframe src="now.html" title="As it is: v27, live" loading="lazy"></iframe></div>
+      <a class="open" href="now.html" target="_blank" rel="noopener">Open full screen</a>
+    </section>
+    <section class="opt">
+      <span class="tag rec">Bottom up</span><h2>Read from the bottom</h2>
+      <ul><li>Design's heading at the foot, then 2.1, 2.2 and its sprints, each sprint's events from the first upward, Now, and what's still to come at the top.</li>
+        <li>The Context view the same way.</li></ul>
+      <div class="phone"><iframe src="bu.html" title="Bottom up, live" loading="lazy"></iframe></div>
+      <a class="open" href="bu.html" target="_blank" rel="noopener">Open full screen</a>
+    </section>
+  </div>
+</main>

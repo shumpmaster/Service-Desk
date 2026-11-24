@@ -1,0 +1,11 @@
+/* round 7, answer 13: segmented sprint progress, fourth numbers, neutral rails (options-rails, sg). No new colours. */
+html.sg .fin-sq { display: none; }
+html.sg #v13list .v13sp > .v13body, html.sg #v13list .v13sp.fin-ok > .v13body, html.sg #v13list .v13sp.fin-wait > .v13body, html.sg #v13list .v13sp.fin-bad > .v13body { border-left: 1px solid var(--ink-5); margin-left: 1px; padding-left: 12px; }
+.sg-seg { display: inline-flex; gap: 2px; align-items: center; flex: none; }
+.sg-seg i { width: 7px; height: 7px; border-radius: 2px; background: var(--ink-5); opacity: .55; }
+.sg-seg i.f { opacity: 1; background: var(--ink-3); }
+.sg-seg.ok i.f { background: var(--status-ok); } .sg-seg.wait i.f { background: var(--status-wait); } .sg-seg.bad i.f { background: var(--status-bad); }
+html.sg-R #v13list .v13sp > .v13gr .l1 .sg-seg { margin-left: auto; align-self: center; }
+html.sg-R #v13list .v13sp > .v13gr .l1 .cnt { display: none; }
+html.sg-U #v13list .v13sp > .v13gr .sg-row { display: flex; align-items: center; gap: 8px; margin: 3px 0 1px; font: 400 12px/14px var(--font-ui); color: var(--text-2); }
+.no4 { font: 600 12px/1 var(--font-ui); margin-right: 2px; color: var(--text-2); font-variant-numeric: tabular-nums; flex: none; }

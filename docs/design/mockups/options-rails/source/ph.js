@@ -12,7 +12,7 @@
     [].slice.call(L.querySelectorAll('.v13ms > .v13gr .v13g, .v13sp > .v13gr .v13g')).forEach(function (g) {
       var inn = g.querySelector('.in'); if (!inn || inn.classList.contains('ph-pc')) return;
       var a = g.querySelector('.arc'), pct = a ? Math.round(parseFloat(a.getAttribute('stroke-dasharray')) / PH_C * 100) : 0;
-      inn.classList.add('ph-pc'); inn.textContent = pct + '%';
+      inn.classList.add('ph-pc'); inn.textContent = String(pct); g.setAttribute('aria-label', pct + ' percent complete');
     });
     [].slice.call(L.querySelectorAll('.v13phase')).forEach(function (ph) {
       var hd = ph.querySelector(':scope > .v13phh'); if (!hd || hd.querySelector('.ph-strip')) return;

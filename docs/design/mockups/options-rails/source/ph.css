@@ -15,7 +15,7 @@ html.ph #v13list .v13phh > .tx { flex: 1 1 100%; }
 /* percents inside the milestone and sprint rings */
 html.ph #v13list .v13ms > .v13gr .v13g, html.ph #v13list .v13ms > .v13gr .v13g > svg { width: 30px; height: 30px; }
 html.ph #v13list .v13sp > .v13gr .v13g, html.ph #v13list .v13sp > .v13gr .v13g > svg { width: 26px; height: 26px; }
-html.ph #v13list .v13gr .v13g .in.ph-pc { display: block; font: 600 8.5px/1 var(--font-ui); letter-spacing: -.02em; color: var(--ink); font-variant-numeric: tabular-nums; }
-html.ph #v13list .v13sp > .v13gr .v13g .in.ph-pc { font-size: 7.5px; }
+html.ph #v13list .v13gr .v13g .in.ph-pc { display: block; font: 600 7.5px/1 var(--font-ui); letter-spacing: -.01em; color: var(--ink); font-variant-numeric: tabular-nums; }
+html.ph #v13list .v13sp > .v13gr .v13g .in.ph-pc { font-size: 6.5px; }
 html.ph #v13list .v13ms > .v13body { margin-left: 14px; }
 html.ph #v13list .v13sp > .v13body { margin-left: 12px; }

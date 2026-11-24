@@ -48,3 +48,9 @@ Shown in chat: the library with SessionLink and ContextView (https://claude.ai/a
 6. A comment on mockup v27, written at 16:32 UTC on 24 November, on the phase row "Phase 1, Discovery" at the top of a project's list: "I’m not sure if we touched on this before but the phases and milestones are not oriented bottom up. The timeline adjusts correctly as you scroll but the info below the physical timeline starts at 1 and requires you to scroll down instead of up"
 
 Read by the Chief of Staff as, to be confirmed: the list under the floating map should run bottom up, Discovery (1) at the bottom and the later phases above, the earliest thing lowest at every level, so that going forward in time means scrolling up. This reverses the top-down order of round 6 (decisions/questions/P-005-design-round-6.md, answers 13 and 14), so it is confirmed with the owner before drawing.
+
+Replied on the comment's thread: recorded; round 6 chose top down, so this flips it; one question in the chat first.
+Asked by the question tool: "Your comment on v27: the list should run bottom up so you scroll up, not down. In round 6 you chose top down ('Yes, that's it'), so this flips it. Do you mean the whole list bottom up: Discovery (1) at the bottom and Launch at the top, and inside each phase, milestone and sprint the earliest thing lowest, so going forward in time is always scrolling up? The numbers would keep following that order, and the page would still open on Now." Options: "Yes, all bottom up"; "Only phases and milestones"; "Something else".
+7. "Yes, all bottom up"
+
+Carried out: to be drawn beside v27 and asked once, then built into the library (ReadingOrder) and mockup v28. Round 6's top-down order (answers 13 and 14) is superseded by this answer; the numbers still follow the order of time.

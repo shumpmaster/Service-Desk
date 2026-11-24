@@ -19,4 +19,8 @@ ph_css = open(os.path.join(H, 'ph.css'), encoding='utf-8').read(); ph_js = open(
 s = v; i = s.rindex('</style>'); s = s[:i] + css + ph_css + s[i:]
 s = s.replace(a, "\n  var RL = '1';\n" + js + ph_js + a)
 open(os.path.join(H, '../rl-1ph.html'), 'w', encoding='utf-8').write(HEAD + done(s))
+fin_css = open(os.path.join(H, 'fin.css'), encoding='utf-8').read(); fin_js = open(os.path.join(H, 'fin.js'), encoding='utf-8').read()
+s = v; i = s.rindex('</style>'); s = s[:i] + css + ph_css + fin_css + s[i:]
+s = s.replace(a, "\n  var RL = '1';\n" + js + ph_js + fin_js + a)
+open(os.path.join(H, '../rl-1fin.html'), 'w', encoding='utf-8').write(HEAD + done(s))
 print('ok')

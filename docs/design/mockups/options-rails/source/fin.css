@@ -1,0 +1,20 @@
+/* round 7, answer 12: more room on the left, a sprint's accent bar and square progress, and nothing moves on a fold (options-rails, fin). */
+html.fin #v13list { margin-left: -6px; margin-right: -4px; }   /* the list alone reaches further out; the header keeps its margins */
+html.fin #v13list .v13ms > .v13gr { gap: 8px; }
+html.fin #v13list .v13ms > .v13body { margin-left: 13px; padding-left: 9px; }
+html.fin #v13list .v13sp > .v13gr { gap: 7px; padding-left: 0; }
+html.fin #v13list .v13acts { margin-left: 4px; }
+/* the sprint: a thin accent bar in its status colour, which carries on as its rail, and a square progress indicator */
+html.fin #v13list .v13sp > .v13gr > .v13g { display: none; }
+html.fin .fin-acc { flex: none; align-self: stretch; width: 3px; border-radius: 2px; background: var(--ink-5); margin: 2px 0; }
+html.fin .fin-acc.ok { background: var(--status-ok-arc); } html.fin .fin-acc.wait { background: var(--status-wait-arc); } html.fin .fin-acc.bad { background: var(--status-bad-arc); }
+html.fin #v13list .v13sp > .v13body { margin-left: 1px; padding-left: 13px; border-left: 3px solid var(--ink-5); }
+html.fin #v13list .v13sp.fin-ok > .v13body { border-left-color: var(--status-ok-arc); }
+html.fin #v13list .v13sp.fin-wait > .v13body { border-left-color: var(--status-wait-arc); }
+html.fin #v13list .v13sp.fin-bad > .v13body { border-left-color: var(--status-bad-arc); }
+html.fin .fin-sq { flex: none; position: relative; width: 24px; height: 24px; display: grid; place-items: center; }
+html.fin .fin-sq svg { position: absolute; inset: 0; width: 24px; height: 24px; overflow: visible; }
+html.fin .fin-sq .trk { fill: var(--surface); stroke: var(--v13-track); stroke-width: 2.5; }
+html.fin .fin-sq .arc { fill: none; stroke: var(--ink-4); stroke-width: 2.5; stroke-linecap: round; }
+html.fin .fin-sq.ok .arc { stroke: var(--status-ok); } html.fin .fin-sq.wait .arc { stroke: var(--status-wait); } html.fin .fin-sq.bad .arc { stroke: var(--status-bad); }
+html.fin .fin-sq b { position: relative; font: 600 6.5px/1 var(--font-ui); color: var(--ink); font-variant-numeric: tabular-nums; }

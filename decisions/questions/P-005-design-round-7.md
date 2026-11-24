@@ -44,3 +44,7 @@ Asked by the question tool: "Context view, on https://claude.ai/artifact/5weN7m1
 Carried out: the links as read under answer 4, and the Context view with CX = 'A'. To be built into the library (new cards SessionLink and ContextView) and then mockup v27 over v26.
 
 Shown in chat: the library with SessionLink and ContextView (https://claude.ai/artifact/UqdAH5E4nwtSJdxcATBp3W) and mockup v27 (https://claude.ai/artifact/UUk7DTtDNKoxhH9Q9jRfHq).
+
+6. A comment on mockup v27, written at 16:32 UTC on 24 November, on the phase row "Phase 1, Discovery" at the top of a project's list: "I’m not sure if we touched on this before but the phases and milestones are not oriented bottom up. The timeline adjusts correctly as you scroll but the info below the physical timeline starts at 1 and requires you to scroll down instead of up"
+
+Read by the Chief of Staff as, to be confirmed: the list under the floating map should run bottom up, Discovery (1) at the bottom and the later phases above, the earliest thing lowest at every level, so that going forward in time means scrolling up. This reverses the top-down order of round 6 (decisions/questions/P-005-design-round-6.md, answers 13 and 14), so it is confirmed with the owner before drawing.

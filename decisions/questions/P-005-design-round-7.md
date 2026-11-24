@@ -94,3 +94,11 @@ Asked by the question tool: "Your two tweaks are on the fourth phone of https://
 Read by the Chief of Staff as: 1, less margin and indent so the list's text and rails sit further left and the rows get more width; 2, a sprint's ring gives way to a thin accent bar in its status colour (red, yellow or green) with a small square progress indicator beside it, also in its status colour; the picture the owner mentions attaching did not reach the session, so the square is drawn from the words and the picture asked for again; 3, folding or opening anything keeps the tapped row where it is on the screen. To be drawn on the revised phone and asked.
 
 Shown live: the rails page's fifth phone, "Final tweaks" (https://claude.ai/artifact/4oisnPEMhMBhsd4ybAy17p, rl-1fin; source options-rails/source/fin.css and fin.js). Measured before: tapping a sprint moved it about 120 points, a milestone about 350; after: 0. The owner's attached picture did not reach the session. To be asked once.
+
+13. In the chat, with a picture (docs/design/references/2026-11-24-segmented-progress.jpg: two segmented progress bars of small dark squares, the top one inside an outlined box, the bottom one without): "The bottom was what I was referring too. Shift the sprints to the left by removing the current progress box. Then place this progress indicator either as another row on the sprints, or out to the right side of the title. 
+
+Also could we get the actions numbered with a 4th number please so 2.2.2.X?
+
+And the tasks actions under all of the sprints don't need a colored accent."
+
+Read by the Chief of Staff as: 1, a sprint loses its square, so its row starts further left; its progress shows as a row of small squares, the bottom style of the picture (no outline), filled in its status colour, either on a line of its own under the title or to the right of the title, both to be drawn; 2, every row under a sprint (its events and its agent's plan) takes a fourth number in the list's order, 2.2.2.1, 2.2.2.2 and so on, the plan's own actions following from it; 3, the rail down a sprint's rows is neutral again; only the sprint's own accent bar keeps its colour.

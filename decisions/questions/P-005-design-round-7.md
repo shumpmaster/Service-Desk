@@ -26,3 +26,14 @@ Asked by the question tool: "Links from the desk back to where things happened. 
 3. "Sorry explain this a bit more, are you saying that we can’t get a link back to the Claude session?"
 
 Read by the Chief of Staff as: a request to explain, not a choice. Answered in chat: every session started in the Claude app (the Chief of Staff's and the design sessions) can be linked, and the options do; the pipeline's agents are Claude too, but each runs once, headless, inside a GitHub Actions job (.github/workflows/orchestrator.yml), so it leaves a run log, not a conversation in the app to open or carry on. The question to be put again once the owner has the explanation.
+
+Answered in chat as recorded under answer 3, with two ways to close the gap: 1, link each pipeline step to the Claude session that was watching it; 2, run the pipeline's agents as sessions in the Claude app (a building decision). Asked: "Does that change your pick, or would you like me to add the first idea to the options before you choose?"
+4. "Option 1 is perfect.  With a slight tweak and a different design addition. 
+
+I want you to provide links back to the Claude conversation when available, then when not to the GitHub agent run result or whatever is available there
+
+And then add a page toggle, the comes with  a hold press or click on the little circle icon on the bottom of the page that filters the view to a scaled down timeline with simple motion that shows our same current phase/milestone/ task etc but simple the number and title plus the link to the Claude session or the the GitHub ruling etc. 
+
+Call this context view"
+
+Read by the Chief of Staff as: 1, the first way (link each pipeline step to the Claude session watching it), with a tweak: each event's one link goes to a Claude conversation whenever there is one (the session that did it; for a pipeline step, the Chief of Staff session at work on P-005 when it ran, matched by time from the session lines; for the owner's merge, the session that prepared it), and only otherwise to the GitHub run, then the pull request; the run or pull request stays one tap further, in the bubble. Built on option A's tag, since no list or grouping was asked for. 2, a "Context view": holding the round button (whose tap already jumps to Now, and still does) toggles a slim list in the same order and numbers, each row a number, a title and that one link, entered with a short settle motion. Shown live, with how much it opens as the question: https://claude.ai/artifact/5weN7m17BcS6YBVJdtE5Mb (docs/design/mockups/options-context/: now, cx-A, cx-B). To be asked.

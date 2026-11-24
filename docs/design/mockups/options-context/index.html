@@ -1,0 +1,59 @@
+<title>Context View</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<style>/* Layout: the question, then v23 as it is and three live phones side by side; they wrap to two, then one, column. Tokens follow the Desk Element Library (v22). */
+:root { --ground:#f2f3f7; --surface:#ffffff; --text-1:#1c1d21; --text-2:#6b6d71; --separator:#e7e9ed; --now-word:#0868bc;
+  --sans:-apple-system,BlinkMacSystemFont,"SF Pro Text","Inter","Segoe UI",Roboto,sans-serif; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --ground:#000000; --surface:#1c1c1e; --text-1:#f2f2f7; --text-2:#98989f; --separator:#38383a; --now-word:#9fd0ff; color-scheme:dark } }
+:root[data-theme="dark"] { --ground:#000000; --surface:#1c1c1e; --text-1:#f2f2f7; --text-2:#98989f; --separator:#38383a; --now-word:#9fd0ff; color-scheme:dark }
+body { background:var(--ground); color:var(--text-1); font:400 17px/1.4 var(--sans);
+  padding-left:max(16px, env(safe-area-inset-left, 0px)); padding-right:max(16px, env(safe-area-inset-right, 0px)); padding-block:24px 48px; }
+main { max-width:1680px; margin:0 auto; display:flex; flex-direction:column; gap:32px; }
+h1 { font:700 27px/1.15 var(--sans); margin:0; text-wrap:balance; }
+p { margin:0; max-width:70ch; }
+a { color:var(--now-word); }
+.lede { display:flex; flex-direction:column; gap:10px; } .lede p { color:var(--text-2); font-size:15px; }
+.lede blockquote { margin:0; padding:10px 14px; border-radius:12px; background:var(--surface); font-size:15px; max-width:70ch; }
+.phones { display:grid; grid-template-columns:repeat(3, minmax(0, 395px)); gap:20px; align-items:start; }
+.opt { display:flex; flex-direction:column; gap:10px; min-width:0; }
+.tag { font:600 13px/1 var(--sans); letter-spacing:.06em; text-transform:uppercase; color:var(--text-2); }
+.tag.rec { color:var(--now-word); }
+h2 { font:600 19px/1.25 var(--sans); margin:0; text-wrap:balance; }
+.opt ul { margin:0; padding-left:20px; display:flex; flex-direction:column; gap:4px; font-size:15px; color:var(--text-2); min-height:9.5em; }
+.phone { width:100%; max-width:395px; height:760px; border:1px solid var(--separator); border-radius:24px; overflow:hidden; background:var(--surface); }
+.phone iframe { width:393px; max-width:100%; height:100%; border:0; display:block; }
+.open { font-size:14px; }
+@media (max-width: 1720px) { .phones { grid-template-columns:repeat(2, minmax(0, 395px)); } }
+@media (max-width: 860px) { .phones { grid-template-columns:minmax(0, 1fr); } .opt ul { min-height:0; } }
+</style>
+<main>
+  <div class="lede">
+    <h1>Links to the conversation, and a Context view</h1>
+    <p>What you asked for:</p>
+    <blockquote>"I want you to provide links back to the Claude conversation when available, then when not to the GitHub agent run result or whatever is available there. And then add a page toggle, the comes with a hold press or click on the little circle icon on the bottom of the page that filters the view to a scaled down timeline with simple motion that shows our same current phase/milestone/ task etc but simple the number and title plus the link to the Claude session or the the GitHub ruling etc. Call this context view"</blockquote>
+    <p><b>The links, built as you asked, in both options.</b> Each event has one tag. It says Claude whenever a conversation stands behind it: the session that did it, or, for a pipeline step, the Chief of Staff session at work on this project when it ran (matched by time from the session records), or, for your merge, the session that prepared it. The bubble opens that conversation, and the run or pull request is one tap further. Where no session was running, the tag falls back to Run, then to PR. On this project every event of M6 and Design-5 found a session, and the Design gate links to your ruling's pull request.</p>
+    <p><b>The gesture.</b> The round button already jumps to Now on a tap, so a tap keeps that and <b>holding</b> it (about half a second) turns the Context view on or off. The button turns blue while it's on and a small label says which view you're in. On a computer, hold the mouse button down the same way. The bar, the pills and the tab bar stay; the map and the phase row step aside.</p>
+    <p><b>The question is how much the Context view opens.</b> Hold the round button in each phone below to try it, or use the full-screen links, which open straight into it.</p>
+  </div>
+  <div class="phones">
+    <section class="opt">
+      <span class="tag">As it is</span><h2>v26: no links, one view</h2>
+      <ul><li>Events say who, never where. The round button only jumps to Now.</li></ul>
+      <div class="phone"><iframe src="now.html" title="As it is: v26, live" loading="lazy"></iframe></div>
+      <a class="open" href="now.html" target="_blank" rel="noopener">Open full screen</a>
+    </section>
+    <section class="opt">
+      <span class="tag rec">Option A · recommended</span><h2>The current phase, open</h2>
+      <ul><li>Every phase and gate on one line; the current phase opens down to each event: number, title, link.</li>
+        <li>It lands on Now. The same order and numbers as the full view.</li></ul>
+      <div class="phone"><iframe src="cx-A.html" title="Option A, live" loading="lazy"></iframe></div>
+      <a class="open" href="cx-A.html?cx=1" target="_blank" rel="noopener">Open full screen, in Context view</a>
+    </section>
+    <section class="opt">
+      <span class="tag">Option B</span><h2>Everything, open</h2>
+      <ul><li>As A, and every phase opens too, so Discovery's milestones and sprints show above Design.</li>
+        <li>The whole project in one scroll, about half as long again.</li></ul>
+      <div class="phone"><iframe src="cx-B.html" title="Option B, live" loading="lazy"></iframe></div>
+      <a class="open" href="cx-B.html?cx=1" target="_blank" rel="noopener">Open full screen, in Context view</a>
+    </section>
+  </div>
+</main>

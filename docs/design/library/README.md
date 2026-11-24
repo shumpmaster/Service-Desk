@@ -8,6 +8,10 @@ This library holds every element seen in the owner's seven Craft screenshots (re
 
 The colour hold is lifted for status only (decisions/questions/P-005-design-round-3.md, answers 4 to 13). Status takes soft green, yellow and red (`status-ok`, `status-wait`, `status-bad` and their tinted forms) on gauges, event marks, tags and the branch map. Everything else stays neutral, with the one blue. The shapes for milestones and sprints are still on hold. New cards: Gauge, StatusMark, BranchMap and PhaseRow. On the timeline, BranchMap replaces LaneGraph.
 
+## Change, 24 November 2026 (round 7, links back and the Context view)
+
+Each event carries one SessionLink on its first line: Claude whenever a conversation stands behind it (the session that did it; for a pipeline step, the Chief of Staff session at work on the project when it ran; for the owner's merge, the session that prepared it), otherwise the GitHub run, otherwise the pull request; its bubble opens the conversation, with the run or pull request beside it. Holding the RoundButton turns on the ContextView: the same order and numbers, every phase on one line and the current phase open to its events, each row a number, a title and its link (decisions/questions/P-005-design-round-7.md, answers 2 to 5).
+
 ## Change, 18 November 2026 (round 6, one order of operations)
 
 A project's list reads top down at every level, each thing where it happened or where it is meant to; milestones are placed by when their work began or is meant to begin, with Now at the clock, and the numbers follow that order, so they never jump. A standard milestone's own id (Design-5) is not shown in the row (ReadingOrder; decisions/questions/P-005-design-round-6.md, answers 8 to 14).

@@ -42,3 +42,5 @@ Asked by the question tool: "Context view, on https://claude.ai/artifact/5weN7m1
 5. "A: current phase open (Recommended)"
 
 Carried out: the links as read under answer 4, and the Context view with CX = 'A'. To be built into the library (new cards SessionLink and ContextView) and then mockup v27 over v26.
+
+Shown in chat: the library with SessionLink and ContextView (https://claude.ai/artifact/UqdAH5E4nwtSJdxcATBp3W) and mockup v27 (https://claude.ai/artifact/UUk7DTtDNKoxhH9Q9jRfHq).

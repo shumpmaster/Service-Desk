@@ -419,3 +419,29 @@ button:focus-visible { outline: 2px solid var(--accent-select); outline-offset: 
 /* MilestoneMap: words on main (round 6, answers 6 and 7) */
 .dk-map .fl.ml { font-weight: 500; fill: var(--text-1); }
 .dk-map .ml-lead { fill: none; stroke: var(--text-3); stroke-width: 1.2; }
+/* SessionLink: where an event happened, Claude first (round 7, answers 2 to 5) */
+.dk-sl { all: unset; display: inline-flex; align-items: center; gap: 4px; font: 400 12px/18px var(--font-sans); color: var(--text-2); padding: 0 7px; border-radius: var(--radius-6); box-shadow: inset 0 0 0 1px var(--separator); white-space: nowrap; }
+.dk-sl.claude { color: var(--accent-text); }
+.dk-sl .d { width: 6px; height: 6px; border-radius: 50%; background: var(--accent-text); }
+.dk-sl.on { box-shadow: inset 0 0 0 1px var(--accent-text); }
+.dk-slbub { margin: 8px 0 2px; padding: 9px 11px 10px; border-radius: var(--radius-12); background: var(--surface); box-shadow: 0 2px 10px rgba(0,0,0,.08), 0 0 0 1px var(--separator); font: 400 13px/18px var(--font-sans); color: var(--text-1); display: flex; flex-direction: column; gap: 4px; }
+.dk-slbub .k { font-size: 12px; font-weight: 600; color: var(--text-2); display: flex; align-items: center; gap: 6px; }
+.dk-slbub .w { font-size: 12px; color: var(--text-2); }
+.dk-slbub .acts { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 12px; margin-top: 4px; }
+.dk-slbub .open { display: inline-flex; align-items: center; gap: 5px; font-weight: 600; color: var(--accent-text); text-decoration: none; padding: 5px 10px; border-radius: var(--radius-8, 8px); box-shadow: inset 0 0 0 1px var(--accent-text); }
+.dk-slbub .alt { font-size: 12px; color: var(--text-2); text-decoration: none; }
+/* ContextView: the slim list held from the round button (round 7, answers 4 and 5) */
+.dk-cx { list-style: none; margin: 0; padding: 0; position: relative; font-family: var(--font-sans); }
+.dk-cx::before { content: ""; position: absolute; left: 13px; top: 8px; bottom: 8px; width: 1.5px; background: var(--separator); }
+.dk-cx li { position: relative; display: flex; align-items: baseline; gap: 8px; min-height: 28px; padding: 4px 0; font-size: 14px; line-height: 19px; color: var(--text-1); }
+.dk-cx .l2 { padding-left: 30px; } .dk-cx .l3 { padding-left: 48px; font-size: 13px; } .dk-cx .l4 { padding-left: 66px; font-size: 13px; color: var(--text-2); min-height: 24px; padding-block: 2px; }
+.dk-cx .no { flex: none; min-width: 26px; font-variant-numeric: tabular-nums; font-weight: 600; color: var(--text-2); font-size: 12px; }
+.dk-cx .l1 .no { width: 28px; height: 28px; min-width: 0; border-radius: 14px; display: inline-flex; align-items: center; justify-content: center; background: var(--surface); box-shadow: inset 0 0 0 1.5px var(--separator); color: var(--text-1); position: relative; z-index: 1; align-self: center; }
+.dk-cx .l1.cur .no { box-shadow: inset 0 0 0 1.5px var(--accent-text); color: var(--accent-text); }
+.dk-cx .pip { flex: none; width: 7px; height: 7px; border-radius: 50%; background: var(--text-3); margin: 0 4px 0 1px; align-self: center; }
+.dk-cx .l1 .pip { margin: 0 11px 0 10px; position: relative; z-index: 1; }
+.dk-cx .pip.bad { background: var(--status-bad-dot); } .dk-cx .pip.ok { background: var(--status-ok-arc); } .dk-cx .pip.now { background: var(--accent-text); }
+.dk-cx .t { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.dk-cx .gate .t, .dk-cx .s { color: var(--text-2); font-size: 13px; }
+.dk-cx .nowrow { color: var(--accent-text); font-weight: 600; }
+.dk-round.cx { background: var(--accent-text); color: var(--surface); }

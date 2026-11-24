@@ -18,8 +18,8 @@
  },
  "lastChange": {
   "by": "Claude",
-  "at": "2026-11-18T00:30:00Z",
+  "at": "2026-11-24T12:00:00Z",
   "via": "Claude Code",
-  "note": "Round 6, one order of operations: new card ReadingOrder (top down everywhere, numbers in that order, standard ids hidden). decisions/questions/P-005-design-round-6.md, answers 8 to 14."
+  "note": "Round 7, links back and the Context view: new cards SessionLink and ContextView; RoundButton held turns the Context view on. decisions/questions/P-005-design-round-7.md, answers 2 to 5."
  }
 }

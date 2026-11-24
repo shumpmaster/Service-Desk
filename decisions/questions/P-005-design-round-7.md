@@ -77,3 +77,6 @@ Asked by the question tool (cut off by a restart before it was answered, so not 
 For the phase, let’s push the text left aligned, get rid of the progress circle and replace it with a milestone indicator, the boxes side by with status color and a current milestone indication as well. Then on all of the remainigg by progress circles keep them, but put the percent complete in the circle."
 
 Read by the Chief of Staff as: option 1 (thin line icons) is chosen, with two revisions: 1, the phase's heading starts at the left edge with no ring; under it, a strip of small boxes side by side, one per milestone in the list's order, each in its status colour, with the current milestone marked; 2, every other ring (milestones and sprints) stays, with its percent complete written inside in place of the icon. To be drawn and asked once.
+
+Replied on the comment's thread: recorded; drawing option 1 with both revisions.
+Shown live: the rails page's fourth phone, "Option 1, revised" (https://claude.ai/artifact/4oisnPEMhMBhsd4ybAy17p, rl-1ph; source options-rails/source/ph.css and ph.js). To be asked once.

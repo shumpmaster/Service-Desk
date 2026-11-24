@@ -13,7 +13,7 @@ p { margin:0; max-width:70ch; }
 a { color:var(--now-word); }
 .lede { display:flex; flex-direction:column; gap:10px; } .lede p { color:var(--text-2); font-size:15px; }
 .lede blockquote { margin:0; padding:10px 14px; border-radius:12px; background:var(--surface); font-size:15px; max-width:70ch; }
-.phones { display:grid; grid-template-columns:repeat(3, minmax(0, 395px)); gap:20px; align-items:start; }
+.phones { display:grid; grid-template-columns:repeat(4, minmax(0, 395px)); gap:20px; align-items:start; }
 .opt { display:flex; flex-direction:column; gap:10px; min-width:0; }
 .tag { font:600 13px/1 var(--sans); letter-spacing:.06em; text-transform:uppercase; color:var(--text-2); }
 .tag.rec { color:var(--now-word); }
@@ -32,7 +32,7 @@ h2 { font:600 19px/1.25 var(--sans); margin:0; text-wrap:balance; }
     <blockquote>"I don’t really like the cards in that manner. I’m more inclined towards the rails, with a label of some sort and a more subtle & modern icon set with proper indentation and text sizing"</blockquote>
     <p>Both phones below share the same base:</p>
     <p><b>Rails</b>: each level hangs an even 20 in from its parent, on a rail running down through the parent's mark (solid for a milestone, thinner for a sprint, dashed for a plan). <b>Labels</b>: PHASE, MILESTONE and SPRINT in small capitals; an event's label is its kind word (Decision, Review). <b>Sizes</b>, one per level: phase 22, milestone 17, sprint 15, an event's title 15 (turning points semibold), its other lines 12 and 13, a plan's action 13. The milestone and sprint rings are thinner and smaller.</p>
-    <p>The two differ only in the event's icon. Each phone opens on the timeline at Now. Scroll up to M6 to see the rails. No new colours.</p>
+    <p>Your comment chose option 1 with two revisions, now drawn as the fourth phone. The two first options differ only in the event's icon. Each phone opens on the timeline at Now. Scroll up to M6 to see the rails. No new colours.</p>
   </div>
   <div class="phones">
     <section class="opt">
@@ -54,6 +54,13 @@ h2 { font:600 19px/1.25 var(--sans); margin:0; text-wrap:balance; }
         <li>The kind word is the only label. The quietest, but kinds read by word, not by shape.</li></ul>
       <div class="phone"><iframe src="rl-2.html" title="Option 2, live" loading="lazy"></iframe></div>
       <a class="open" href="rl-2.html" target="_blank" rel="noopener">Open full screen</a>
+    </section>
+    <section class="opt">
+      <span class="tag rec">Option 1, revised</span><h2>Your revisions</h2>
+      <ul><li>The phase heading starts at the left with no ring. Under it, one box per milestone in the list's order, in its status colour (outlined if planned), a blue tick at Now, and the current milestone raised and ringed with its number. Tap a box to go to it.</li>
+        <li>Every milestone and sprint ring keeps its arc, with its percent complete inside.</li></ul>
+      <div class="phone"><iframe src="rl-1ph.html" title="Option 1 revised, live" loading="lazy"></iframe></div>
+      <a class="open" href="rl-1ph.html" target="_blank" rel="noopener">Open full screen</a>
     </section>
   </div>
 </main>

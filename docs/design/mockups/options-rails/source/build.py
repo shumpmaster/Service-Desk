@@ -15,4 +15,8 @@ for o in '12':
     s = v; i = s.rindex('</style>'); s = s[:i] + css + s[i:]
     s = s.replace(a, "\n  var RL = '" + o + "';\n" + js + a)
     open(os.path.join(H, '../rl-%s.html' % o), 'w', encoding='utf-8').write(HEAD + done(s))
+ph_css = open(os.path.join(H, 'ph.css'), encoding='utf-8').read(); ph_js = open(os.path.join(H, 'ph.js'), encoding='utf-8').read()
+s = v; i = s.rindex('</style>'); s = s[:i] + css + ph_css + s[i:]
+s = s.replace(a, "\n  var RL = '1';\n" + js + ph_js + a)
+open(os.path.join(H, '../rl-1ph.html'), 'w', encoding='utf-8').write(HEAD + done(s))
 print('ok')

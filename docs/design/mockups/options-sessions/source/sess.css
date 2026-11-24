@@ -1,0 +1,32 @@
+/* round 7, answer 2: links from the desk back to where each thing happened (options-sessions). No new colours. */
+.ss-q { all: unset; cursor: pointer; flex: none; display: inline-flex; align-items: center; gap: 4px; font-size: 12px; line-height: 18px; color: var(--text-2); padding: 0 7px; border-radius: 6px; box-shadow: inset 0 0 0 1px var(--ink-5); white-space: nowrap; }
+.ss-q.on { color: var(--now-word); box-shadow: inset 0 0 0 1px var(--now-word); }
+.ss-q:focus-visible, .ss-sw:focus-visible, .ss-chip:focus-visible, .ss-open:focus-visible { outline: 2px solid var(--now-word); outline-offset: 2px; }
+.ss-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--now-word); flex: none; display: inline-block; }
+.ss-bub { position: relative; margin: 8px 0 2px; padding: 9px 11px 10px; border-radius: 12px; background: var(--surface); box-shadow: 0 2px 10px rgba(0,0,0,.08), 0 0 0 1px var(--rule); font-size: 13px; line-height: 18px; color: var(--ink-2); display: flex; flex-direction: column; gap: 4px; white-space: normal; }
+.ss-k { font-size: 12px; font-weight: 600; color: var(--text-2); display: flex; align-items: center; gap: 6px; }
+.ss-d { color: var(--ink); }
+.ss-w, .ss-also, .ss-by { color: var(--text-2); font-size: 12px; }
+.ss-by { display: flex; align-items: center; gap: 6px; }
+.ss-open { align-self: flex-start; margin-top: 4px; display: inline-flex; align-items: center; gap: 5px; font-weight: 600; font-size: 13px; color: var(--now-word); text-decoration: none; padding: 5px 10px; border-radius: 8px; box-shadow: inset 0 0 0 1px var(--now-word); min-height: 20px; }
+/* B: a Claude session's events under one header */
+.ss-head { display: flex; align-items: center; gap: 8px; margin: 8px 0 0; padding: 6px 10px; border-radius: 10px; background: var(--rule-2, rgba(0,0,0,.03)); font-size: 12px; line-height: 16px; color: var(--text-2); }
+.ss-head .ss-ht { flex: 1; min-width: 0; }
+.ss-head b { color: var(--ink); font-weight: 600; }
+.ss-head a { display: inline-flex; align-items: center; gap: 4px; color: var(--now-word); font-weight: 600; text-decoration: none; padding: 4px 2px; }
+.v13ev.ss-in { box-shadow: inset 2px 0 0 var(--now-word); padding-left: 6px; border-radius: 0 0 0 2px; }
+/* C: the Sessions button and its sheet */
+.ss-sw { all: unset; cursor: pointer; position: absolute; right: 10px; bottom: 6px; z-index: 3; display: inline-flex; align-items: center; gap: 5px; font-size: 12px; line-height: 18px; color: var(--ink-2); padding: 2px 9px; border-radius: 9px; background: var(--surface); box-shadow: 0 0 0 1px var(--rule), 0 1px 4px rgba(0,0,0,.08); }
+.ss-scrim { position: fixed; inset: 0; z-index: 60; background: rgba(0,0,0,.28); display: flex; align-items: flex-end; justify-content: center; }
+.ss-sheet { width: 100%; max-width: 480px; max-height: 82vh; overflow: auto; background: var(--surface); border-radius: 16px 16px 0 0; padding: 6px 16px calc(20px + env(safe-area-inset-bottom, 0px)); box-sizing: border-box; }
+.ss-grab { width: 36px; height: 4px; border-radius: 2px; background: var(--ink-5); margin: 4px auto 8px; }
+.ss-st { display: flex; align-items: center; justify-content: space-between; font-size: 17px; color: var(--ink); }
+.ss-x { all: unset; cursor: pointer; color: var(--now-word); font-weight: 600; font-size: 15px; padding: 6px 2px; }
+.ss-note { margin: 4px 0 10px; font-size: 13px; line-height: 18px; color: var(--text-2); }
+.ss-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; }
+.ss-srow { display: flex; flex-direction: column; gap: 5px; padding: 12px 0; border-top: 1px solid var(--rule); font-size: 14px; line-height: 19px; }
+.ss-touch { display: flex; flex-wrap: wrap; gap: 6px; }
+.ss-chip { all: unset; cursor: pointer; font-size: 12px; line-height: 16px; padding: 5px 9px; border-radius: 8px; color: var(--ink-2); box-shadow: inset 0 0 0 1px var(--ink-5); }
+.ss-flash { animation: ssflash 1.6s ease-out; }
+@keyframes ssflash { 0%, 40% { background: var(--you-wash, rgba(29,78,216,.08)); } 100% { background: transparent; } }
+@media (prefers-reduced-motion: reduce) { .ss-flash { animation: none; } }

@@ -1,0 +1,70 @@
+<title>Links to Sessions</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<style>/* Layout: the question, then v23 as it is and three live phones side by side; they wrap to two, then one, column. Tokens follow the Desk Element Library (v22). */
+:root { --ground:#f2f3f7; --surface:#ffffff; --text-1:#1c1d21; --text-2:#6b6d71; --separator:#e7e9ed; --now-word:#0868bc;
+  --sans:-apple-system,BlinkMacSystemFont,"SF Pro Text","Inter","Segoe UI",Roboto,sans-serif; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --ground:#000000; --surface:#1c1c1e; --text-1:#f2f2f7; --text-2:#98989f; --separator:#38383a; --now-word:#9fd0ff; color-scheme:dark } }
+:root[data-theme="dark"] { --ground:#000000; --surface:#1c1c1e; --text-1:#f2f2f7; --text-2:#98989f; --separator:#38383a; --now-word:#9fd0ff; color-scheme:dark }
+body { background:var(--ground); color:var(--text-1); font:400 17px/1.4 var(--sans);
+  padding-left:max(16px, env(safe-area-inset-left, 0px)); padding-right:max(16px, env(safe-area-inset-right, 0px)); padding-block:24px 48px; }
+main { max-width:1680px; margin:0 auto; display:flex; flex-direction:column; gap:32px; }
+h1 { font:700 27px/1.15 var(--sans); margin:0; text-wrap:balance; }
+p { margin:0; max-width:70ch; }
+a { color:var(--now-word); }
+.lede { display:flex; flex-direction:column; gap:10px; } .lede p { color:var(--text-2); font-size:15px; }
+.lede blockquote { margin:0; padding:10px 14px; border-radius:12px; background:var(--surface); font-size:15px; max-width:70ch; }
+.phones { display:grid; grid-template-columns:repeat(4, minmax(0, 395px)); gap:20px; align-items:start; }
+.opt { display:flex; flex-direction:column; gap:10px; min-width:0; }
+.tag { font:600 13px/1 var(--sans); letter-spacing:.06em; text-transform:uppercase; color:var(--text-2); }
+.tag.rec { color:var(--now-word); }
+h2 { font:600 19px/1.25 var(--sans); margin:0; text-wrap:balance; }
+.opt ul { margin:0; padding-left:20px; display:flex; flex-direction:column; gap:4px; font-size:15px; color:var(--text-2); min-height:9.5em; }
+.phone { width:100%; max-width:395px; height:760px; border:1px solid var(--separator); border-radius:24px; overflow:hidden; background:var(--surface); }
+.phone iframe { width:393px; max-width:100%; height:100%; border:0; display:block; }
+.open { font-size:14px; }
+@media (max-width: 1720px) { .phones { grid-template-columns:repeat(2, minmax(0, 395px)); } }
+@media (max-width: 860px) { .phones { grid-template-columns:minmax(0, 1fr); } .opt ul { min-height:0; } }
+</style>
+<main>
+  <div class="lede">
+    <h1>From the desk back to where it happened</h1>
+    <p>What you said about v26:</p>
+    <blockquote>"So one thing I want is some way to go back and forth between the desk and Claude code sessions. One thing I'm noticing is that projects get blurred or missed. And because I go back and forth between both in a way where the desk keeps the structure, but Claude is the brains and who I interact with, I was thinking we structure the desk with links back to the Claude sessions where the things happened"</blockquote>
+    <p><b>What the records hold.</b> About 2,500 of Service-Desk's commits name the session or run that made them, and every Chief of Staff session has a file with its start, its end and what it set out to do. So these links are real, not examples: tap one and it opens. Three kinds of place stand behind an event:</p>
+    <p><b>Claude</b>: a Chief of Staff or design session, the conversation you can open and carry on. <b>Run</b>: a pipeline step (a spec draft, a review, a stop card) ran as a GitHub Actions run, which is a log, not a conversation. <b>PR</b>: your merge, on its pull request. Today the pipeline's steps aren't Claude sessions you can talk to; only the Chief of Staff's are.</p>
+    <p>One real case shows the blurring you describe. A single session, started 13 Nov 23:20, worked on M6's stop card 4 and then built the first five mockups in Design-5. Only option C puts that in one place.</p>
+    <p>Each phone opens on the timeline at M6 (S-011 is mostly runs and one PR; open S-010, or Design-5's two sprints, to see Claude sessions). Scroll inside it. No new colours: the dot is the blue the desk already uses for Now.</p>
+  </div>
+  <div class="phones">
+    <section class="opt">
+      <span class="tag">As it is</span><h2>v26: no way back</h2>
+      <ul><li>An event says who did it ("by orchestrator"), never where. To find the conversation, you search Claude for it.</li></ul>
+      <div class="phone"><iframe src="now.html" title="As it is: v26, live" loading="lazy"></iframe></div>
+      <a class="open" href="now.html" target="_blank" rel="noopener">Open full screen</a>
+    </section>
+    <section class="opt">
+      <span class="tag">Option A</span><h2>A tag on each event</h2>
+      <ul><li>Beside Why, a small tag says where it happened: Claude, Run or PR.</li>
+        <li>Tap it for a bubble: what that session set out to do, when, what else on this page it touched, and one button: Open in Claude, Open the run, or Open PR.</li></ul>
+      <div class="phone"><iframe src="ss-A.html" title="Option A, live" loading="lazy"></iframe></div>
+      <a class="open" href="ss-A.html" target="_blank" rel="noopener">Open full screen</a>
+    </section>
+    <section class="opt">
+      <span class="tag">Option B</span><h2>Grouped by session</h2>
+      <ul><li>As A, and the events one Claude session made sit together under a slim header: the session, when it started, Open.</li>
+        <li>You see where one conversation began and ended in the list. Runs and PRs keep their tag.</li></ul>
+      <div class="phone"><iframe src="ss-B.html" title="Option B, live" loading="lazy"></iframe></div>
+      <a class="open" href="ss-B.html" target="_blank" rel="noopener">Open full screen</a>
+    </section>
+    <section class="opt">
+      <span class="tag rec">Option C · recommended</span><h2>Tags, and a Sessions list</h2>
+      <ul><li>As A, and a Sessions button beside the map's chip opens every Claude session behind this project, first to last.</li>
+        <li>Each shows what it set out to do, the places on the desk it touched (tap one to go there), and Open in Claude. A session that wandered across milestones shows it.</li></ul>
+      <div class="phone"><iframe src="ss-C.html" title="Option C, live" loading="lazy"></iframe></div>
+      <a class="open" href="ss-C.html" target="_blank" rel="noopener">Open full screen</a>
+    </section>
+  </div>
+  <div class="lede">
+    <p><b>The way back, whichever you pick.</b> Going from a Claude session to the desk is a habit, not a picture: each session would end its closing message and handoff with a link to the place on the desk it worked on. That needs the desk to give each place its own address, which is for the building session. I'll ask about it after this.</p>
+  </div>
+</main>

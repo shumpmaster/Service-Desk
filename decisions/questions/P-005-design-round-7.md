@@ -10,3 +10,10 @@ Asked by the question tool: "What do you think of mockup v26 as a whole (https:/
 1. "Good, with changes"
 
 Read by the Chief of Staff as: v26 holds as a whole; the changes were not yet named, so they are asked for next.
+
+Asked in chat: "What changes do you want on v26? Tell me here, or leave comments on the page ..."
+2. "Awesome. So one thing I want is some way to go back and forth between the desk and Claude code sessions.
+
+One thing I'm noticing is that projects get blurred or missed. And because I go back and forth between both in a way where the desk keeps the structure, but Claude is the brains and who I interact with, I was thinking we structure the desk with links back to the Claude sessions where the things happened"
+
+Read by the Chief of Staff as: each thing on the desk (an event, a sprint, a milestone, something waiting on the owner) should link to the Claude Code session where it happened, so the owner can move from the desk's structure to the conversation behind it and back; the aim is that work stops being blurred across projects or missed. To be shown as the desk is now, then with options, and asked.

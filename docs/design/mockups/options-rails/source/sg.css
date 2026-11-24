@@ -7,5 +7,11 @@ html.sg #v13list .v13sp > .v13body, html.sg #v13list .v13sp.fin-ok > .v13body, h
 .sg-seg.ok i.f { background: var(--status-ok); } .sg-seg.wait i.f { background: var(--status-wait); } .sg-seg.bad i.f { background: var(--status-bad); }
 html.sg-R #v13list .v13sp > .v13gr .l1 .sg-seg { margin-left: auto; align-self: center; }
 html.sg-R #v13list .v13sp > .v13gr .l1 .cnt { display: none; }
-html.sg-U #v13list .v13sp > .v13gr .sg-row { display: flex; align-items: center; gap: 8px; margin: 3px 0 1px; font: 400 12px/14px var(--font-ui); color: var(--text-2); }
+html.sg-U #v13list .v13sp > .v13gr .sg-row { display: flex; align-items: center; gap: 8px; margin: 1px 0 0; font: 400 12px/14px var(--font-ui); color: var(--text-2); }
 .no4 { font: 600 12px/1 var(--font-ui); margin-right: 2px; color: var(--text-2); font-variant-numeric: tabular-nums; flex: none; }
+/* round 7, answer 14: tighter around the squares; the fourth number on a line of its own */
+html.sg-U #v13list .v13sp > .v13gr { padding-block: 5px; }
+html.sg-U #v13list .v13sp > .v13gr .l1, html.sg-U #v13list .v13sp > .v13gr .l3 { line-height: 16px; }
+html.sg-U #v13list .v13sp > .v13gr .sg-row { line-height: 12px; }
+.no4.own { display: block; flex: 1 1 100%; order: -1; font: 600 11px/14px var(--font-ui); letter-spacing: .02em; color: var(--text-2); margin: 0 0 1px; }
+html.sg #v13list .v13ev.wt-3 .tx { flex-wrap: wrap; }

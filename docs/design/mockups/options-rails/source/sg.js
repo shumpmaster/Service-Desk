@@ -29,7 +29,7 @@
           n++; var x = no + '.' + n, b = c.querySelector('.v13stephd .l1 > b'); if (b) b.textContent = x;
           [].slice.call(c.querySelectorAll('.v12plan .num')).forEach(function (s) { s.textContent = x + '.' + s.textContent.split('.').pop(); });
         } else if (c.classList.contains('v13ev')) {
-          n++; var l2 = c.querySelector('.l2'); if (l2) l2.insertAdjacentHTML('afterbegin', '<span class="no4">' + no + '.' + n + '</span> ');   /* on the title's line, where there is room */
+          n++; var tx = c.querySelector('.tx'); if (tx) tx.insertAdjacentHTML('afterbegin', SG === 'U' ? '<div class="no4 own">' + no + '.' + n + '</div>' : ''); if (SG !== 'U') { var l2 = c.querySelector('.l2'); if (l2) l2.insertAdjacentHTML('afterbegin', '<span class="no4">' + no + '.' + n + '</span> '); }   /* U: on a line of its own, above the event's lines (round 7, answer 14) */
         }
       });
     });

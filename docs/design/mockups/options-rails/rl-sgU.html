@@ -1740,8 +1740,14 @@ html.sg #v13list .v13sp > .v13body, html.sg #v13list .v13sp.fin-ok > .v13body, h
 .sg-seg.ok i.f { background: var(--status-ok); } .sg-seg.wait i.f { background: var(--status-wait); } .sg-seg.bad i.f { background: var(--status-bad); }
 html.sg-R #v13list .v13sp > .v13gr .l1 .sg-seg { margin-left: auto; align-self: center; }
 html.sg-R #v13list .v13sp > .v13gr .l1 .cnt { display: none; }
-html.sg-U #v13list .v13sp > .v13gr .sg-row { display: flex; align-items: center; gap: 8px; margin: 3px 0 1px; font: 400 12px/14px var(--font-ui); color: var(--text-2); }
+html.sg-U #v13list .v13sp > .v13gr .sg-row { display: flex; align-items: center; gap: 8px; margin: 1px 0 0; font: 400 12px/14px var(--font-ui); color: var(--text-2); }
 .no4 { font: 600 12px/1 var(--font-ui); margin-right: 2px; color: var(--text-2); font-variant-numeric: tabular-nums; flex: none; }
+/* round 7, answer 14: tighter around the squares; the fourth number on a line of its own */
+html.sg-U #v13list .v13sp > .v13gr { padding-block: 5px; }
+html.sg-U #v13list .v13sp > .v13gr .l1, html.sg-U #v13list .v13sp > .v13gr .l3 { line-height: 16px; }
+html.sg-U #v13list .v13sp > .v13gr .sg-row { line-height: 12px; }
+.no4.own { display: block; flex: 1 1 100%; order: -1; font: 600 11px/14px var(--font-ui); letter-spacing: .02em; color: var(--text-2); margin: 0 0 1px; }
+html.sg #v13list .v13ev.wt-3 .tx { flex-wrap: wrap; }
 </style>
 
 <div class="page">
@@ -4908,7 +4914,7 @@ html.sg-U #v13list .v13sp > .v13gr .sg-row { display: flex; align-items: center;
           n++; var x = no + '.' + n, b = c.querySelector('.v13stephd .l1 > b'); if (b) b.textContent = x;
           [].slice.call(c.querySelectorAll('.v12plan .num')).forEach(function (s) { s.textContent = x + '.' + s.textContent.split('.').pop(); });
         } else if (c.classList.contains('v13ev')) {
-          n++; var l2 = c.querySelector('.l2'); if (l2) l2.insertAdjacentHTML('afterbegin', '<span class="no4">' + no + '.' + n + '</span> ');   /* on the title's line, where there is room */
+          n++; var tx = c.querySelector('.tx'); if (tx) tx.insertAdjacentHTML('afterbegin', SG === 'U' ? '<div class="no4 own">' + no + '.' + n + '</div>' : ''); if (SG !== 'U') { var l2 = c.querySelector('.l2'); if (l2) l2.insertAdjacentHTML('afterbegin', '<span class="no4">' + no + '.' + n + '</span> '); }   /* U: on a line of its own, above the event's lines (round 7, answer 14) */
         }
       });
     });

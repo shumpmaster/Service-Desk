@@ -8,6 +8,10 @@ This library holds every element seen in the owner's seven Craft screenshots (re
 
 The colour hold is lifted for status only (decisions/questions/P-005-design-round-3.md, answers 4 to 13). Status takes soft green, yellow and red (`status-ok`, `status-wait`, `status-bad` and their tinted forms) on gauges, event marks, tags and the branch map. Everything else stays neutral, with the one blue. The shapes for milestones and sprints are still on hold. New cards: Gauge, StatusMark, BranchMap and PhaseRow. On the timeline, BranchMap replaces LaneGraph.
 
+## Change, 24 November 2026 (round 7, the levels on rails)
+
+A project's list tells its levels apart (LevelRails): each level steps in on its own rail and says what it is (PHASE, MILESTONE, SPRINT), with one size per level and thin line icons with no disc. The phase heading starts at the left with no ring, and a strip of its milestones under it, in their status colours, Now and the current one marked. Milestone rings show their percent inside; a sprint has a thin accent bar in its status colour and ten small squares to the right of its title. Every row under a sprint carries its fourth number on a line of its own. Folding or opening keeps the tapped row in place. The list stays top down (decisions/questions/P-005-design-round-7.md, answers 8 to 15).
+
 ## Change, 24 November 2026 (round 7, links back and the Context view)
 
 Each event carries one SessionLink on its first line: Claude whenever a conversation stands behind it (the session that did it; for a pipeline step, the Chief of Staff session at work on the project when it ran; for the owner's merge, the session that prepared it), otherwise the GitHub run, otherwise the pull request; its bubble opens the conversation, with the run or pull request beside it. Holding the RoundButton turns on the ContextView: the same order and numbers, every phase on one line and the current phase open to its events, each row a number, a title and its link (decisions/questions/P-005-design-round-7.md, answers 2 to 5).

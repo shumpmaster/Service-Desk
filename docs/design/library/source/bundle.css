@@ -445,3 +445,42 @@ button:focus-visible { outline: 2px solid var(--accent-select); outline-offset: 
 .dk-cx .gate .t, .dk-cx .s { color: var(--text-2); font-size: 13px; }
 .dk-cx .nowrow { color: var(--accent-text); font-weight: 600; }
 .dk-round.cx { background: var(--accent-text); color: var(--surface); }
+/* LevelRails: the list's levels on rails (round 7, answers 8 to 15) */
+.dk-rl { font-family: var(--font-sans); color: var(--text-1); }
+.dk-rl .w { font: 600 10px/19px var(--font-sans); letter-spacing: .08em; text-transform: uppercase; color: var(--text-2); }
+.dk-rl .no { font: 600 13px/19px var(--font-sans); color: var(--text-2); font-variant-numeric: tabular-nums; }
+.dk-rl .ph { padding: 10px 0; border-bottom: 1.5px solid var(--text-3); }
+.dk-rl .ph .t { display: flex; align-items: baseline; gap: 6px; font-size: 22px; line-height: 28px; } .dk-rl .ph .t b { font-weight: 700; }
+.dk-rl .ph .now { font: 600 13px var(--font-sans); color: var(--accent-text); } .dk-rl .ph .pc { margin-left: auto; font-size: 13px; color: var(--text-2); }
+.dk-rl .s { font-size: 12px; line-height: 16px; color: var(--text-2); }
+.dk-rl .strip { display: flex; align-items: flex-end; gap: 4px; margin: 8px 0 18px; }
+.dk-rl .strip i { flex: 1; height: 8px; border-radius: 3px; position: relative; background: var(--ground); box-shadow: inset 0 0 0 1.2px var(--text-3); }
+.dk-rl .strip i.ok { background: var(--status-ok-arc); box-shadow: none; } .dk-rl .strip i.wait { background: var(--status-wait-arc); box-shadow: none; } .dk-rl .strip i.bad { background: var(--status-bad-arc); box-shadow: none; }
+.dk-rl .strip i.cur { height: 14px; box-shadow: 0 0 0 2px var(--ground), 0 0 0 3.5px var(--text-1); }
+.dk-rl .strip i.cur::after { content: attr(data-no); position: absolute; left: 50%; top: 100%; transform: translateX(-50%); margin-top: 5px; font: 600 11px/13px var(--font-sans); white-space: nowrap; }
+.dk-rl .strip .nw { flex: none; width: 2px; height: 18px; border-radius: 1px; background: var(--accent-text); margin: 0 2px; }
+.dk-rl .row { display: flex; align-items: center; gap: 8px; padding: 7px 0; }
+.dk-rl .row .tx { flex: 1; min-width: 0; }
+.dk-rl .l1 { display: flex; align-items: baseline; gap: 6px; white-space: nowrap; overflow: hidden; }
+.dk-rl .ms .l1 { font-size: 17px; line-height: 22px; } .dk-rl .ms .l1 b { font-weight: 600; }
+.dk-rl .sp .l1 { font-size: 15px; line-height: 20px; } .dk-rl .sp .l1 b { font-weight: 600; }
+.dk-rl .ring { flex: none; position: relative; width: 30px; height: 30px; display: grid; place-items: center; font: 600 7.5px/1 var(--font-sans); font-variant-numeric: tabular-nums; }
+.dk-rl .ring svg { position: absolute; inset: 0; width: 30px; height: 30px; }
+.dk-rl .ring .trk { fill: var(--surface); stroke: var(--groove, #e5e5ea); stroke-width: 2.5; } .dk-rl .ring .arc { fill: none; stroke-width: 2.5; stroke-linecap: round; }
+.dk-rl .ring.ok .arc { stroke: var(--status-ok); } .dk-rl .ring.bad .arc { stroke: var(--status-bad); } .dk-rl .ring.wait .arc { stroke: var(--status-wait); }
+.dk-rl .ring b { position: relative; }
+.dk-rl .msb { margin-left: 13px; padding-left: 9px; border-left: 2px solid var(--text-3); }
+.dk-rl .acc { flex: none; align-self: stretch; width: 3px; border-radius: 2px; margin: 2px 0; }
+.dk-rl .acc.ok { background: var(--status-ok-arc); } .dk-rl .acc.bad { background: var(--status-bad-arc); } .dk-rl .acc.wait { background: var(--status-wait-arc); }
+.dk-rl .seg { margin-left: auto; display: inline-flex; gap: 2px; align-self: center; }
+.dk-rl .seg i { width: 7px; height: 7px; border-radius: 2px; background: var(--text-3); opacity: .55; }
+.dk-rl .seg.ok i.f { opacity: 1; background: var(--status-ok); } .dk-rl .seg.bad i.f { opacity: 1; background: var(--status-bad); } .dk-rl .seg.wait i.f { opacity: 1; background: var(--status-wait); }
+.dk-rl .spb { margin-left: 1px; padding-left: 12px; border-left: 1px solid var(--text-3); }
+.dk-rl .ev { display: flex; gap: 8px; padding: 6px 0; align-items: flex-start; }
+.dk-rl .ev .ic { flex: none; width: 20px; height: 20px; color: var(--text-2); margin-top: 16px; }
+.dk-rl .ev .ic svg { width: 16px; height: 16px; }
+.dk-rl .ev .n4 { font: 600 11px/14px var(--font-sans); letter-spacing: .02em; color: var(--text-2); }
+.dk-rl .ev .k { font-size: 13px; line-height: 18px; color: var(--text-2); display: flex; gap: 6px; align-items: baseline; } .dk-rl .ev .k .tm { margin-left: auto; }
+.dk-rl .ev .t { font-size: 15px; line-height: 20px; }
+.dk-rl .ev.tp .t { font-weight: 600; }
+.dk-rl .ev .tx { flex: 1; min-width: 0; }

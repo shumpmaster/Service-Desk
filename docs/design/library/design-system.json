@@ -18,8 +18,8 @@
  },
  "lastChange": {
   "by": "Claude",
-  "at": "2026-11-24T12:00:00Z",
+  "at": "2026-11-24T20:30:00Z",
   "via": "Claude Code",
-  "note": "Round 7, links back and the Context view: new cards SessionLink and ContextView; RoundButton held turns the Context view on. decisions/questions/P-005-design-round-7.md, answers 2 to 5."
+  "note": "Round 7, the levels on rails: new card LevelRails (rails, level labels, sizes, the phase's milestone strip, percents in rings, sprint accent bars and squares, fourth numbers, folds that keep their place). decisions/questions/P-005-design-round-7.md, answers 8 to 15."
  }
 }

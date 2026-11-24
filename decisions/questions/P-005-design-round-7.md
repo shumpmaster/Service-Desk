@@ -110,3 +110,11 @@ Asked in the chat: which placement for the squares, right of the title or their 
 
 Read by the Chief of Staff as: the squares on their own row (U) are chosen; the gap above and below that row is to be tightened; each row under a sprint shows its fourth number on a line of its own at the top, then its lines as before. The thread on option 1's revisions (answers 10 and 11) is resolved as carried out.
 Carried out on the seventh phone (rl-sgU; sg.css and sg.js): the sprint row's squares sit closer to its title and its line under; each row under a sprint begins with its fourth number on a line of its own. Republished (version 6) and replied on the thread; asked whether this is it.
+
+15. "Oh shoot sorry, I didn't see the version with the progress bars to the side. 
+
+Let's use that one. But keep the numbers as their own top row. The vertical addition will also provide some overflow space if there are too many tasks"
+
+Carried out: the squares to the right of the sprint's title (the sixth phone, R), with each row's fourth number on a line of its own at the top (answer 14). With answers 9 to 15 the rails are settled: to be built into the library (a new card, LevelRails) and then mockup v28 over v27.
+
+Shown in chat: the library with LevelRails (https://claude.ai/artifact/UqdAH5E4nwtSJdxcATBp3W) and mockup v28 (https://claude.ai/artifact/9TUEBD24WS4seQAbusPQFJ). Still to come from answer 8: the fixed centre arrow and its match on the branch map.

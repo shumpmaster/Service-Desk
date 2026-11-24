@@ -1,0 +1,50 @@
+/* round 7, answer 9: rails, with a label for each level, subtler icons, even indents and a size for each level (options-rails).
+   No new colours. RL = 1: thin line icons. RL = 2: status dots only. */
+html.rl #v13list .lv-w { font: 600 10px/19px var(--font-ui); letter-spacing: .08em; text-transform: uppercase; color: var(--text-2); flex: none; }
+/* sizes, one per level: phase 22, milestone 17, sprint 15, event 15 (turning points semibold), its lines 12, a plan's action 13 */
+html.rl #v13list .v13phh { padding: 10px 0 10px; border-bottom: 1.5px solid var(--ink); margin-bottom: 6px; }
+html.rl #v13list .v13phh .l1 { font-size: 22px; line-height: 28px; }
+html.rl #v13list .v13ms { border-top: 0; }
+html.rl #v13list .v13ms > .v13gr { padding: 9px 0 7px; }
+html.rl #v13list .v13ms > .v13gr .l1 { font-size: 17px; line-height: 22px; } html.rl #v13list .v13ms > .v13gr .l1 b { font-weight: 600; }
+html.rl #v13list .v13sp > .v13gr .l1 { font-size: 15px; line-height: 20px; }
+html.rl #v13list .v13gr .l3 { font-size: 12px; line-height: 16px; }
+html.rl #v13list .v13ev .l1 { font-size: 13px; line-height: 18px; color: var(--text-2); }
+html.rl #v13list .v13ev .l1 > b { font-weight: 500; color: var(--text-2); }
+html.rl #v13list .v13ev .l2 { font-size: 15px; line-height: 20px; }
+html.rl #v13list .v13ev .l3 { font-size: 12px; line-height: 16px; }
+html.rl #v13list .wt-A.wt-1 { padding: 9px 0 8px; }
+html.rl #v13list .wt-A.wt-1 .l2 { font-size: 15px; line-height: 20px; font-weight: 600; }
+html.rl #v13list .v12plan li { font-size: 13px; }
+/* rails and even indents: each level hangs 20 in from its parent, on a rail through the parent's mark */
+html.rl #v13list .v13ms > .v13body { margin-left: 11px; padding-left: 15px; border-left: 2px solid var(--ink-5); }
+html.rl #v13list .v13sp { padding-left: 0; }
+html.rl #v13list .v13sp > .v13body { margin-left: 9px; padding-left: 15px; border-left: 1px solid var(--ink-5); }
+html.rl #v13list .v13acts { margin-left: 9px; border-left: 1px dashed var(--ink-5); padding-left: 8px; }
+/* subtler marks for the levels: thin rings, smaller */
+html.rl #v13list .v13phh .v13g { width: 28px; height: 28px; } html.rl #v13list .v13phh .v13g > svg { width: 28px; height: 28px; }
+html.rl #v13list .v13ms > .v13gr .v13g { width: 24px; height: 24px; } html.rl #v13list .v13ms > .v13gr .v13g > svg { width: 24px; height: 24px; }
+html.rl #v13list .v13sp > .v13gr .v13g { width: 20px; height: 20px; } html.rl #v13list .v13sp > .v13gr .v13g > svg { width: 20px; height: 20px; }
+html.rl #v13list .v13gr .v13g .trk { stroke-width: 2.5; }
+html.rl #v13list .v13gr .v13g .arc { stroke-width: 2.5; }
+html.rl #v13list .v13gr .v13g .in svg { width: 8px; height: 8px; }
+html.rl #v13list .v13sp > .v13gr .v13g .in { display: none; }
+/* RL 1: line icons, no discs; the kind's icon drawn thin in the secondary ink, main's events in full ink */
+html.rl-1 #v13list .v13ev > .v13ico { width: 20px; height: 20px; background: none; box-shadow: none; color: var(--text-2); margin-left: -1px; }
+html.rl-1 #v13list .v13ev > .v13ico > svg { width: 16px; height: 16px; stroke-width: 1.3; }
+html.rl-1 #v13list .v13ev > .v13ico.main { color: var(--ink); }
+html.rl-1 #v13list .v13ev > .v13ico.plan { box-shadow: none; color: var(--ink-5); }
+html.rl-1 #v13list .wt-A.wt-1 > .v13ico { width: 20px; height: 20px; margin-left: -1px; }
+html.rl-1 #v13list .wt-A.wt-1 > .v13ico > svg { width: 18px; height: 18px; }
+html.rl-1 #v13list .v13ev .v13mk { width: 10px; height: 10px; right: -3px; bottom: -2px; box-shadow: 0 0 0 1.5px var(--ground); }
+html.rl-1 #v13list .v13ev .v13mk svg { width: 7px; height: 7px; }
+/* RL 2: a status dot on the rail in place of the icon; the kind is the label word */
+html.rl-2 #v13list .v13ev > .v13ico { width: 9px; height: 9px; margin: 6px 6px 0 -20px; background: var(--ink-5); box-shadow: 0 0 0 3px var(--ground); border-radius: 50%; }
+html.rl-2 #v13list .v13ev > .v13ico > svg, html.rl-2 #v13list .v13ev > .v13ico > .v13mk { display: none; }
+html.rl-2 #v13list .v13ev > .v13ico:has(.v13mk.ok) { background: var(--status-ok-arc); }
+html.rl-2 #v13list .v13ev > .v13ico:has(.v13mk.bad) { background: var(--status-bad-dot); }
+html.rl-2 #v13list .v13ev > .v13ico:has(.v13mk.wait) { background: var(--status-wait-dot); }
+html.rl-2 #v13list .v13ev > .v13ico.main { background: var(--ink); }
+html.rl-2 #v13list .v13ev > .v13ico.plan { background: var(--ground); box-shadow: 0 0 0 3px var(--ground), inset 0 0 0 1.5px var(--ink-5); }
+html.rl-2 #v13list .wt-A.wt-1 > .v13ico { width: 11px; height: 11px; margin-left: -21px; }
+html.rl-2 #v13list .v13ev { gap: 6px; }

@@ -68,3 +68,5 @@ Asked by the question tool: "Telling the levels apart (the list stays top down).
 9. "I don’t really like the cards in that manner. I’m more inclined towards the rails, with a label of some sort and a more subtle & modern icon set with proper indentation and text sizing"
 
 Read by the Chief of Staff as: rails (A) as the base, refined: keep a label naming each level; lighter, simpler icons in place of the ringed discs; an even indent for each level; a clear text size for each level. To be drawn against v27 and A as shown, and asked.
+
+Shown live: https://claude.ai/artifact/4oisnPEMhMBhsd4ybAy17p (docs/design/mockups/options-rails/: now, rl-1, rl-2): v27 as it is, then rails with an even 20 indent per level, PHASE, MILESTONE and SPRINT labels, one size per level and thinner rings; 1, thin line icons with no disc (recommended); 2, status dots on the rail in place of icons. To be asked.

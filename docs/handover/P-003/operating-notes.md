@@ -105,9 +105,14 @@ All of these come from the main branch's history (`git log --first-parent --form
   (`git log --first-parent --diff-filter=A --format=%cI main -- queue/<id>.md`, its last line).
 - **A card's check moments from a due time** are the due time itself, then the committer time of each later commit
   on the main line that changes queue/, any notes file (`decisions/*/*-notes.md`), the dispatch log
-  (`dispatch-log/`) or the rule's code (src/lib/model.js), stopping at the first commit whose tree no longer holds
-  the card file. Between those commits only time passes, and that can only turn a held card to shown.
-- At each check moment, run the rule (above) on the commit current then, at that moment.
+  (`dispatch-log/`), `src/lib/` (the rule's code and the modules it imports) or the two record readers the count
+  runs (`src/notify/collect.mjs` and `src/notify/checkout.mjs`), stopping at the first commit whose tree no longer
+  holds the card file. Between those commits only time passes, and that can only turn a held card to shown.
+- At each check moment, run the rule (above) on the commit current then, at that moment, with the rule's code as
+  it stood at that commit. For a commit before M4 was merged (2783b48, PR #465), use the code as M4 merged it.
+- **A card's recorded raise time** is the one the rule gives at the first of its moments (its arrival, then each
+  later check-moment commit) at which the rule lists it with a recorded time, so a card whose `card` entry reaches
+  the main branch after its file still gets a V6 due time.
 
 The figures, for each decision card:
 
@@ -117,7 +122,9 @@ The figures, for each decision card:
    arrival plus 24 hours. Reported if `held` at any of its check moments.
 
 A check moment at which the records cannot be read (`notRead`, or `withoutNotes` with the card left out) is a failed
-read, reported as such, not a miss. A card answered before its due time has left queue/ and has no check moments.
+read, reported as such, not a miss. A card answered before its due time has left the open set (its card file stays in
+queue/, but it now has an answer; src/lib/model.js:141-147), so the rule no longer lists it, and it can be neither
+a miss nor reported.
 
 Example: a card and its entry arrive together at 2026-11-10 10:00, but the entry records 2026-11-11 09:00. With no
 notes, at the V6 due time 2026-11-12 09:00 it is `shown, no recommendation yet`: not a miss. At the second figure's

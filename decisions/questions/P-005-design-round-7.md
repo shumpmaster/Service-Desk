@@ -37,3 +37,8 @@ And then add a page toggle, the comes with  a hold press or click on the little 
 Call this context view"
 
 Read by the Chief of Staff as: 1, the first way (link each pipeline step to the Claude session watching it), with a tweak: each event's one link goes to a Claude conversation whenever there is one (the session that did it; for a pipeline step, the Chief of Staff session at work on P-005 when it ran, matched by time from the session lines; for the owner's merge, the session that prepared it), and only otherwise to the GitHub run, then the pull request; the run or pull request stays one tap further, in the bubble. Built on option A's tag, since no list or grouping was asked for. 2, a "Context view": holding the round button (whose tap already jumps to Now, and still does) toggles a slim list in the same order and numbers, each row a number, a title and that one link, entered with a short settle motion. Shown live, with how much it opens as the question: https://claude.ai/artifact/5weN7m17BcS6YBVJdtE5Mb (docs/design/mockups/options-context/: now, cx-A, cx-B). To be asked.
+
+Asked by the question tool: "Context view, on https://claude.ai/artifact/5weN7m17BcS6YBVJdtE5Mb. The links are built as you asked: ... Hold the round button at the bottom to switch to Context view; a tap still jumps to Now. How much should Context view open?" Options: "A: current phase open (Recommended)"; "B: everything open"; "Close, but…".
+5. "A: current phase open (Recommended)"
+
+Carried out: the links as read under answer 4, and the Context view with CX = 'A'. To be built into the library (new cards SessionLink and ContextView) and then mockup v27 over v26.

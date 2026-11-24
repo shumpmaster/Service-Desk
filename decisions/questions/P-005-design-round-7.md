@@ -63,3 +63,8 @@ Asked by the question tool: "The whole list bottom up, on https://claude.ai/arti
 Read by the Chief of Staff as: the list stays top down, as in round 6 and v27; answer 7's bottom-up order is withdrawn and not built. Two new asks, to be drawn one at a time against v27: 1, the levels of the list (phase, milestone, sprint, event, a plan's action) should look more distinct from one another; 2, a fixed centre: an arrow fixed at the middle of the screen marks whichever row (phase, milestone, sprint, event or action) is level with it as the list scrolls past, and a matching arrow appears on the floating branch map at that row's place.
 
 Shown live, for the first of answer 8's asks: https://claude.ai/artifact/DWgPjfajkP3ib5oFkg7Haj (docs/design/mockups/options-levels/: now, lv-A to lv-C): v27 as it is, then A, rails; B, cards (recommended); C, type and labels. To be asked. The bottom-up drawing (options-bottomup/) is kept for the record and not built.
+
+Asked by the question tool: "Telling the levels apart (the list stays top down). On https://claude.ai/artifact/DWgPjfajkP3ib5oFkg7Haj: v27 as it is, then three live phones. Which one? The fixed centre arrow comes next, on its own page." Options: "B: cards (Recommended)"; "A: rails"; "C: type and labels"; "Mix or none".
+9. "I don’t really like the cards in that manner. I’m more inclined towards the rails, with a label of some sort and a more subtle & modern icon set with proper indentation and text sizing"
+
+Read by the Chief of Staff as: rails (A) as the base, refined: keep a label naming each level; lighter, simpler icons in place of the ringed discs; an even indent for each level; a clear text size for each level. To be drawn against v27 and A as shown, and asked.

@@ -70,3 +70,10 @@ Asked by the question tool: "Telling the levels apart (the list stays top down).
 Read by the Chief of Staff as: rails (A) as the base, refined: keep a label naming each level; lighter, simpler icons in place of the ringed discs; an even indent for each level; a clear text size for each level. To be drawn against v27 and A as shown, and asked.
 
 Shown live: https://claude.ai/artifact/4oisnPEMhMBhsd4ybAy17p (docs/design/mockups/options-rails/: now, rl-1, rl-2): v27 as it is, then rails with an even 20 indent per level, PHASE, MILESTONE and SPRINT labels, one size per level and thinner rings; 1, thin line icons with no disc (recommended); 2, status dots on the rail in place of icons. To be asked.
+
+Asked by the question tool (cut off by a restart before it was answered, so not asked): "Rails, refined ... Which one?" Options: "1: thin line icons (Recommended)"; "2: status dots"; "Close, but…".
+10. A comment on the rails page, written at 18:11 UTC on 24 November, on option 1's phone: "Option 1 is perfect with the following revisions
+
+For the phase, let’s push the text left aligned, get rid of the progress circle and replace it with a milestone indicator, the boxes side by with status color and a current milestone indication as well. Then on all of the remainigg by progress circles keep them, but put the percent complete in the circle."
+
+Read by the Chief of Staff as: option 1 (thin line icons) is chosen, with two revisions: 1, the phase's heading starts at the left edge with no ring; under it, a strip of small boxes side by side, one per milestone in the list's order, each in its status colour, with the current milestone marked; 2, every other ring (milestones and sprints) stays, with its percent complete written inside in place of the icon. To be drawn and asked once.

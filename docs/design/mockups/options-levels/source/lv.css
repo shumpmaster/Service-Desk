@@ -1,0 +1,28 @@
+/* round 7, answer 8: "a better visual delineation on the different hierarchy elements" (options-levels). No new colours. */
+/* A: rails. Each level steps in and hangs from its own rail; a small caps word names the level. */
+.lv-A #v13list .v13phh { border-bottom: 2px solid var(--ink); margin-bottom: 4px; }
+.lv-A #v13list .v13ms > .v13body { margin-left: 15px; padding-left: 4px; border-left: 3px solid var(--rule); }
+.lv-A #v13list .v13sp > .v13body { margin-left: 14px; padding-left: 2px; border-left: 1.5px solid var(--rule); }
+.lv-A #v13list .v13acts { border-left: 1px dashed var(--rule); }
+.lv-A #v13list .v13ms > .v13gr .l1 { font-size: 17px; line-height: 22px; }
+.lv-A #v13list .v13ms > .v13gr .l1 b { font-weight: 600; }
+.lv-A #v13list .lv-w, .lv-C #v13list .lv-w { font: 600 10px/19px var(--font-ui); letter-spacing: .07em; text-transform: uppercase; color: var(--text-2); flex: none; }
+/* B: cards. An open milestone is a card; an open sprint is a tinted panel inside it; the phase heads the page above a rule. */
+.lv-B #v13list .v13phh { border-bottom: 1px solid var(--rule); margin-bottom: 10px; }
+.lv-B #v13list .v13ms { border-top: 0; margin: 0 0 8px; border-radius: 16px; }
+.lv-B #v13list .v13ms.open { background: var(--surface); box-shadow: 0 1px 3px rgba(0,0,0,.06), 0 0 0 1px var(--rule-2); padding: 2px 12px 6px; margin-inline: -8px; }
+.lv-B #v13list .v13ms:not(.open) { padding: 0 4px; }
+.lv-B #v13list .v13ms > .v13gr .l1 { font-size: 17px; line-height: 22px; }
+.lv-B #v13list .v13sp { padding-left: 0; margin: 4px 0; border-radius: 12px; }
+.lv-B #v13list .v13sp.open { background: var(--ground); padding: 0 10px 4px; box-shadow: inset 0 0 0 1px var(--rule-2); }
+.lv-B #v13list .v13acts { background: var(--surface); border-radius: 10px; padding-top: 4px; }
+/* C: type and labels. No boxes: a size for each level, a small caps word naming it, and a rule that weakens with depth. */
+.lv-C #v13list .v13phh { border-bottom: 2px solid var(--ink); }
+.lv-C #v13list .v13phh .l1 { font-size: 26px; line-height: 32px; }
+.lv-C #v13list .v13ms { border-top: 1px solid var(--rule); }
+.lv-C #v13list .v13ms > .v13gr { padding: 12px 0 8px; }
+.lv-C #v13list .v13ms > .v13gr .l1 { font-size: 19px; line-height: 24px; } .lv-C #v13list .v13ms > .v13gr .l1 b { font-weight: 700; }
+.lv-C #v13list .v13sp { border-top: 1px dotted var(--rule); margin-top: 4px; }
+.lv-C #v13list .v13sp > .v13gr .l1 { font-size: 15px; } .lv-C #v13list .v13sp > .v13gr .l1 b { font-weight: 600; }
+.lv-C #v13list .v13ev .l1 { font-size: 14px; }
+.lv-C #v13list .v12plan li { font-size: 13px; }

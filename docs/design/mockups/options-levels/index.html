@@ -1,0 +1,64 @@
+<title>Clearer Levels</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<style>/* Layout: the question, then v23 as it is and three live phones side by side; they wrap to two, then one, column. Tokens follow the Desk Element Library (v22). */
+:root { --ground:#f2f3f7; --surface:#ffffff; --text-1:#1c1d21; --text-2:#6b6d71; --separator:#e7e9ed; --now-word:#0868bc;
+  --sans:-apple-system,BlinkMacSystemFont,"SF Pro Text","Inter","Segoe UI",Roboto,sans-serif; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --ground:#000000; --surface:#1c1c1e; --text-1:#f2f2f7; --text-2:#98989f; --separator:#38383a; --now-word:#9fd0ff; color-scheme:dark } }
+:root[data-theme="dark"] { --ground:#000000; --surface:#1c1c1e; --text-1:#f2f2f7; --text-2:#98989f; --separator:#38383a; --now-word:#9fd0ff; color-scheme:dark }
+body { background:var(--ground); color:var(--text-1); font:400 17px/1.4 var(--sans);
+  padding-left:max(16px, env(safe-area-inset-left, 0px)); padding-right:max(16px, env(safe-area-inset-right, 0px)); padding-block:24px 48px; }
+main { max-width:1680px; margin:0 auto; display:flex; flex-direction:column; gap:32px; }
+h1 { font:700 27px/1.15 var(--sans); margin:0; text-wrap:balance; }
+p { margin:0; max-width:70ch; }
+a { color:var(--now-word); }
+.lede { display:flex; flex-direction:column; gap:10px; } .lede p { color:var(--text-2); font-size:15px; }
+.lede blockquote { margin:0; padding:10px 14px; border-radius:12px; background:var(--surface); font-size:15px; max-width:70ch; }
+.phones { display:grid; grid-template-columns:repeat(4, minmax(0, 395px)); gap:20px; align-items:start; }
+.opt { display:flex; flex-direction:column; gap:10px; min-width:0; }
+.tag { font:600 13px/1 var(--sans); letter-spacing:.06em; text-transform:uppercase; color:var(--text-2); }
+.tag.rec { color:var(--now-word); }
+h2 { font:600 19px/1.25 var(--sans); margin:0; text-wrap:balance; }
+.opt ul { margin:0; padding-left:20px; display:flex; flex-direction:column; gap:4px; font-size:15px; color:var(--text-2); min-height:9.5em; }
+.phone { width:100%; max-width:395px; height:760px; border:1px solid var(--separator); border-radius:24px; overflow:hidden; background:var(--surface); }
+.phone iframe { width:393px; max-width:100%; height:100%; border:0; display:block; }
+.open { font-size:14px; }
+@media (max-width: 1720px) { .phones { grid-template-columns:repeat(2, minmax(0, 395px)); } }
+@media (max-width: 860px) { .phones { grid-template-columns:minmax(0, 1fr); } .opt ul { min-height:0; } }
+</style>
+<main>
+  <div class="lede">
+    <h1>Telling the levels apart</h1>
+    <p>Your answer, the first of its two asks:</p>
+    <blockquote>"Okay sorry now that I look at it and think about I actually want it from the top down. But also I want a better visual delineation on the different hierarchy elements."</blockquote>
+    <p>The list stays top down, as in v27; the bottom-up version is set aside. Today a phase, a milestone and a sprint all use the same row: a ring, a number and a name in nearly the same size, split by faint hairlines. Below: v27 as it is, then three ways to tell the five levels (phase, milestone, sprint, event, a plan's action) apart. Each phone opens on the timeline at M6. Scroll inside it. No new colours. The fixed centre arrow comes next, on its own page.</p>
+  </div>
+  <div class="phones">
+    <section class="opt">
+      <span class="tag">As it is</span><h2>v27: one row for every level</h2>
+      <ul><li>Milestones and sprints look alike; only the indent and the number's length tell them apart.</li></ul>
+      <div class="phone"><iframe src="now.html" title="As it is: v27, live" loading="lazy"></iframe></div>
+      <a class="open" href="now.html" target="_blank" rel="noopener">Open full screen</a>
+    </section>
+    <section class="opt">
+      <span class="tag">Option A</span><h2>Rails</h2>
+      <ul><li>Each level steps in and hangs from its own rail: thick for a milestone, thin for a sprint, dashed for a plan.</li>
+        <li>A small capital word names the level (MILESTONE, SPRINT); a strong rule under the phase.</li></ul>
+      <div class="phone"><iframe src="lv-A.html" title="Option A, live" loading="lazy"></iframe></div>
+      <a class="open" href="lv-A.html" target="_blank" rel="noopener">Open full screen</a>
+    </section>
+    <section class="opt">
+      <span class="tag rec">Option B · recommended</span><h2>Cards</h2>
+      <ul><li>An open milestone becomes a white card holding its sprints; an open sprint is a tinted panel inside it holding its events.</li>
+        <li>You see at a glance what belongs to what. Folded milestones stay plain rows.</li></ul>
+      <div class="phone"><iframe src="lv-B.html" title="Option B, live" loading="lazy"></iframe></div>
+      <a class="open" href="lv-B.html" target="_blank" rel="noopener">Open full screen</a>
+    </section>
+    <section class="opt">
+      <span class="tag">Option C</span><h2>Type and labels</h2>
+      <ul><li>No boxes: each level its own size (phase 26, milestone 19 bold, sprint 15, event 14, action 13), with the small capital word.</li>
+        <li>Rules weaken with depth: strong under the phase, a line above a milestone, dotted above a sprint.</li></ul>
+      <div class="phone"><iframe src="lv-C.html" title="Option C, live" loading="lazy"></iframe></div>
+      <a class="open" href="lv-C.html" target="_blank" rel="noopener">Open full screen</a>
+    </section>
+  </div>
+</main>

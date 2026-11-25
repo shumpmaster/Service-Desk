@@ -7,3 +7,4 @@ A fixed point the list scrolls past, and its match on the branch map. Chosen by 
 - **On the map**, a small blue arrow points down at the matching event: the event itself, a sprint's or milestone's first event, or the event a plan follows. It moves with the scroll and hides when the event is off the map's edge.
 - Hidden while the ContextView is on, and on home.
 - Icons: Phosphor (MIT), regular for rows, bold for controls and menus, fill for anything selected; Craft's own are Apple's SF Symbols, which a web page cannot use.
+- **v33 (round 8):** the pointer stands 4 in from the edge with a rounded tip (L9); the row's wash fades in 120 and out 200, with the map's arrow (M6). "Needed by" and the other jumps land the row they name at the centre, its arrow on the map (F1).

@@ -7,3 +7,4 @@ The project at a glance, held from the round button. Chosen by the owner on 24 N
 - **What steps aside:** the branch map and the phase row; the slim bar, the project pills and the tab bar stay.
 - **Motion:** the list settles in from slightly larger, each row a beat after the one above, then lands on Now. The reduced-motion setting turns it off.
 - Icons: Phosphor (MIT), regular for rows, bold for controls and menus, fill for anything selected; Craft's own are Apple's SF Symbols, which a web page cannot use.
+- **v33 (round 8):** the view lands first, then only the first eight rows settle, 14 ms apart (M8).

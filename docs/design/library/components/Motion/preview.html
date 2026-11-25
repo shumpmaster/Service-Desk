@@ -1,0 +1,15 @@
+<!-- @dsCard group="Foundations" height=420 -->
+<!doctype html>
+<html lang="en">
+<head><meta charset="utf-8"><title>Motion</title></head>
+<body>
+<div class="dk-stage col"><div class="dk-mo"><div class="lane"><i style="left:12px"></i><i style="left:34px"></i><i style="left:56px"></i><span>the map's events slide, 320 spring</span></div><div class="acts"><button class="dk-circ glass dk-press" id="mo-slide" aria-label="Slide the events"><svg class="i" aria-hidden="true" focusable="false" viewBox="0 0 256 256" fill="currentColor"><path d="M216.49,184.49l-32,32a12,12,0,0,1-17-17L179,188H48a12,12,0,0,1,0-24H179l-11.52-11.51a12,12,0,0,1,17-17l32,32A12,12,0,0,1,216.49,184.49Zm-145-64a12,12,0,0,0,17-17L77,92H208a12,12,0,0,0,0-24H77L88.49,56.49a12,12,0,0,0-17-17l-32,32a12,12,0,0,0,0,17Z"/></svg></button><span class="dk-sl claude dk-tagbtn"><i class="d"></i>Claude</span><span class="dk-sl">Why</span></div><div class="fold"><button type="button">Sprint 2.2.2 · tap to fold</button><div class="b"><p>Opens on the spring in 320 ms, its words fading in over the first 150; closes in 240 on the exit curve. The row you tapped stays put.</p></div></div><p class="dk-note">Press anything: controls dip to .96 and spring back; rows take a grey fill; tags dim.</p></div></div>
+<script>
+
+var R = matchMedia('(prefers-reduced-motion: reduce)').matches, S = getComputedStyle(document.documentElement).getPropertyValue('--spring').trim() || 'cubic-bezier(.2,.8,.2,1)';
+document.getElementById('mo-slide').onclick = function () { document.querySelectorAll('.dk-mo .lane i').forEach(function (d, i) { var from = d.offsetLeft, to = from > 150 ? 12 + i * 22 : 220 + i * 22; d.style.left = to + 'px'; if (!R) d.animate([{ transform: 'translateX(' + (from - to) + 'px)' }, { transform: 'none' }], { duration: 320, easing: S }); }); };
+document.querySelector('.dk-mo .fold button').onclick = function () { var b = this.nextElementSibling, open = b.hidden; if (open) { b.hidden = false; var h = b.scrollHeight; if (!R) b.animate([{ height: '0px', opacity: 0 }, { height: h + 'px', opacity: 1 }], { duration: 320, easing: S }); } else { var h2 = b.offsetHeight; if (R) { b.hidden = true; return; } var a = b.animate([{ height: h2 + 'px', opacity: 1 }, { height: '0px', opacity: 0 }], { duration: 240, easing: 'cubic-bezier(.4,0,1,1)' }); a.onfinish = function () { b.hidden = true; }; } };
+
+</script>
+</body>
+</html>

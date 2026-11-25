@@ -9,3 +9,4 @@ Home, grouped by what waits on the owner: one summary sentence, then a group for
 - **A waiting row**: the kind's icon, the question in 15 `text-1` on up to two lines, under it what it holds up in 12.5 `text-2` ("Holds up M6, M7, M8", or the phase when it feeds no milestone), its age at the right. The longest wait on the desk, a week or more, wears a red "Longest wait" tag above its question. Each thing waiting is shown once on home.
 - **The quiet row**: a grey dot and "Nothing waits on you in …"; tapped, it opens the quiet projects as project rows, each with its strip. Shown here open.
 - Icons: Phosphor (MIT), regular for rows, bold for controls and menus, fill for anything selected; Craft's own are Apple's SF Symbols, which a web page cannot use.
+- **v33 (round 8):** the strip fits its card at 360; the wait time sits under the question, so the question keeps up to three lines (R5).

@@ -10,3 +10,4 @@ How a project's list tells its levels apart: rails, a label for each level, one 
 - **Nothing moves**: folding or opening a row keeps the tapped row where it was on the screen.
 - Colour: only the soft status colours and the one blue.
 - Icons: Phosphor (MIT), regular for rows, bold for controls and menus, fill for anything selected; Craft's own are Apple's SF Symbols, which a web page cannot use.
+- **v33 (round 8):** the phase strip's current segment is raised by a soft shadow, not a black ring, and a washed heading hides its rule (L7); routine rows' words sit on the same column as every other event's (L8); one separator colour, a hairline on retina (L9); 700 only for the phase's name (L3).

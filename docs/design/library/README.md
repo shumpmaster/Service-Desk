@@ -4,6 +4,10 @@ The quiet, round, neutral look for the whole desk, taken from the owner's Craft 
 
 This library holds every element seen in the owner's seven Craft screenshots (references 11 to 17 in Service-Desk `docs/design/references/`). The measures come from the external audit of those screenshots (`docs/design/audit-2026-11-14-craft-v7.md`, Part 2). Mockup v8 (`docs/design/mockups/timeline-v8-craft.html`) is the first desk screen built from them. The palette is neutral only for now; the owner will add colour later.
 
+## Change, 25 November 2026 (round 8, the two reviews: polish and motion)
+
+From the design reviewer's two reviews of mockup v32 (docs/design/audit-2026-11-25-v32-review.md and docs/design/audit-2026-11-25-v32-polish.md), within the owner's rulings (decisions/questions/P-005-design-round-8.md, answers 1 to 3). **One blue** in three roles: fill `accent` #0a6cff (the same in both themes, so white on it passes), text `accent-text`, and washes; the bell is in ink. **One type ramp** (11, 12, 13, 15, 17, 20, 22, 28; weights 400 and 600, 700 for the large and phase titles), **one radius scale** (6, 12, 20, 28, full), **one separator** colour as a retina hairline. **Dark mode** lifts by lightness (`surface-band`), keeps status washes in their hue, and lets done merges recede. A new **Motion** card holds one curve, one spring and four durations for the whole desk, and every control now answers a press (`press-fill`). Changed: Gauge, TopPills, EventBubble, SessionLink, BranchMap, MilestoneMap, FixedCentre, LevelRails, RoundButton, ContextView, BottomSheet, PopoverMenu, WaitGroup (each card's README ends with its v33 line).
+
 ## Change, 15 November 2026 (round 3)
 
 The colour hold is lifted for status only (decisions/questions/P-005-design-round-3.md, answers 4 to 13). Status takes soft green, yellow and red (`status-ok`, `status-wait`, `status-bad` and their tinted forms) on gauges, event marks, tags and the branch map. Everything else stays neutral, with the one blue. The shapes for milestones and sprints are still on hold. New cards: Gauge, StatusMark, BranchMap and PhaseRow. On the timeline, BranchMap replaces LaneGraph.

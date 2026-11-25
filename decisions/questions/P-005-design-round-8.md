@@ -10,3 +10,5 @@ Asked in chat: "First question: what do you think of v32 as a whole? https://cla
 1. "I like it as a whole, can you dispatch a fable 5.2 model to review it and identify potential improvements to flow, useability, readability etc...?"
 
 Read by the Chief of Staff as: v32 holds as a whole. Before the queued items (gate, decision, research and stop; what serves no purpose or is missing), the design reviewer is dispatched on the requested model for an advisory review of v32, not a pull-request verdict, looking for improvements to flow, usability and readability. Its findings are to be put to the owner, one at a time with pictures, before anything is changed.
+
+Carried out: the design reviewer's advisory review of v32, recorded verbatim at docs/design/audit-2026-11-25-v32-review.md. It ranks findings under Flow (F1 to F6), Usability (U1 to U8), Readability (R1 to R6) and Other (O1 to O5), and adds observations on what serves no purpose or is missing. Several findings touch earlier rulings (round 3 answer 4; R5 answers 4 and 7; R7 answers 4, 11 and 20) and are put to the owner as questions, not changes.

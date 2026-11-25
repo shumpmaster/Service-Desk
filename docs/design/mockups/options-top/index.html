@@ -1,0 +1,50 @@
+<title>Two Pills on Top</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<style>/* Layout: the question, then v23 as it is and three live phones side by side; they wrap to two, then one, column. Tokens follow the Desk Element Library (v22). */
+:root { --ground:#f2f3f7; --surface:#ffffff; --text-1:#1c1d21; --text-2:#6b6d71; --separator:#e7e9ed; --now-word:#0868bc;
+  --sans:-apple-system,BlinkMacSystemFont,"SF Pro Text","Inter","Segoe UI",Roboto,sans-serif; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --ground:#000000; --surface:#1c1c1e; --text-1:#f2f2f7; --text-2:#98989f; --separator:#38383a; --now-word:#9fd0ff; color-scheme:dark } }
+:root[data-theme="dark"] { --ground:#000000; --surface:#1c1c1e; --text-1:#f2f2f7; --text-2:#98989f; --separator:#38383a; --now-word:#9fd0ff; color-scheme:dark }
+body { background:var(--ground); color:var(--text-1); font:400 17px/1.4 var(--sans);
+  padding-left:max(16px, env(safe-area-inset-left, 0px)); padding-right:max(16px, env(safe-area-inset-right, 0px)); padding-block:24px 48px; }
+main { max-width:1680px; margin:0 auto; display:flex; flex-direction:column; gap:32px; }
+h1 { font:700 27px/1.15 var(--sans); margin:0; text-wrap:balance; }
+p { margin:0; max-width:70ch; }
+a { color:var(--now-word); }
+.lede { display:flex; flex-direction:column; gap:10px; } .lede p { color:var(--text-2); font-size:15px; }
+.lede blockquote { margin:0; padding:10px 14px; border-radius:12px; background:var(--surface); font-size:15px; max-width:70ch; }
+.phones { display:grid; grid-template-columns:repeat(2, minmax(0, 395px)); gap:20px; align-items:start; }
+.opt { display:flex; flex-direction:column; gap:10px; min-width:0; }
+.tag { font:600 13px/1 var(--sans); letter-spacing:.06em; text-transform:uppercase; color:var(--text-2); }
+.tag.rec { color:var(--now-word); }
+h2 { font:600 19px/1.25 var(--sans); margin:0; text-wrap:balance; }
+.opt ul { margin:0; padding-left:20px; display:flex; flex-direction:column; gap:4px; font-size:15px; color:var(--text-2); min-height:9.5em; }
+.phone { width:100%; max-width:395px; height:760px; border:1px solid var(--separator); border-radius:24px; overflow:hidden; background:var(--surface); }
+.phone iframe { width:393px; max-width:100%; height:100%; border:0; display:block; }
+.open { font-size:14px; }
+@media (max-width: 1720px) { .phones { grid-template-columns:repeat(2, minmax(0, 395px)); } }
+@media (max-width: 860px) { .phones { grid-template-columns:minmax(0, 1fr); } .opt ul { min-height:0; } }
+</style>
+<main>
+  <div class="lede">
+    <h1>Project and phase as two pills at the top</h1>
+    <p>What you said:</p>
+    <blockquote>"Maybe we do this. Convert the project Pills and the phase pills into two separate pills, that act as dropdown filters. And place both of them in the top. Then do a final pass on space optimization and readability."</blockquote>
+    <p><b>The top row</b> is now Back, the project pill (its name and what waits on you), the phase pill (the phase in view, with its small progress ring), then the bell and More. Tap the project pill for the list of projects; choose one to switch. Tap the phase pill for the phases with their gates and percents; choose one to go to it in the list. The phase pill follows the phase at the fixed centre as you scroll.</p>
+    <p><b>The pass for room and legibility:</b> the row of project pills and the four phase tiles are gone, so the floating top drops from about 362 points to about 339, and with v30 about 120 fewer. The list's titles are a touch larger (15.5) and its detail lines 12.5; the map's words 10.5; an event's first line now wraps instead of cutting its status ("Awaiting y…"). No new colours.</p>
+  </div>
+  <div class="phones">
+    <section class="opt">
+      <span class="tag">As it was</span><h2>Answer 21's option A</h2>
+      <ul><li>Pills for every project, and the phases in a capsule under the map.</li></ul>
+      <div class="phone"><iframe src="now.html" title="As it was, live" loading="lazy"></iframe></div>
+      <a class="open" href="now.html" target="_blank" rel="noopener">Open full screen</a>
+    </section>
+    <section class="opt">
+      <span class="tag rec">Your change</span><h2>Two pills at the top</h2>
+      <ul><li>Tap either pill for its list. Scroll up into Discovery and watch the phase pill change.</li></ul>
+      <div class="phone"><iframe src="top.html" title="Two pills at the top, live" loading="lazy"></iframe></div>
+      <a class="open" href="top.html" target="_blank" rel="noopener">Open full screen</a>
+    </section>
+  </div>
+</main>

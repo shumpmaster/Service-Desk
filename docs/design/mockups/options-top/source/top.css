@@ -1,0 +1,43 @@
+/* round 7, answer 22: one top row, Back, the project pill, the phase pill, the bell and More; a pass for room and legibility (options-top). */
+html.tp #v13band .pl-row .chips, html.tp #v13band .v13phases { display: none !important; }
+html.tp #v13band .pl-row { gap: 6px; padding: 6px 10px 4px; }
+.tp-pill { all: unset; box-sizing: border-box; cursor: pointer; flex: 0 1 auto; min-width: 0; height: 34px; display: inline-flex; align-items: center; gap: 6px; padding: 0 10px 0 12px; border-radius: 17px; background: var(--surface); box-shadow: var(--v13-chip-shadow, 0 0 0 1px var(--rule)); font: 600 14px/1 var(--font-ui); color: var(--ink); }
+.tp-pill .t { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
+.tp-pill .n { flex: none; font: 600 11px/18px var(--font-ui); min-width: 18px; text-align: center; border-radius: 9px; background: var(--you, #1d4ed8); color: #fff; padding: 0 5px; }
+.tp-pill .no { flex: none; color: var(--text-2); font-weight: 600; }
+.tp-pill svg.cv { flex: none; width: 12px; height: 12px; color: var(--text-2); transition: transform .2s; }
+.tp-pill[aria-expanded="true"] svg.cv { transform: rotate(180deg); }
+.tp-pill:focus-visible { outline: 2px solid var(--now-word); outline-offset: 2px; }
+.tp-pill .ring { flex: none; width: 16px; height: 16px; }
+.tp-spacer { flex: 1; }
+/* the dropdown lists (the desk's popover) */
+.menu.tp-menu { width: 270px; padding: 6px 0; border-radius: 20px; }
+.tp-menu .mi { min-height: 44px; font-size: 16px; gap: 10px; padding: 0 16px; }
+.tp-menu .mi .sub { margin-left: auto; font-size: 13px; color: var(--text-2); }
+.tp-menu .mi .n { font: 600 11px/18px var(--font-ui); min-width: 18px; text-align: center; border-radius: 9px; background: var(--you, #1d4ed8); color: #fff; padding: 0 5px; }
+.tp-menu .mi.on { font-weight: 600; }
+.tp-menu .mi .ck { margin-left: 6px; color: var(--now-word); }
+.tp-menu .mcap { padding: 6px 16px 4px; font: 600 11px/14px var(--font-ui); letter-spacing: .06em; text-transform: uppercase; color: var(--text-2); }
+.tp-menu .gate { min-height: 30px; font-size: 13px; color: var(--text-2); pointer-events: none; }
+.tp-menu .gate i { width: 8px; height: 8px; transform: rotate(45deg); border-radius: 2px; box-shadow: inset 0 0 0 1.5px var(--ink-5); margin: 0 4px; }
+.tp-menu .gate.ok i { background: var(--status-ok-arc); box-shadow: none; }
+/* the pass for room and legibility */
+html.tp #v13band .v13vp { margin-top: 0; }
+html.tp #v13list .v13phh { padding-top: 6px; }
+html.tp #v13list .v13gr .l3, html.tp #v13list .v13ev .l3 { font-size: 12.5px; line-height: 17px; }
+html.tp #v13list .v13ev .l2 { font-size: 15.5px; line-height: 21px; }
+html.tp #v13band text.lb, html.tp #v13band text.fl { font-size: 10.5px; }
+.tp-pill .ring, .tp-menu .ring { flex: none; width: 18px !important; height: 18px !important; }
+.tp-pill .ring > svg, .tp-menu .ring > svg { width: 18px !important; height: 18px !important; }
+.tp-pill .ring .in, .tp-menu .ring .in { font: 700 9px/1 var(--font-ui); }
+.tp-pill .ring .trk, .tp-pill .ring .arc, .tp-menu .ring .trk, .tp-menu .ring .arc { stroke-width: 3.5; }
+/* room for both names: the bell and More pull closer, the pills' words a touch smaller */
+html.tp #v13band .pl-row > .capsule { padding: 0 2px; gap: 0; width: auto; }
+html.tp #v13band .pl-row > .capsule .cbtn { width: 32px; height: 32px; }
+html.tp #v13band .pl-row > .circ { width: 32px; height: 32px; }
+.tp-pill { font-size: 13.5px; padding: 0 8px 0 10px; gap: 5px; }
+.tp-pill.pj { flex: 1 1 auto; max-width: 60%; }
+.tp-pill.ph { flex: 0 0 auto; }
+/* an event's first line wraps rather than cutting its status ("Awaiting y…") */
+html.tp #v13list .v13ev .l1 { flex-wrap: wrap; row-gap: 2px; }
+html.tp #v13list .v13ev .l1 .v13tag { overflow: visible; max-width: none; }

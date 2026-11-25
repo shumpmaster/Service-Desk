@@ -157,3 +157,5 @@ Asked in the chat: "Is this it? If so, it goes into the library and becomes mock
 21. "This is almost perfect. Let's redesign the phase tiles to add more space for the text timeline at the bottom of the page. We can also get rid of the header on this page to get more space"
 
 Read by the Chief of Staff as: answer 20's drawing stands; to win back room for the list, the four phase tiles (1 Discovery, 2 Design, 3 Build, 4 Launch) are to be redrawn much slimmer, and the project page's slim title bar (Back, "The timeline", its live line, the bell and More) is to go, its controls finding a place elsewhere. To be drawn and asked.
+
+Shown live: https://claude.ai/artifact/DQeTJeUNJwRvP9jKUhq4v4 (docs/design/mockups/options-slim/: now = answer 20's drawing, hb-A, hb-B): in both, the title bar gone, Back to the left of the project pills and the bell and More to their right, the live line no longer shown, the band about 461 to about 362 points; A, the phases in one slim capsule, a small ring, number and name on one line (recommended); B, text tabs with a thin progress line in the status colour. To be asked.

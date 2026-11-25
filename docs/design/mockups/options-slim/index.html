@@ -1,0 +1,56 @@
+<title>Slimmer Top</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<style>/* Layout: the question, then v23 as it is and three live phones side by side; they wrap to two, then one, column. Tokens follow the Desk Element Library (v22). */
+:root { --ground:#f2f3f7; --surface:#ffffff; --text-1:#1c1d21; --text-2:#6b6d71; --separator:#e7e9ed; --now-word:#0868bc;
+  --sans:-apple-system,BlinkMacSystemFont,"SF Pro Text","Inter","Segoe UI",Roboto,sans-serif; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --ground:#000000; --surface:#1c1c1e; --text-1:#f2f2f7; --text-2:#98989f; --separator:#38383a; --now-word:#9fd0ff; color-scheme:dark } }
+:root[data-theme="dark"] { --ground:#000000; --surface:#1c1c1e; --text-1:#f2f2f7; --text-2:#98989f; --separator:#38383a; --now-word:#9fd0ff; color-scheme:dark }
+body { background:var(--ground); color:var(--text-1); font:400 17px/1.4 var(--sans);
+  padding-left:max(16px, env(safe-area-inset-left, 0px)); padding-right:max(16px, env(safe-area-inset-right, 0px)); padding-block:24px 48px; }
+main { max-width:1680px; margin:0 auto; display:flex; flex-direction:column; gap:32px; }
+h1 { font:700 27px/1.15 var(--sans); margin:0; text-wrap:balance; }
+p { margin:0; max-width:70ch; }
+a { color:var(--now-word); }
+.lede { display:flex; flex-direction:column; gap:10px; } .lede p { color:var(--text-2); font-size:15px; }
+.lede blockquote { margin:0; padding:10px 14px; border-radius:12px; background:var(--surface); font-size:15px; max-width:70ch; }
+.phones { display:grid; grid-template-columns:repeat(3, minmax(0, 395px)); gap:20px; align-items:start; }
+.opt { display:flex; flex-direction:column; gap:10px; min-width:0; }
+.tag { font:600 13px/1 var(--sans); letter-spacing:.06em; text-transform:uppercase; color:var(--text-2); }
+.tag.rec { color:var(--now-word); }
+h2 { font:600 19px/1.25 var(--sans); margin:0; text-wrap:balance; }
+.opt ul { margin:0; padding-left:20px; display:flex; flex-direction:column; gap:4px; font-size:15px; color:var(--text-2); min-height:9.5em; }
+.phone { width:100%; max-width:395px; height:760px; border:1px solid var(--separator); border-radius:24px; overflow:hidden; background:var(--surface); }
+.phone iframe { width:393px; max-width:100%; height:100%; border:0; display:block; }
+.open { font-size:14px; }
+@media (max-width: 1720px) { .phones { grid-template-columns:repeat(2, minmax(0, 395px)); } }
+@media (max-width: 860px) { .phones { grid-template-columns:minmax(0, 1fr); } .opt ul { min-height:0; } }
+</style>
+<main>
+  <div class="lede">
+    <h1>A slimmer top, more room for the list</h1>
+    <p>What you said:</p>
+    <blockquote>"This is almost perfect. Let's redesign the phase tiles to add more space for the text timeline at the bottom of the page. We can also get rid of the header on this page to get more space"</blockquote>
+    <p><b>In both:</b> the title bar goes. Back moves to the left of the project pills, and the bell (Needs you) and More to their right; the lit pill already names the project. The live line ("Live · as of 17:25") is no longer shown. The floating top drops from about 461 points to about 362, so the list gets about 100 more.</p>
+    <p>They differ only in the phase tiles. Each phone opens on the timeline at Now; tap a phase, and scroll.</p>
+  </div>
+  <div class="phones">
+    <section class="opt">
+      <span class="tag">As it is</span><h2>Your last version</h2>
+      <ul><li>The title bar, the pills, the map, and four tall phase tiles.</li></ul>
+      <div class="phone"><iframe src="now.html" title="As it is, live" loading="lazy"></iframe></div>
+      <a class="open" href="now.html" target="_blank" rel="noopener">Open full screen</a>
+    </section>
+    <section class="opt">
+      <span class="tag rec">Option A · recommended</span><h2>One slim capsule</h2>
+      <ul><li>The four phases in one slim capsule, each a small ring (its progress) with its number and name on one line; the phase in view lit white.</li></ul>
+      <div class="phone"><iframe src="hb-A.html" title="Option A, live" loading="lazy"></iframe></div>
+      <a class="open" href="hb-A.html" target="_blank" rel="noopener">Open full screen</a>
+    </section>
+    <section class="opt">
+      <span class="tag">Option B</span><h2>Text tabs with a progress line</h2>
+      <ul><li>The number and name as plain text, a thin progress line in its status colour under each; the phase in view in bold, its line ringed.</li></ul>
+      <div class="phone"><iframe src="hb-B.html" title="Option B, live" loading="lazy"></iframe></div>
+      <a class="open" href="hb-B.html" target="_blank" rel="noopener">Open full screen</a>
+    </section>
+  </div>
+</main>

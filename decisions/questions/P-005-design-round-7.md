@@ -136,3 +136,8 @@ Asked in the chat: "Shall I start on the gauges?"
 Read by the Chief of Staff as, to be confirmed with pictures: the phase row (1 Discovery, 2 Design, 3 Build, 4 Launch) and the branch map above it lose their bearings when a milestone is selected; what changes is to be captured before and after and shown.
 
 Found before drawing: tapping a milestone's row fits the branch map to that milestone alone (round 5's MilestoneMap), so the rest of the phase leaves the map. Shown live: https://claude.ai/artifact/R7c1GBW7Q5upseCLqa2vsz (docs/design/mockups/options-select/: now, sl-A to sl-C): v29 as it is; A, the map always the whole phase, the selected milestone's stretch tinted and outlined with a chip (recommended); B, the zoom kept with a strip of the phase's milestones in the band; C, no selecting, the map always the whole phase. Noted on the page: the whole-phase map is the older drawing without icons or words. To be asked.
+
+Asked in the chat: "Which one, A, B or C?"
+19. "A is good, but yeah we need the whole phase map"
+
+Carried out: A, with the whole-phase map brought up to the fitted map's drawing (every event as its icon, the words in the window and on main, the window in the centre), so the map never zooms and never loses its detail. To be drawn and shown once, then built into the library and v30.

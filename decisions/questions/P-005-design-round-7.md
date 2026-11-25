@@ -118,3 +118,7 @@ Let's use that one. But keep the numbers as their own top row. The vertical addi
 Carried out: the squares to the right of the sprint's title (the sixth phone, R), with each row's fourth number on a line of its own at the top (answer 14). With answers 9 to 15 the rails are settled: to be built into the library (a new card, LevelRails) and then mockup v28 over v27.
 
 Shown in chat: the library with LevelRails (https://claude.ai/artifact/UqdAH5E4nwtSJdxcATBp3W) and mockup v28 (https://claude.ai/artifact/9TUEBD24WS4seQAbusPQFJ). Still to come from answer 8: the fixed centre arrow and its match on the branch map.
+
+16. "Proceed"
+
+Shown live, for the second of answer 8's asks: https://claude.ai/artifact/MGyUNEjtCaXLQ41NgT1Cb1 (docs/design/mockups/options-centre/: now, ct-A to ct-C): v28 as it is, then the row level with the middle of the list's window marked, with a small arrow on the map over its event; A, a pointer in the left margin and a light wash on the row (recommended); B, a reading line across the screen and a playhead on the map; C, an arrow at the right edge carrying the row's number, the same number on the map. To be asked.

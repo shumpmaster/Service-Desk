@@ -1,0 +1,65 @@
+<title>Fixed Centre</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<style>/* Layout: the question, then v23 as it is and three live phones side by side; they wrap to two, then one, column. Tokens follow the Desk Element Library (v22). */
+:root { --ground:#f2f3f7; --surface:#ffffff; --text-1:#1c1d21; --text-2:#6b6d71; --separator:#e7e9ed; --now-word:#0868bc;
+  --sans:-apple-system,BlinkMacSystemFont,"SF Pro Text","Inter","Segoe UI",Roboto,sans-serif; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --ground:#000000; --surface:#1c1c1e; --text-1:#f2f2f7; --text-2:#98989f; --separator:#38383a; --now-word:#9fd0ff; color-scheme:dark } }
+:root[data-theme="dark"] { --ground:#000000; --surface:#1c1c1e; --text-1:#f2f2f7; --text-2:#98989f; --separator:#38383a; --now-word:#9fd0ff; color-scheme:dark }
+body { background:var(--ground); color:var(--text-1); font:400 17px/1.4 var(--sans);
+  padding-left:max(16px, env(safe-area-inset-left, 0px)); padding-right:max(16px, env(safe-area-inset-right, 0px)); padding-block:24px 48px; }
+main { max-width:1680px; margin:0 auto; display:flex; flex-direction:column; gap:32px; }
+h1 { font:700 27px/1.15 var(--sans); margin:0; text-wrap:balance; }
+p { margin:0; max-width:70ch; }
+a { color:var(--now-word); }
+.lede { display:flex; flex-direction:column; gap:10px; } .lede p { color:var(--text-2); font-size:15px; }
+.lede blockquote { margin:0; padding:10px 14px; border-radius:12px; background:var(--surface); font-size:15px; max-width:70ch; }
+.phones { display:grid; grid-template-columns:repeat(4, minmax(0, 395px)); gap:20px; align-items:start; }
+.opt { display:flex; flex-direction:column; gap:10px; min-width:0; }
+.tag { font:600 13px/1 var(--sans); letter-spacing:.06em; text-transform:uppercase; color:var(--text-2); }
+.tag.rec { color:var(--now-word); }
+h2 { font:600 19px/1.25 var(--sans); margin:0; text-wrap:balance; }
+.opt ul { margin:0; padding-left:20px; display:flex; flex-direction:column; gap:4px; font-size:15px; color:var(--text-2); min-height:9.5em; }
+.phone { width:100%; max-width:395px; height:760px; border:1px solid var(--separator); border-radius:24px; overflow:hidden; background:var(--surface); }
+.phone iframe { width:393px; max-width:100%; height:100%; border:0; display:block; }
+.open { font-size:14px; }
+@media (max-width: 1720px) { .phones { grid-template-columns:repeat(2, minmax(0, 395px)); } }
+@media (max-width: 860px) { .phones { grid-template-columns:minmax(0, 1fr); } .opt ul { min-height:0; } }
+</style>
+<main>
+  <div class="lede">
+    <h1>A fixed centre the list scrolls past</h1>
+    <p>The second half of your answer:</p>
+    <blockquote>"And can we establish a fixed center, that the scroll moves around? My example would be an arrow fixed in the middle of the screen that is always identifying the phase or milestone or task or action that is in line with it. And along with it an arrow pops up on the horizontal scrolling branch timeline to match"</blockquote>
+    <p>The centre is the middle of the list's window, between the floating map and the tab bar. Whatever row is level with it is the one marked: a phase heading, a milestone, a sprint, an event, a plan or one of its actions (the smallest one the line crosses). On the map, a small blue arrow points down at the matching event: the event itself, a sprint's or milestone's first event, or the event a plan follows. The arrow moves as you scroll, and the map's window keeps following as before.</p>
+    <p>Below: v28 as it is, then three ways to draw the centre. Each phone opens on the timeline at Now. Scroll slowly inside it and watch both arrows. Only the one blue.</p>
+  </div>
+  <div class="phones">
+    <section class="opt">
+      <span class="tag">As it is</span><h2>v28: no centre</h2>
+      <ul><li>The map's blue window shows what's on screen, but nothing says which row you're on.</li></ul>
+      <div class="phone"><iframe src="now.html" title="As it is: v28, live" loading="lazy"></iframe></div>
+      <a class="open" href="now.html" target="_blank" rel="noopener">Open full screen</a>
+    </section>
+    <section class="opt">
+      <span class="tag rec">Option A · recommended</span><h2>A pointer and a wash</h2>
+      <ul><li>A small blue pointer fixed in the left margin; the row level with it is lightly washed in blue.</li>
+        <li>On the map, a small arrow over the matching event.</li></ul>
+      <div class="phone"><iframe src="ct-A.html" title="Option A, live" loading="lazy"></iframe></div>
+      <a class="open" href="ct-A.html" target="_blank" rel="noopener">Open full screen</a>
+    </section>
+    <section class="opt">
+      <span class="tag">Option B</span><h2>A reading line</h2>
+      <ul><li>A thin blue line across the screen with its arrow at the left; no wash on the row.</li>
+        <li>On the map, the arrow with a short hairline down through the event, like a playhead.</li></ul>
+      <div class="phone"><iframe src="ct-B.html" title="Option B, live" loading="lazy"></iframe></div>
+      <a class="open" href="ct-B.html" target="_blank" rel="noopener">Open full screen</a>
+    </section>
+    <section class="opt">
+      <span class="tag">Option C</span><h2>An arrow with the number</h2>
+      <ul><li>A blue arrow at the right edge carrying the marked row's number (2.2.2.3).</li>
+        <li>On the map, the same number over the arrow, so the two match by number as well as by place.</li></ul>
+      <div class="phone"><iframe src="ct-C.html" title="Option C, live" loading="lazy"></iframe></div>
+      <a class="open" href="ct-C.html" target="_blank" rel="noopener">Open full screen</a>
+    </section>
+  </div>
+</main>

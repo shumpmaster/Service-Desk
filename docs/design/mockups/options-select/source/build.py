@@ -15,4 +15,8 @@ for o in 'ABC':
     s = v; i = s.rindex('</style>'); s = s[:i] + css + s[i:]
     s = s.replace(a, "\n  var SL = '" + o + "';\n" + js + a)
     open(os.path.join(H, '../sl-%s.html' % o), 'w', encoding='utf-8').write(HEAD + done(s))
+import sys; sys.path.insert(0, H); import whole
+s = whole.apply(v); i = s.rindex('</style>'); s = s[:i] + css + s[i:]
+s = s.replace(a, "\n  var SL = 'A';\n" + whole.JS + js + a).replace("(function () {\n  var REDUCED", "(function () {\n  var WHOLE = true;\n  var REDUCED", 1)
+open(os.path.join(H, '../sl-A2.html'), 'w', encoding='utf-8').write(HEAD + done(s))
 print('ok')

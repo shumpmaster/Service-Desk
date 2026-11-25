@@ -8,6 +8,10 @@ This library holds every element seen in the owner's seven Craft screenshots (re
 
 The colour hold is lifted for status only (decisions/questions/P-005-design-round-3.md, answers 4 to 13). Status takes soft green, yellow and red (`status-ok`, `status-wait`, `status-bad` and their tinted forms) on gauges, event marks, tags and the branch map. Everything else stays neutral, with the one blue. The shapes for milestones and sprints are still on hold. New cards: Gauge, StatusMark, BranchMap and PhaseRow. On the timeline, BranchMap replaces LaneGraph.
 
+## Change, 25 November 2026 (round 7, the whole phase on the map)
+
+Selecting a milestone no longer zooms the map (MilestoneSelect): the map always shows the whole current phase, drawn as MilestoneMap draws a milestone, and the selected milestone's stretch is outlined in dashed blue with a chip that names it and clears it (decisions/questions/P-005-design-round-7.md, answers 18 and 19).
+
 ## Change, 25 November 2026 (round 7, a fixed centre)
 
 A project's list has a fixed centre (FixedCentre): a small blue pointer in the left margin at the middle of the list's window; the row level with it is lightly washed in blue, and a small blue arrow on the branch map points at its event (decisions/questions/P-005-design-round-7.md, answers 8, 16 and 17).

@@ -141,3 +141,5 @@ Asked in the chat: "Which one, A, B or C?"
 19. "A is good, but yeah we need the whole phase map"
 
 Carried out: A, with the whole-phase map brought up to the fitted map's drawing (every event as its icon, the words in the window and on main, the window in the centre), so the map never zooms and never loses its detail. To be drawn and shown once, then built into the library and v30.
+
+Shown in chat: the library with MilestoneSelect (https://claude.ai/artifact/UqdAH5E4nwtSJdxcATBp3W) and mockup v30 (https://claude.ai/artifact/3BtedPTizWrFBowrdP6Jzb). Built without a further question, since answer 19 named both the option and the change.

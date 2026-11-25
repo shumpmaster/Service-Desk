@@ -26,3 +26,11 @@ Asked in chat, after both reviews were summarised: "My plan for building them to
 3. "Yup build it all out"
 
 Read by the Chief of Staff as: build v33 as planned: the first review's fixes (F1, F3, U1, U2, U4, U7, U8, R3, R4, R5, O1, O2) and the second review's polish and motion within the owner's rulings (L1 to L3, L5, L7 to L11, M1 to M3, M5 to M8, D1 to D5, C1 to C5, the motion spec, and L4 and L6 in the parts that touch no ruling), library first, then the mockup. The questions that touch a ruling wait: the top row's height, Why's outline, the push's direction, and F2, F4, F5, F6, U3, U5, R1 and R2.
+
+Asked in chat: "Are you adopting all of the suggested changes? Or no?"
+4. (the owner's question, as above)
+
+Answered: not all; every suggestion within the owner's rulings is in v33, L4, L6 and M4 in part, and the rest held for the owner: the top row's height, Why's outline, the push's direction, F2, F4, F5, F6, U3, U5, R1 and R2; O3 (dates on older events, Chicago time) was left out of v33's scope by mistake.
+5. "If you can mockup each of the proposed changes I can give a ruling"
+
+Read by the Chief of Staff as: each held change is drawn as options on a page, the element as it is in v33 first, then each option, live where it moves, and put to the owner for a ruling: the top row's height, Why's outline, the push's direction, F2, F4, F5, F6, U3, U5, R1, R2 and O3. Drawn on v33 once it is built.

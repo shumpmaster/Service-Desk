@@ -168,3 +168,10 @@ Convert the project Pills and the phase pills into two separate pills, that act 
 Read by the Chief of Staff as: neither A nor B; the row of project pills and the row of phase tiles each become one pill at the top, beside Back and the bell and More: one names the project and opens a list of the projects to switch to; the other names the phase in view and opens a list of the phases to go to. Then one pass over the whole page for room and legibility. To be drawn and asked.
 
 Shown live: https://claude.ai/artifact/9xSX9KzVDaoCtkCfxFmNVr (docs/design/mockups/options-top/: now = answer 21's option A, top): the top row is Back, the project pill (name and what waits, opening the list of projects), the phase pill (the phase in view with its ring, opening the phases with their gates and percents), the bell and More; the row of project pills and the phase tiles gone; the band about 339 points (461 in answer 20's drawing); the list's titles 15.5 and detail lines 12.5, the map's words 10.5; an event's first line wraps instead of cutting its status. To be asked.
+
+Asked in the chat: "Is this it? If so, answers 20 to 22 go into the library together and become mockup v31."
+23. "Yes, build it into v31"
+
+Carried out: answers 20 to 22 into the library (a new card, TopPills; ProjectHeader's slim bar and PhaseRow give way on a project's page) and then mockup v31 over v30.
+
+Shown in chat: the library with TopPills (https://claude.ai/artifact/UqdAH5E4nwtSJdxcATBp3W) and mockup v31 (https://claude.ai/artifact/GpEHMvdGva2U2WbrvqdjH5).

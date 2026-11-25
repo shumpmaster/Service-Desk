@@ -8,6 +8,10 @@ This library holds every element seen in the owner's seven Craft screenshots (re
 
 The colour hold is lifted for status only (decisions/questions/P-005-design-round-3.md, answers 4 to 13). Status takes soft green, yellow and red (`status-ok`, `status-wait`, `status-bad` and their tinted forms) on gauges, event marks, tags and the branch map. Everything else stays neutral, with the one blue. The shapes for milestones and sprints are still on hold. New cards: Gauge, StatusMark, BranchMap and PhaseRow. On the timeline, BranchMap replaces LaneGraph.
 
+## Change, 25 November 2026 (round 7, two pills at the top, every phase kept)
+
+A project's page has one row at the top (TopPills): Back, the project pill and the phase pill, each opening its list, then the bell and More; the slim title bar (ProjectHeader), the row of project pills and the four phase tiles (PhaseRow) are gone from a project's page. Every phase stays in the list, top down with its gates, its milestones folded unless opened; the phase pill and the map follow the phase in view. The map gives each sprint its own lane. The list's words are a little larger and an event's first line wraps (decisions/questions/P-005-design-round-7.md, answers 20 to 23).
+
 ## Change, 25 November 2026 (round 7, the whole phase on the map)
 
 Selecting a milestone no longer zooms the map (MilestoneSelect): the map always shows the whole current phase, drawn as MilestoneMap draws a milestone, and the selected milestone's stretch is outlined in dashed blue with a chip that names it and clears it (decisions/questions/P-005-design-round-7.md, answers 18 and 19).

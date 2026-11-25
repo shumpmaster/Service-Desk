@@ -1,0 +1,9 @@
+# FixedCentre
+
+A fixed point the list scrolls past, and its match on the branch map. Chosen by the owner on 24 and 25 November 2026 (decisions/questions/P-005-design-round-7.md: answer 8, "an arrow fixed in the middle of the screen that is always identifying the phase or milestone or task or action that is in line with it. And along with it an arrow pops up on the horizontal scrolling branch timeline to match"; answer 17, "Option A for sure").
+
+- **The centre** is the middle of the list's window, between the floating band and the tab bar. A small pointer in the one blue sits fixed in the left margin there.
+- **The marked row** is the smallest row the centre line crosses: a phase heading, a milestone, a sprint, an event, a plan or one of its actions. It takes a light blue wash; nothing else changes.
+- **On the map**, a small blue arrow points down at the matching event: the event itself, a sprint's or milestone's first event, or the event a plan follows. It moves with the scroll and hides when the event is off the map's edge.
+- Hidden while the ContextView is on, and on home.
+- Icons: Phosphor (MIT), regular for rows, bold for controls and menus, fill for anything selected; Craft's own are Apple's SF Symbols, which a web page cannot use.

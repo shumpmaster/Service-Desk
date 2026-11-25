@@ -484,3 +484,16 @@ button:focus-visible { outline: 2px solid var(--accent-select); outline-offset: 
 .dk-rl .ev .t { font-size: 15px; line-height: 20px; }
 .dk-rl .ev.tp .t { font-weight: 600; }
 .dk-rl .ev .tx { flex: 1; min-width: 0; }
+/* FixedCentre: the row at the middle of the screen, and its match on the map (round 7, answers 8, 16 and 17) */
+.dk-fc { position: relative; font-family: var(--font-sans); }
+.dk-fc .ptr { position: absolute; left: -16px; width: 0; height: 0; border-top: 7px solid transparent; border-bottom: 7px solid transparent; border-left: 9px solid var(--accent-text); }
+.dk-fc .row { padding: 6px 8px; margin: 0 -8px; border-radius: 8px; }
+.dk-fc .row.on { background: var(--accent-tint, rgba(29,78,216,.06)); }
+.dk-fc .n4 { font: 600 11px/14px var(--font-sans); color: var(--text-2); }
+.dk-fc .k { font-size: 13px; line-height: 18px; color: var(--text-2); }
+.dk-fc .t { font-size: 15px; line-height: 20px; color: var(--text-1); }
+.dk-fc .map { position: relative; height: 54px; margin-bottom: 10px; border-radius: 10px; background: var(--surface); box-shadow: 0 0 0 1px var(--separator); }
+.dk-fc .map .main { position: absolute; left: 10px; right: 10px; top: 38px; height: 3px; border-radius: 2px; background: var(--groove, #e5e5ea); }
+.dk-fc .map .d { position: absolute; top: 33px; width: 12px; height: 12px; margin-left: -6px; border-radius: 6px; background: var(--surface); box-shadow: inset 0 0 0 2px var(--text-3); }
+.dk-fc .map .d.on { box-shadow: inset 0 0 0 2px var(--accent-text); }
+.dk-fc .map .arw { position: absolute; top: 24px; margin-left: -5px; width: 0; height: 0; border-left: 5px solid transparent; border-right: 5px solid transparent; border-top: 6px solid var(--accent-text); }

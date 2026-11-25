@@ -8,6 +8,10 @@ This library holds every element seen in the owner's seven Craft screenshots (re
 
 The colour hold is lifted for status only (decisions/questions/P-005-design-round-3.md, answers 4 to 13). Status takes soft green, yellow and red (`status-ok`, `status-wait`, `status-bad` and their tinted forms) on gauges, event marks, tags and the branch map. Everything else stays neutral, with the one blue. The shapes for milestones and sprints are still on hold. New cards: Gauge, StatusMark, BranchMap and PhaseRow. On the timeline, BranchMap replaces LaneGraph.
 
+## Change, 25 November 2026 (round 7, a fixed centre)
+
+A project's list has a fixed centre (FixedCentre): a small blue pointer in the left margin at the middle of the list's window; the row level with it is lightly washed in blue, and a small blue arrow on the branch map points at its event (decisions/questions/P-005-design-round-7.md, answers 8, 16 and 17).
+
 ## Change, 24 November 2026 (round 7, the levels on rails)
 
 A project's list tells its levels apart (LevelRails): each level steps in on its own rail and says what it is (PHASE, MILESTONE, SPRINT), with one size per level and thin line icons with no disc. The phase heading starts at the left with no ring, and a strip of its milestones under it, in their status colours, Now and the current one marked. Milestone rings show their percent inside; a sprint has a thin accent bar in its status colour and ten small squares to the right of its title. Every row under a sprint carries its fourth number on a line of its own. Folding or opening keeps the tapped row in place. The list stays top down (decisions/questions/P-005-design-round-7.md, answers 8 to 15).

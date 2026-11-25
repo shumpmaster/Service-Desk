@@ -122,3 +122,10 @@ Shown in chat: the library with LevelRails (https://claude.ai/artifact/UqdAH5E4n
 16. "Proceed"
 
 Shown live, for the second of answer 8's asks: https://claude.ai/artifact/MGyUNEjtCaXLQ41NgT1Cb1 (docs/design/mockups/options-centre/: now, ct-A to ct-C): v28 as it is, then the row level with the middle of the list's window marked, with a small arrow on the map over its event; A, a pointer in the left margin and a light wash on the row (recommended); B, a reading line across the screen and a playhead on the map; C, an arrow at the right edge carrying the row's number, the same number on the map. To be asked.
+
+Asked in the chat: "Which one do you want? You can also comment on a phone."
+17. "Option A for sure"
+
+Carried out: the fixed centre as A, a blue pointer fixed in the left margin at the middle of the list's window, the row level with it lightly washed in blue, and a small blue arrow on the map over its event. To be built into the library (a new card, FixedCentre) and then mockup v29 over v28.
+
+Shown in chat: the library with FixedCentre (https://claude.ai/artifact/UqdAH5E4nwtSJdxcATBp3W) and mockup v29 (https://claude.ai/artifact/SZHKZxyC3XP4tQUYVzC5XL).

@@ -143,3 +143,10 @@ Asked in the chat: "Which one, A, B or C?"
 Carried out: A, with the whole-phase map brought up to the fitted map's drawing (every event as its icon, the words in the window and on main, the window in the centre), so the map never zooms and never loses its detail. To be drawn and shown once, then built into the library and v30.
 
 Shown in chat: the library with MilestoneSelect (https://claude.ai/artifact/UqdAH5E4nwtSJdxcATBp3W) and mockup v30 (https://claude.ai/artifact/3BtedPTizWrFBowrdP6Jzb). Built without a further question, since answer 19 named both the option and the change.
+
+Asked in the chat: "Shall I start on the gauges?"
+20. "I'm okay with the taller phase map, but maybe we scale it to fit the details in a little bit better? 
+
+And also, the original problem I wanted fixed was actually the disappearing of phases when you click around. I want every phase, milestone combination shown on the table, I just want the ones we aren't looking at collapsed"
+
+Read by the Chief of Staff as: 1, the taller whole-phase map is fine; give its lanes and words more room so nothing overlaps; 2, answer 18's trouble was the list, not the map: tapping 1, 2, 3 or 4 swaps the list to that phase alone, so the other phases vanish. Every phase, with all its milestones, is to stay in the list; the ones not being looked at are folded, and tapping a phase opens it where it sits.

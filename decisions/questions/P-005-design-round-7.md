@@ -129,3 +129,8 @@ Asked in the chat: "Which one do you want? You can also comment on a phone."
 Carried out: the fixed centre as A, a blue pointer fixed in the left margin at the middle of the list's window, the row level with it lightly washed in blue, and a small blue arrow on the map over its event. To be built into the library (a new card, FixedCentre) and then mockup v29 over v28.
 
 Shown in chat: the library with FixedCentre (https://claude.ai/artifact/UqdAH5E4nwtSJdxcATBp3W) and mockup v29 (https://claude.ai/artifact/SZHKZxyC3XP4tQUYVzC5XL).
+
+Asked in the chat: "Shall I start on the gauges?"
+18. "On the 1/2/3/4 section I don't like how the timeline perspective gets thrown off when you select a milestone?"
+
+Read by the Chief of Staff as, to be confirmed with pictures: the phase row (1 Discovery, 2 Design, 3 Build, 4 Launch) and the branch map above it lose their bearings when a milestone is selected; what changes is to be captured before and after and shown.

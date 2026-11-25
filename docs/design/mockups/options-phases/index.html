@@ -1,0 +1,52 @@
+<title>Every Phase Kept</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<style>/* Layout: the question, then v23 as it is and three live phones side by side; they wrap to two, then one, column. Tokens follow the Desk Element Library (v22). */
+:root { --ground:#f2f3f7; --surface:#ffffff; --text-1:#1c1d21; --text-2:#6b6d71; --separator:#e7e9ed; --now-word:#0868bc;
+  --sans:-apple-system,BlinkMacSystemFont,"SF Pro Text","Inter","Segoe UI",Roboto,sans-serif; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --ground:#000000; --surface:#1c1c1e; --text-1:#f2f2f7; --text-2:#98989f; --separator:#38383a; --now-word:#9fd0ff; color-scheme:dark } }
+:root[data-theme="dark"] { --ground:#000000; --surface:#1c1c1e; --text-1:#f2f2f7; --text-2:#98989f; --separator:#38383a; --now-word:#9fd0ff; color-scheme:dark }
+body { background:var(--ground); color:var(--text-1); font:400 17px/1.4 var(--sans);
+  padding-left:max(16px, env(safe-area-inset-left, 0px)); padding-right:max(16px, env(safe-area-inset-right, 0px)); padding-block:24px 48px; }
+main { max-width:1680px; margin:0 auto; display:flex; flex-direction:column; gap:32px; }
+h1 { font:700 27px/1.15 var(--sans); margin:0; text-wrap:balance; }
+p { margin:0; max-width:70ch; }
+a { color:var(--now-word); }
+.lede { display:flex; flex-direction:column; gap:10px; } .lede p { color:var(--text-2); font-size:15px; }
+.lede blockquote { margin:0; padding:10px 14px; border-radius:12px; background:var(--surface); font-size:15px; max-width:70ch; }
+.phones { display:grid; grid-template-columns:repeat(2, minmax(0, 395px)); gap:20px; align-items:start; }
+.opt { display:flex; flex-direction:column; gap:10px; min-width:0; }
+.tag { font:600 13px/1 var(--sans); letter-spacing:.06em; text-transform:uppercase; color:var(--text-2); }
+.tag.rec { color:var(--now-word); }
+h2 { font:600 19px/1.25 var(--sans); margin:0; text-wrap:balance; }
+.opt ul { margin:0; padding-left:20px; display:flex; flex-direction:column; gap:4px; font-size:15px; color:var(--text-2); min-height:9.5em; }
+.phone { width:100%; max-width:395px; height:760px; border:1px solid var(--separator); border-radius:24px; overflow:hidden; background:var(--surface); }
+.phone iframe { width:393px; max-width:100%; height:100%; border:0; display:block; }
+.open { font-size:14px; }
+@media (max-width: 1720px) { .phones { grid-template-columns:repeat(2, minmax(0, 395px)); } }
+@media (max-width: 860px) { .phones { grid-template-columns:minmax(0, 1fr); } .opt ul { min-height:0; } }
+</style>
+<main>
+  <div class="lede">
+    <h1>Every phase in the list, and a roomier map</h1>
+    <p>What you said:</p>
+    <blockquote>"I'm okay with the taller phase map, but maybe we scale it to fit the details in a little bit better? And also, the original problem I wanted fixed was actually the disappearing of phases when you click around. I want every phase, milestone combination shown on the table, I just want the ones we aren't looking at collapsed"</blockquote>
+    <p><b>The list.</b> Today tapping 1, 2, 3 or 4 swaps the list to that one phase, so the others vanish. Now every phase and gate stays in the list, top down, each phase with all its milestones as rows, folded unless you open one (the milestone in progress opens with the page). Tapping 1, 2, 3 or 4 scrolls to that phase where it sits. As you scroll, the lit pill and the map follow the phase you're in: scroll up into Discovery and the map becomes Discovery's. Standard ids (Discovery-2) stay hidden here as in Design.</p>
+    <p><b>The map.</b> Each sprint now has a lane of its own, so no two sprint names share a line, and a sprint's name steps aside where it would sit on an event's words. The cost: the floating band is about 80 points taller than v30's. If that's too much, the next step would be folding away lanes with nothing in view.</p>
+    <p>Each phone opens on the timeline at Now. Tap the 1/2/3/4 row, and scroll up into Discovery.</p>
+  </div>
+  <div class="phones">
+    <section class="opt">
+      <span class="tag">As it is</span><h2>v30</h2>
+      <ul><li>Only the current phase in the list; tapping another phase swaps it in. Sprint names collide on shared lanes.</li></ul>
+      <div class="phone"><iframe src="now.html" title="As it is: v30, live" loading="lazy"></iframe></div>
+      <a class="open" href="now.html" target="_blank" rel="noopener">Open full screen</a>
+    </section>
+    <section class="opt">
+      <span class="tag rec">Your changes</span><h2>Every phase kept, a roomier map</h2>
+      <ul><li>All phases and gates in the list, the ones you aren't in folded to their milestones; the pill and the map follow the phase in view.</li>
+        <li>A lane per sprint; names never overlap.</li></ul>
+      <div class="phone"><iframe src="all.html" title="Your changes, live" loading="lazy"></iframe></div>
+      <a class="open" href="all.html" target="_blank" rel="noopener">Open full screen</a>
+    </section>
+  </div>
+</main>

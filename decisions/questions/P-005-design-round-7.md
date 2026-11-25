@@ -175,3 +175,8 @@ Asked in the chat: "Is this it? If so, answers 20 to 22 go into the library toge
 Carried out: answers 20 to 22 into the library (a new card, TopPills; ProjectHeader's slim bar and PhaseRow give way on a project's page) and then mockup v31 over v30.
 
 Shown in chat: the library with TopPills (https://claude.ai/artifact/UqdAH5E4nwtSJdxcATBp3W) and mockup v31 (https://claude.ai/artifact/GpEHMvdGva2U2WbrvqdjH5).
+
+Asked in the chat: "Should I start on the gauges? Or, if you'd rather stop here, I'll write the handoff for the next session."
+24. "Start on the gauges"
+
+Taken up: the open item "what a gauge counts, and when it turns green, yellow or red" (docs/handoff/2026-11-18-chief-of-staff-p005-17.md, Open 1).

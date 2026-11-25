@@ -8,6 +8,10 @@ This library holds every element seen in the owner's seven Craft screenshots (re
 
 The colour hold is lifted for status only (decisions/questions/P-005-design-round-3.md, answers 4 to 13). Status takes soft green, yellow and red (`status-ok`, `status-wait`, `status-bad` and their tinted forms) on gauges, event marks, tags and the branch map. Everything else stays neutral, with the one blue. The shapes for milestones and sprints are still on hold. New cards: Gauge, StatusMark, BranchMap and PhaseRow. On the timeline, BranchMap replaces LaneGraph.
 
+## Change, 25 November 2026 (round 7, what a gauge counts)
+
+The Gauge has its rule: a phase counts its milestones reached, a milestone its criteria met, a sprint its events done; red when stopped or after a third failed review, yellow when waiting on you or after a failed review, green when moving or done, no colour when not started; a milestone and a phase take the worst of what they hold, and the track carries the soft status colour so a gauge at 0 still shows it (decisions/questions/P-005-design-round-7.md, answers 24 to 26).
+
 ## Change, 25 November 2026 (round 7, two pills at the top, every phase kept)
 
 A project's page has one row at the top (TopPills): Back, the project pill and the phase pill, each opening its list, then the bell and More; the slim title bar (ProjectHeader), the row of project pills and the four phase tiles (PhaseRow) are gone from a project's page. Every phase stays in the list, top down with its gates, its milestones folded unless opened; the phase pill and the map follow the phase in view. The map gives each sprint its own lane. The list's words are a little larger and an event's first line wraps (decisions/questions/P-005-design-round-7.md, answers 20 to 23).
@@ -130,6 +134,5 @@ Words must reach 4.5:1 against what they sit on. Three reference values fall sho
 ## Open, the owner's to choose
 
 - Colour: on hold except for status. The owner, 15 November 2026: "Hold tight on the colors for now, the design needs to be ironed out"; later that day the owner chose red, yellow and green gauges and marks, made softer (round 3, answers 4, 7, 9 and 13).
-- What a gauge counts for a milestone or a sprint, and exactly when it turns red, yellow or green beyond the examples.
 - The key shapes for milestones and sprints, and how "planned" is drawn on the trunk (TimelineTrunk shows a dashed ring as a placeholder). The owner, 15 November 2026: "I think that will get changed around a bit as well".
 - Positions: DeskHome puts the elements together at phone width. Comment on any card to move, resize or drop an element.

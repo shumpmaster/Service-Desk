@@ -189,3 +189,5 @@ Asked by the question tool: "What should a gauge count? ..." Options: "C: criter
 26. "1: what happened (Recommended)"
 
 Carried out: a milestone's gauge counts its criteria met (a project milestone: its spec's acceptance criteria passing their locked checks; a standard milestone: the checks that define it); a sprint's counts its events done of those it plans; a phase's counts its milestones reached. Red: stopped, or a review failed the third time; yellow: waiting on the owner, or a review failed; green: moving or done; grey: not started; a milestone and a phase take the worst of what they hold. To be built into the library (Gauge) and mockup v32.
+
+Shown in chat: the library with Gauge's rule (https://claude.ai/artifact/UqdAH5E4nwtSJdxcATBp3W) and mockup v32 (https://claude.ai/artifact/YGGHidAWYsHtkfpRen272Q).

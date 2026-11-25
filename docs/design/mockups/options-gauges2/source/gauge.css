@@ -1,0 +1,5 @@
+/* round 7, answers 25 and 26: a ring's track takes the soft colour of its state, so a ring at 0 still shows it (options-gauges2). */
+#v13list .v13g.ok .trk { stroke: var(--status-ok-track); }
+#v13list .v13g.wait .trk { stroke: var(--status-wait-track); }
+#v13list .v13g.bad .trk { stroke: var(--status-bad-track); }
+.sg-seg.ok i:not(.f), .sg-seg.wait i:not(.f), .sg-seg.bad i:not(.f) { opacity: .4; }

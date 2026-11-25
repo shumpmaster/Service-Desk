@@ -19,3 +19,5 @@ Asked in chat: "My suggestion: build the fixes straight into v33, since each one
 Then we can build both in together"
 
 Read by the Chief of Staff as: the fixes wait. The design reviewer is dispatched again, on the same model, for a second advisory review of v32 on polish and a modern look and feel: the style, the motion and the like. Then the fixes of the first review and what the owner takes from the second are built together into v33.
+
+Carried out: the design reviewer's second advisory review of v32, on polish, the look and the motion, recorded verbatim at docs/design/audit-2026-11-25-v32-polish.md: Look (L1 to L11), Motion (M1 to M8), Dark mode (D1 to D5), Consistency (C1 to C5) and a proposed motion spec. Three of its points touch earlier rulings (R7 answers 21 and 22, the top row's height; R5 answer 10, Why's outline; v11's push from the left) and are put to the owner as questions.

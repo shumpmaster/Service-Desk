@@ -1,0 +1,61 @@
+/* ================= v33 · tokens: one blue, one separator, dark elevation, motion (round 8, answers 1 to 3;
+   docs/design/audit-2026-11-25-v32-polish.md L2, L9, D1 to D5, section 3) ================= */
+:root {
+  /* one blue, three roles (L2): fill for badges, buttons, the active tab, the Now disc and the pointer; text; wash.
+     The fill is the same in both themes so white on it passes 4.5:1 (also the first review's R3, the badge). */
+  --blue-fill: #0a6cff; --blue-text: #0759bd; --blue-wash: #eaf2fe; --blue-window: rgba(10, 108, 255, .10);
+  --blue-block: rgba(10, 108, 255, .10); --blue-ring: rgba(10, 108, 255, .18); --blue-edge: rgba(10, 108, 255, .28); --v33-band: var(--ground);
+  /* one separator (L9) */
+  --sep: rgba(60, 60, 67, .18); --hair: 1px;
+  /* type ramp (L3): 11 caption, 12 caption, 13 footnote, 15 subhead, 17 body, 20/22 titles */
+  /* radius scale (L5) */
+  --r-tag: 6px; --r-inner: 12px; --r-card: 20px; --r-sheet: 28px;
+  /* motion (section 3): one curve, one exit, a spring, four durations */
+  --ease: cubic-bezier(.2, .8, .2, 1); --ease-exit: cubic-bezier(.4, 0, 1, 1);
+  --spring: cubic-bezier(.2, .8, .2, 1); --spring-bouncy: cubic-bezier(.34, 1.56, .64, 1);
+  --d-press: 100ms; --d-small: 200ms; --d-std: 320ms; --d-page: 450ms;
+  --press-fill: rgba(120, 120, 128, .12);
+}
+/* the roles, mapped onto the names the earlier layers use; html:not(#v33) outranks every earlier theme block */
+html:not(#v33) {
+  --you: var(--blue-fill); --now-dot: var(--blue-fill); --chip-count: var(--blue-fill); --apply: var(--blue-fill);
+  --you-t: var(--blue-text); --now-word: var(--blue-text); --bell: var(--ink);
+  --you-wash: var(--blue-wash); --you-halo: var(--blue-wash); --you-block: var(--blue-block); --now-ring: var(--blue-ring);
+  --segment-on: var(--blue-block); --you-ring: var(--blue-edge); --map-window: var(--blue-window);
+  /* the band is solid; only the top row's controls are glass (L1, D1) */
+  --v13-glass: var(--v33-band);
+}
+@supports (transition-timing-function: linear(0, 1)) {
+  :root {
+    /* stiffness 300, damping 30, mass 1 (about 0.35 s, no visible overshoot), sampled */
+    --spring: linear(0, 0.075 5.6%, 0.234 11.1%, 0.408 16.7%, 0.569 22.2%, 0.700 27.8%, 0.802 33.3%, 0.875 38.9%, 0.926 44.4%, 0.959 50.0%, 0.981 55.6%, 0.993 61.1%, 1.000 66.7%, 1.003 72.2%, 1.004 77.8%, 1.004 83.3%, 1.003 88.9%, 1.003 94.4%, 1);
+    /* stiffness 380, damping 24: only a press releasing and a gauge landing */
+    --spring-bouncy: linear(0, 0.120 5.6%, 0.368 11.1%, 0.629 16.7%, 0.840 22.2%, 0.982 27.8%, 1.057 33.3%, 1.084 38.9%, 1.079 44.4%, 1.061 50.0%, 1.038 55.6%, 1.019 61.1%, 1.005 66.7%, 0.997 72.2%, 0.993 77.8%, 0.993 83.3%, 0.994 88.9%, 0.996 94.4%, 1);
+  }
+}
+@media (min-resolution: 2dppx) { :root { --hair: .5px; } }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --blue-text: #6cb4ff; --blue-wash: rgba(10, 132, 255, .14); --blue-window: rgba(10, 132, 255, .12);
+  --blue-block: rgba(10, 132, 255, .18); --blue-ring: rgba(10, 132, 255, .22); --blue-edge: rgba(10, 132, 255, .32);
+  --sep: rgba(84, 84, 88, .6);
+  /* D1: lift by lightness, not shadow */
+  --v33-band: #0f0f11; --glass: rgba(58, 58, 60, .72); --float: #2c2c2e;
+  --float-shadow: 0 6px 20px rgba(0, 0, 0, .4), inset 0 0 0 1px rgba(255, 255, 255, .12);
+  /* D3: done merges recede; Now stays the brightest mark */
+  --main-mark: #636366; --on-main-mark: #ffffff;
+  /* D5: status washes keep their hue: the colour at 18% over the surface */
+  --status-bad-tag-bg: rgba(255, 107, 90, .18); --status-wait-tag-bg: rgba(255, 192, 77, .18);
+  --status-bad-wash: rgba(255, 107, 90, .12); --status-wait-wash: rgba(255, 192, 77, .12); --status-ok-wash: rgba(76, 209, 130, .12);
+  --stop-wash: rgba(255, 107, 90, .18); --warn-wash: rgba(255, 192, 77, .18); --problem-wash: rgba(255, 107, 90, .14);
+} }
+:root[data-theme="dark"] {
+  --blue-text: #6cb4ff; --blue-wash: rgba(10, 132, 255, .14); --blue-window: rgba(10, 132, 255, .12);
+  --blue-block: rgba(10, 132, 255, .18); --blue-ring: rgba(10, 132, 255, .22); --blue-edge: rgba(10, 132, 255, .32);
+  --sep: rgba(84, 84, 88, .6);
+  --v33-band: #0f0f11; --glass: rgba(58, 58, 60, .72); --float: #2c2c2e;
+  --float-shadow: 0 6px 20px rgba(0, 0, 0, .4), inset 0 0 0 1px rgba(255, 255, 255, .12);
+  --main-mark: #636366; --on-main-mark: #ffffff;
+  --status-bad-tag-bg: rgba(255, 107, 90, .18); --status-wait-tag-bg: rgba(255, 192, 77, .18);
+  --status-bad-wash: rgba(255, 107, 90, .12); --status-wait-wash: rgba(255, 192, 77, .12); --status-ok-wash: rgba(76, 209, 130, .12);
+  --stop-wash: rgba(255, 107, 90, .18); --warn-wash: rgba(255, 192, 77, .18); --problem-wash: rgba(255, 107, 90, .14);
+}

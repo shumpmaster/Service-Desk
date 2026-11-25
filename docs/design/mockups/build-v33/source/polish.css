@@ -1,0 +1,153 @@
+/* ================= v33 · polish within the owner's rulings (docs/design/audit-2026-11-25-v32-polish.md) and the first
+   review's fixes that are only styling (docs/design/audit-2026-11-25-v32-review.md). No new colours. ================= */
+
+/* M1: every control answers a finger. No grey flash; controls dip and spring back, rows take a grey fill, tags dim. */
+html { -webkit-tap-highlight-color: transparent; }
+.circ, .cbtn, .tp-pill, .tab, .roundbtn, .linkbtn, .done-btn, .sh-actions > *, .mi, .tp-menu button, .fit-chip, .sl-chip, .cx-row a, .ss-open, .lk-alt, .v33-x {
+  transition: scale 260ms var(--spring-bouncy), filter 260ms var(--ease), background-color var(--d-small) var(--ease);
+}
+:is(.circ, .cbtn, .tp-pill, .tab, .roundbtn, .linkbtn, .done-btn, .sh-actions > *, .mi, .tp-menu button, .fit-chip, .sl-chip, .ss-open, .lk-alt, .v33-x):active {
+  scale: .96; filter: brightness(.96); transition-duration: 80ms; transition-timing-function: var(--ease);
+}
+:is(#v13list .v13gr, #v13list .v13ev, #v13list .v13stephd, .sg-row, .need > .crow, .cx-row):active { background-color: var(--press-fill); border-radius: var(--r-inner); transition: background-color 80ms var(--ease); }
+:is(.w2-q, .ss-q, .n4-tag, .nd-by, .wy-chip):active { opacity: .6; transition: opacity 80ms var(--ease); }
+
+/* L1 (and D1): the map band is solid, with a soft fade where rows slide under it, in place of a 1 px rule */
+#v13band, .v13band { background: var(--v13-glass) !important; -webkit-backdrop-filter: none !important; backdrop-filter: none !important; border-bottom: 0 !important; box-shadow: none !important; }
+#v13band::after { content: ""; position: absolute; left: 0; right: 0; top: 100%; height: 16px; pointer-events: none; background: linear-gradient(var(--v13-glass), transparent); }
+/* D4: rows fade before they reach the tab bar; dark glass a little thicker */
+html.v33 body::after { content: ""; position: fixed; left: 0; right: 0; bottom: 0; height: calc(104px + env(safe-area-inset-bottom, 0px)); z-index: 35; pointer-events: none; background: linear-gradient(transparent, var(--ground) 72%); }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .tabbar, :root:not([data-theme="light"]) .roundbtn { background: rgba(44, 44, 46, .86); -webkit-backdrop-filter: blur(30px) saturate(1.8); backdrop-filter: blur(30px) saturate(1.8); } }
+:root[data-theme="dark"] .tabbar, :root[data-theme="dark"] .roundbtn { background: rgba(44, 44, 46, .86); }
+
+/* L4: one material and one height for Back, the two pills and the bell capsule (height kept at 34, R7 answers 21 and 22) */
+html.tp #v13band .pl-row > .circ, html.tp #v13band .pl-row > .capsule, .tp-pill {
+  height: 34px; background: var(--glass); box-shadow: var(--float-shadow); -webkit-backdrop-filter: blur(20px) saturate(1.8); backdrop-filter: blur(20px) saturate(1.8); border: 0;
+}
+html.tp #v13band .pl-row > .circ { width: 34px; border-radius: 17px; margin-top: -1px; }
+html.tp #v13band .pl-row > .capsule { border-radius: 17px; }
+.tp-pill { border-radius: 17px; }
+/* U4: hit areas reach about 44 points without changing the look */
+.circ, .cbtn, .tp-pill { position: relative; }
+.w2-q, .ss-q, .n4-tag, .v33-x { position: relative; }
+:is(.circ, .cbtn, .tp-pill)::before { content: ""; position: absolute; inset: -5px -3px; }
+:is(.w2-q, .ss-q, .n4-tag, .fit-chip, .sl-chip, .cx-row a)::before { content: ""; position: absolute; inset: -12px -3px; }
+#v13list .v13phh .b[role="button"] { position: relative; }
+#v13list .v13phh .b[role="button"]::before { content: ""; position: absolute; inset: -14px 0; }
+/* U8: the project's name takes the spare width; the phase pill gives way first */
+.tp-pill.pj { flex: 1 1 auto; min-width: 0; }
+.tp-pill.ph { flex: 0 0 auto; }
+html.tp #v13band .pl-row { gap: 6px; }
+.tp-pill { padding: 0 7px 0 9px; gap: 4px; }
+.tp-pill .cv { width: 11px; height: 11px; flex: none; }
+.tp-pill .t { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+/* U7: the phase menu's gate lines wrap */
+.tp-menu button, .tp-menu .mi, .tp-menu [data-tp-ph] { white-space: normal; height: auto; min-height: 44px; box-sizing: border-box; max-width: 100%; }
+.tp-menu * { min-width: 0; }
+.tp-menu .t, .tp-menu span { white-space: normal; overflow-wrap: anywhere; }
+
+/* L5 and C1: one radius scale; both menus one component (28, from the control that opened them) */
+html .menu, html .menu.tp-menu { border-radius: var(--r-sheet); }
+.sheet { border-radius: var(--r-sheet); }
+.sg-grp, .v12step, .v13acts.v12step { border-radius: var(--r-card); }
+.w2-bub, .n4-bub, .ss-bub { border-radius: var(--r-inner); }
+#v13list .ct-on { border-radius: var(--r-inner) !important; }
+.v13now, .v13list .pl.v13now { border-radius: var(--r-inner); }
+/* C4: one card recipe: surface, no outline, the same soft shadow in light; in dark, lift by lightness only */
+.sg-grp, .v12step { box-shadow: 0 1px 3px rgba(28, 29, 33, .06); }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) :is(.sg-grp, .v12step) { box-shadow: none; } }
+:root[data-theme="dark"] :is(.sg-grp, .v12step) { box-shadow: none; }
+
+/* L6: one tag: 20 high, radius 6, 12 text (13 pushed the time onto its own line at 360), one baseline; status tags keep their
+   tint; Why keeps its outline (R5 answer 10) */
+#v13list .l1 { align-items: center; }
+.v13tag, .w2-q, .ss-q, .n4-tag { box-sizing: border-box; height: 20px; line-height: 20px; font-size: 12px; border-radius: var(--r-tag); display: inline-flex; align-items: center; vertical-align: middle; }
+.v13tag { padding: 0 7px; }
+.v13tag:not(.bad):not(.wait) { padding: 0; }
+.ss-q { box-shadow: none; background: rgba(120, 120, 128, .08); color: var(--ink-3); }
+.v13vp .v13main { color: var(--text-2); }
+.ss-q.on { box-shadow: inset 0 0 0 1px var(--now-word); }
+
+/* L3: tabular figures wherever numbers stack */
+.no4, .l3, #v13list .tm, .cx-no, .v13g b { font-variant-numeric: tabular-nums; }
+/* C5: one width for the time column, so the tags to its left stay put */
+#v13list .l1 .tm { min-width: 2.9em; text-align: right; margin-left: auto; }
+
+/* L7: the phase strip's current segment is raised by a soft shadow, not a black ring; a washed heading hides its rule */
+#v13list .v13phh .b.cur { box-shadow: 0 1px 3px rgba(0, 0, 0, .18) !important; }
+html.rl #v13list .v13phh.ct-on { border-bottom-color: transparent; }
+
+/* L8: routine rows' words sit on the same column as every other event's */
+#v13list .v13ev.wt-1 .tx { margin-left: -3px; }
+
+/* L9: one separator colour, a hairline on retina; the pointer stands 4 in from the edge with a rounded tip */
+html.rl #v13list .v13phh { border-bottom: var(--hair) solid var(--sep); }
+.w2-bub, .n4-bub, .ss-bub { box-shadow: 0 4px 16px rgba(0, 0, 0, .08), 0 0 0 var(--hair) var(--sep); }
+.ct-A.ct-mark { left: 4px; width: 10px; height: 14px; border: 0; background: var(--blue-fill); transform: translateY(-7px);
+  clip-path: path("M0 2.2 Q0 0 1.9 1.1 L8.6 5.6 Q10 7 8.6 8.4 L1.9 12.9 Q0 14 0 11.8 Z"); }
+
+/* L10: lighter halos; the selected milestone's dashed outline quieter, as ruled (R7 answer 19) */
+#v13in svg text { stroke-width: 2px; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) #v13in svg text { stroke: #0f0f11; stroke-opacity: .85; } }
+:root[data-theme="dark"] #v13in svg text { stroke: #0f0f11; stroke-opacity: .85; }
+#v13in svg .sl-edge { stroke-width: 1px; stroke-dasharray: 3 3; opacity: .6; }
+
+/* R3: the map's "main" and the Now card's second line in the secondary ink */
+#v13list .v13now .sub { color: var(--ink-2); }
+
+/* M3: folds no longer pulse the gauge; M6: the pointer's wash fades between rows, with the map arrow's timing */
+#v13list :is(.v13phh, .v13gr, .v13ev, .v13stephd, .v13now) { transition: background-color 200ms var(--ease), box-shadow 200ms var(--ease); }
+#v13list .ct-on { transition: background-color 120ms var(--ease), box-shadow 120ms var(--ease) !important; }
+.ct-map { transition: left 200ms var(--ease), top 200ms var(--ease), opacity .15s !important; }
+.v13now.flash, #v13list .v13now.flash { animation: v33pulse 400ms var(--ease); }
+@keyframes v33pulse { 0% { scale: 1; } 45% { scale: 1.02; } 100% { scale: 1; } }
+
+/* M8: holding the round button fills a ring around it, so the press visibly charges; the rows' stagger is shorter */
+@property --v33hold { syntax: "<percentage>"; inherits: false; initial-value: 0%; }
+.roundbtn.cx-press::after { content: ""; position: absolute; inset: -4px; border-radius: 50%; pointer-events: none;
+  background: conic-gradient(var(--blue-fill) var(--v33hold), transparent 0);
+  -webkit-mask: radial-gradient(farthest-side, transparent calc(100% - 3px), #000 calc(100% - 2.5px)); mask: radial-gradient(farthest-side, transparent calc(100% - 3px), #000 calc(100% - 2.5px));
+  animation: v33hold 450ms linear forwards; }
+@keyframes v33hold { to { --v33hold: 100%; } }
+.cx-in .cx-row { animation-delay: calc(min(var(--i), 8) * 14ms); }
+
+/* U1: a close mark in each bubble */
+.v33-x { all: unset; box-sizing: border-box; position: absolute; top: 6px; right: 6px; width: 24px; height: 24px; border-radius: 12px; display: inline-flex; align-items: center; justify-content: center; color: var(--text-2); background: var(--press-fill); cursor: pointer; }
+.v33-x::before { content: ""; position: absolute; inset: -10px; }
+.v33-x svg { width: 12px; height: 12px; }
+.v33-x:focus-visible { outline: 2px solid var(--now-word); outline-offset: 2px; }
+.w2-bub, .n4-bub, .ss-bub { padding-right: 36px !important; }
+/* U2 and F3: a bubble sits after the event's first line, so its tag never moves (a routine row puts that line last);
+   with too little room below it opens above its row, its arrow pointing down, or keeps to the room there is */
+.v13ev .tx > :is(.w2-bub, .n4-bub, .ss-bub) { order: 2; flex-basis: 100%; }
+.v13ev .tx > .v33-up { order: -2; }
+.v33-cap { box-sizing: border-box; overflow-y: auto; overscroll-behavior: contain; }
+.v13ev .tx > .v33-up::before { top: auto !important; bottom: -6px; box-shadow: 1px 1px 0 var(--sep) !important; }
+/* F3: the session bubble leads with its link */
+.ss-bub .lk-acts.v33-first { margin: 0 0 8px; padding: 0 0 8px; border-bottom: var(--hair) solid var(--sep); border-top: 0; }
+
+/* R5: home at 360: the strip fits its card; the wait time goes under the question so the question gets three lines */
+.sg-strip svg { width: 100%; height: auto; display: block; }
+.need > .crow { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; column-gap: 10px; align-items: start; }
+.need > .crow > .ico { grid-row: 1 / span 2; }
+.need > .crow > .t1 { grid-column: 2; }
+.need > .crow > .rc { grid-column: 2; grid-row: 2; justify-self: start; font-size: 12px; color: var(--text-2); }
+.need > .crow > .chev { grid-column: 3; grid-row: 1 / span 2; align-self: center; }
+.need > .crow .tt { white-space: normal; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+
+/* L11: the mockup's own notes fold behind one line */
+details.v33-about { margin: 24px 0 120px; font-size: 13px; color: var(--text-2); }
+details.v33-about > summary { cursor: pointer; min-height: 44px; display: flex; align-items: center; font-weight: 600; color: var(--ink-3); }
+
+/* C3: rings drawn the same everywhere: round caps on track and arc */
+.v13g svg circle, .tp-pill svg circle, .sg-row svg circle { stroke-linecap: round; }
+
+/* reduced motion: no transforms; colour still answers a press */
+@media (prefers-reduced-motion: reduce) {
+  :is(.circ, .cbtn, .tp-pill, .tab, .roundbtn, .linkbtn, .done-btn, .mi, .tp-menu button, .fit-chip, .ss-open, .lk-alt, .v33-x):active { scale: none; }
+  .v13now.flash, #v13list .v13now.flash, .roundbtn.cx-press::after { animation: none; }
+  #v13list :is(.v13phh, .v13gr, .v13ev, .v13stephd, .v13now), #v13list .ct-on, .ct-map { transition: none !important; }
+}
+
+/* L3: 700 stays only for the phase title */
+#v13list .v13phh .l1 b { font-weight: 700; }

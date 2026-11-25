@@ -1,0 +1,65 @@
+<title>Keeping Perspective</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<style>/* Layout: the question, then v23 as it is and three live phones side by side; they wrap to two, then one, column. Tokens follow the Desk Element Library (v22). */
+:root { --ground:#f2f3f7; --surface:#ffffff; --text-1:#1c1d21; --text-2:#6b6d71; --separator:#e7e9ed; --now-word:#0868bc;
+  --sans:-apple-system,BlinkMacSystemFont,"SF Pro Text","Inter","Segoe UI",Roboto,sans-serif; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --ground:#000000; --surface:#1c1c1e; --text-1:#f2f2f7; --text-2:#98989f; --separator:#38383a; --now-word:#9fd0ff; color-scheme:dark } }
+:root[data-theme="dark"] { --ground:#000000; --surface:#1c1c1e; --text-1:#f2f2f7; --text-2:#98989f; --separator:#38383a; --now-word:#9fd0ff; color-scheme:dark }
+body { background:var(--ground); color:var(--text-1); font:400 17px/1.4 var(--sans);
+  padding-left:max(16px, env(safe-area-inset-left, 0px)); padding-right:max(16px, env(safe-area-inset-right, 0px)); padding-block:24px 48px; }
+main { max-width:1680px; margin:0 auto; display:flex; flex-direction:column; gap:32px; }
+h1 { font:700 27px/1.15 var(--sans); margin:0; text-wrap:balance; }
+p { margin:0; max-width:70ch; }
+a { color:var(--now-word); }
+.lede { display:flex; flex-direction:column; gap:10px; } .lede p { color:var(--text-2); font-size:15px; }
+.lede blockquote { margin:0; padding:10px 14px; border-radius:12px; background:var(--surface); font-size:15px; max-width:70ch; }
+.phones { display:grid; grid-template-columns:repeat(4, minmax(0, 395px)); gap:20px; align-items:start; }
+.opt { display:flex; flex-direction:column; gap:10px; min-width:0; }
+.tag { font:600 13px/1 var(--sans); letter-spacing:.06em; text-transform:uppercase; color:var(--text-2); }
+.tag.rec { color:var(--now-word); }
+h2 { font:600 19px/1.25 var(--sans); margin:0; text-wrap:balance; }
+.opt ul { margin:0; padding-left:20px; display:flex; flex-direction:column; gap:4px; font-size:15px; color:var(--text-2); min-height:9.5em; }
+.phone { width:100%; max-width:395px; height:760px; border:1px solid var(--separator); border-radius:24px; overflow:hidden; background:var(--surface); }
+.phone iframe { width:393px; max-width:100%; height:100%; border:0; display:block; }
+.open { font-size:14px; }
+@media (max-width: 1720px) { .phones { grid-template-columns:repeat(2, minmax(0, 395px)); } }
+@media (max-width: 860px) { .phones { grid-template-columns:minmax(0, 1fr); } .opt ul { min-height:0; } }
+</style>
+<main>
+  <div class="lede">
+    <h1>Selecting a milestone without losing your place</h1>
+    <p>What you said:</p>
+    <blockquote>"On the 1/2/3/4 section I don't like how the timeline perspective gets thrown off when you select a milestone?"</blockquote>
+    <p>Why it happens: tapping a milestone's row zooms the branch map in to that milestone alone (since round 5). The rest of the phase leaves the map, so the map no longer matches the 1/2/3/4 row under it. Below: v29 as it is, then three ways to keep your bearings. In each phone, tap <b>2.3 The design fits together</b> (scroll down a little) and watch the map.</p>
+    <p>One thing to know about A and C: the whole-phase map is the older, smaller drawing (dots, no words in the window), because the icons and words were only ever drawn for the zoomed map. If you pick A or C, I'd bring them to the whole-phase map next.</p>
+  </div>
+  <div class="phones">
+    <section class="opt">
+      <span class="tag">As it is</span><h2>v29: the map zooms</h2>
+      <ul><li>Tapping a milestone swaps the map for that milestone's sprints only; the chip's cross brings the phase back.</li></ul>
+      <div class="phone"><iframe src="now.html" title="As it is: v29, live" loading="lazy"></iframe></div>
+      <a class="open" href="now.html" target="_blank" rel="noopener">Open full screen</a>
+    </section>
+    <section class="opt">
+      <span class="tag rec">Option A · recommended</span><h2>Whole phase, milestone outlined</h2>
+      <ul><li>The map always shows the whole phase. The selected milestone's stretch is tinted and outlined in blue, with a chip naming it; its cross clears it.</li>
+        <li>The window and the centre arrow follow the scroll as before.</li></ul>
+      <div class="phone"><iframe src="sl-A.html" title="Option A, live" loading="lazy"></iframe></div>
+      <a class="open" href="sl-A.html" target="_blank" rel="noopener">Open full screen</a>
+    </section>
+    <section class="opt">
+      <span class="tag">Option B</span><h2>Zoom, with a strip to keep bearings</h2>
+      <ul><li>The map still zooms to the milestone, but the band shows the phase's milestones as a strip, the zoomed one ringed and Now ticked.</li>
+        <li>Tap another box to move the zoom there; the chip's cross brings the phase back.</li></ul>
+      <div class="phone"><iframe src="sl-B.html" title="Option B, live" loading="lazy"></iframe></div>
+      <a class="open" href="sl-B.html" target="_blank" rel="noopener">Open full screen</a>
+    </section>
+    <section class="opt">
+      <span class="tag">Option C</span><h2>No selecting</h2>
+      <ul><li>Tapping a milestone only folds or opens it. The map always shows the whole phase and simply follows the scroll and the centre arrow.</li>
+        <li>The simplest; nothing on the map says which milestone you tapped.</li></ul>
+      <div class="phone"><iframe src="sl-C.html" title="Option C, live" loading="lazy"></iframe></div>
+      <a class="open" href="sl-C.html" target="_blank" rel="noopener">Open full screen</a>
+    </section>
+  </div>
+</main>

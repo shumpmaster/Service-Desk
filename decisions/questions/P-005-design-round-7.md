@@ -134,3 +134,5 @@ Asked in the chat: "Shall I start on the gauges?"
 18. "On the 1/2/3/4 section I don't like how the timeline perspective gets thrown off when you select a milestone?"
 
 Read by the Chief of Staff as, to be confirmed with pictures: the phase row (1 Discovery, 2 Design, 3 Build, 4 Launch) and the branch map above it lose their bearings when a milestone is selected; what changes is to be captured before and after and shown.
+
+Found before drawing: tapping a milestone's row fits the branch map to that milestone alone (round 5's MilestoneMap), so the rest of the phase leaves the map. Shown live: https://claude.ai/artifact/R7c1GBW7Q5upseCLqa2vsz (docs/design/mockups/options-select/: now, sl-A to sl-C): v29 as it is; A, the map always the whole phase, the selected milestone's stretch tinted and outlined with a chip (recommended); B, the zoom kept with a strip of the phase's milestones in the band; C, no selecting, the map always the whole phase. Noted on the page: the whole-phase map is the older drawing without icons or words. To be asked.

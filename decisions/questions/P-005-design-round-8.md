@@ -21,3 +21,8 @@ Then we can build both in together"
 Read by the Chief of Staff as: the fixes wait. The design reviewer is dispatched again, on the same model, for a second advisory review of v32 on polish and a modern look and feel: the style, the motion and the like. Then the fixes of the first review and what the owner takes from the second are built together into v33.
 
 Carried out: the design reviewer's second advisory review of v32, on polish, the look and the motion, recorded verbatim at docs/design/audit-2026-11-25-v32-polish.md: Look (L1 to L11), Motion (M1 to M8), Dark mode (D1 to D5), Consistency (C1 to C5) and a proposed motion spec. Three of its points touch earlier rulings (R7 answers 21 and 22, the top row's height; R5 answer 10, Why's outline; v11's push from the left) and are put to the owner as questions.
+
+Asked in chat, after both reviews were summarised: "My plan for building them together: 1. Build v33 with the first review's fixes, plus all the polish and motion that fits your rulings. The library changes first, then the mockup. 2. Put the open choices to you one at a time with pictures ... v33 is a large layer, so it will take a while. ... Shall I start?"
+3. "Yup build it all out"
+
+Read by the Chief of Staff as: build v33 as planned: the first review's fixes (F1, F3, U1, U2, U4, U7, U8, R3, R4, R5, O1, O2) and the second review's polish and motion within the owner's rulings (L1 to L3, L5, L7 to L11, M1 to M3, M5 to M8, D1 to D5, C1 to C5, the motion spec, and L4 and L6 in the parts that touch no ruling), library first, then the mockup. The questions that touch a ruling wait: the top row's height, Why's outline, the push's direction, and F2, F4, F5, F6, U3, U5, R1 and R2.

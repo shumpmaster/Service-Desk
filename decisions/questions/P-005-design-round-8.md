@@ -34,3 +34,5 @@ Answered: not all; every suggestion within the owner's rulings is in v33, L4, L6
 5. "If you can mockup each of the proposed changes I can give a ruling"
 
 Read by the Chief of Staff as: each held change is drawn as options on a page, the element as it is in v33 first, then each option, live where it moves, and put to the owner for a ruling: the top row's height, Why's outline, the push's direction, F2, F4, F5, F6, U3, U5, R1, R2 and O3. Drawn on v33 once it is built.
+
+Shown live, on v33 (https://claude.ai/artifact/CrYMV2mnpibbtaDCedN1AB): https://claude.ai/artifact/3eenPey6B2XdghwbFRmWoc (items 1 to 3: the top row's height, Why's outline, the push's direction), https://claude.ai/artifact/9NRMt4FuGXaLBD2PeW5YZE (items 4 to 8: F2, F4, F5, F6, U3), https://claude.ai/artifact/7jh426KaUd3RXL2zikUhid (items 9 to 12: U5, R1, R2, O3); docs/design/mockups/options-r8-top/, options-r8-map/, options-r8-list/. Each item: v33 as it is, then each option, one recommended. To be asked.

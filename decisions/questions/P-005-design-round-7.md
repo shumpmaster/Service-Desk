@@ -152,3 +152,8 @@ And also, the original problem I wanted fixed was actually the disappearing of p
 Read by the Chief of Staff as: 1, the taller whole-phase map is fine; give its lanes and words more room so nothing overlaps; 2, answer 18's trouble was the list, not the map: tapping 1, 2, 3 or 4 swaps the list to that phase alone, so the other phases vanish. Every phase, with all its milestones, is to stay in the list; the ones not being looked at are folded, and tapping a phase opens it where it sits.
 
 Shown live: https://claude.ai/artifact/1dENnjZta8s9AmDpnhsmg5 (docs/design/mockups/options-phases/: now = v30, all): every phase and gate kept in the list, top down, each phase with all its milestones folded unless opened; tapping 1 to 4 scrolls to the phase where it sits; the lit pill and the map follow the phase at the fixed centre; standard ids hidden in every phase; on the map each sprint has its own lane (40 apart) and a sprint's name gives way to an event's words. Noted on the page: the band is about 80 points taller than v30's. To be asked.
+
+Asked in the chat: "Is this it? If so, it goes into the library and becomes mockup v31."
+21. "This is almost perfect. Let's redesign the phase tiles to add more space for the text timeline at the bottom of the page. We can also get rid of the header on this page to get more space"
+
+Read by the Chief of Staff as: answer 20's drawing stands; to win back room for the list, the four phase tiles (1 Discovery, 2 Design, 3 Build, 4 Launch) are to be redrawn much slimmer, and the project page's slim title bar (Back, "The timeline", its live line, the bell and More) is to go, its controls finding a place elsewhere. To be drawn and asked.

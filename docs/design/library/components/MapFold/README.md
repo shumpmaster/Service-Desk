@@ -7,3 +7,4 @@ Room for the list when you want it. Chosen by the owner on 26 November 2026 (dec
 - **Still floating**, with the top row; nothing folds on its own as you scroll (the other option, folding on scroll, was not chosen).
 - The band is 334 open and 76 folded on a 393 by 852 phone.
 - **v38 (round 8, answer 16):** it folds the card (MapCard) to a slim card with the same edge and shadow; the handle sits inside the card's foot.
+- **v39 (round 8, answer 17):** the slim card is glass too, 16 from the screen's sides.

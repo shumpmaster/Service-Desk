@@ -71,3 +71,10 @@ Asked in chat: "Last item from part 18: what on the timeline serves no purpose, 
 Read by the Chief of Staff as: draw, on v35, what to cut or merge (figures said two or three times; the "by" lines; the Now card repeating Stop card 5) and what to add (a list of what waits on the owner; who is at work now; new since last looked; how long each wait or stop lasted; tokens and context use), each as it is now, then options, live, on a page.
 
 Shown live: https://claude.ai/artifact/HPSxCVJhhxZDeyZduyFpp5 (docs/design/mockups/options-r8-purpose/): eight items on v35, each as it is, then options, A recommended for each. To cut or merge: 1, figures said twice; 2, the "by" lines; 3, the Now card. To add: 4, what waits on you; 5, who is at work; 6, new since you last looked; 7, how long each wait lasted; 8, tokens and context. Dropped as answered by v33 to v35: "Claude" on every event, "0" in empty rings, gates as thin lines, research not shown, no way to answer a stop. Records the options lack (who is at work in the pipeline now; when the owner last looked; sessions' own token and context fields, blank in all 49 end lines; a question's answer from the desk) are listed in the page's README for the records request. To be asked.
+
+Said in chat, while the eight items above wait for a ruling:
+11. "One separate item to touch on later, how functional are the explanations/titles/descriptions of tasks and such?
+
+Honestly I would want them to be so clear and descriptive that I could hand someone my phone and let them see exactly what's going on"
+
+Read by the Chief of Staff as: a separate item for later, not a ruling on the eight: the words on the timeline (titles, explanations, descriptions of tasks and events) should be clear enough that someone with no context, handed the owner's phone, sees exactly what is going on. To be reviewed against that test and drawn as options after the eight items are ruled.

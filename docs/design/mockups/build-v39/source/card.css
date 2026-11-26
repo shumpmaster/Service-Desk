@@ -1,0 +1,47 @@
+/* ================= v39: the map card breathes, holds the whole map inside its outline, and is glass (round 8, answer 17, a comment on
+   v38: "The branch map needs more space to breath away from the other elements. And I want the map to entirely fit within its own space
+   within the outline here if that makes sense? And I want it to have the glass look as well not just flat white").
+   Room: 16 from the screen's sides, 14 under the top row, 20 above the list. Inside: 12 of padding all round; the map is drawn to the
+   inner box only (its width is the card's inner width), and everything that sits on the map (main's label, the gate lines and flags,
+   the chip, the fold handle) is placed inside that box; the inner box clips as a backstop. Glass: translucent over the ground's field,
+   blurred and saturated so the field's colours come through, a light top edge and a soft sheen, a hairline edge and the soft shadow.
+   Reduced transparency or more contrast: a solid card. ================= */
+:root { --mc-pad: 12px; --mc-side: 20px; /* the band runs 4 past each screen edge, so 20 here is 16 from the screen */
+  --mc-bg: rgba(255, 255, 255, .46); --mc-sheen: linear-gradient(165deg, rgba(255, 255, 255, .62), rgba(255, 255, 255, .08) 38%, rgba(255, 255, 255, 0) 60%, rgba(255, 255, 255, .22));
+  --mc-halo: #f4f5fb; --mc-edge: rgba(60, 60, 67, .14); --mc-hi: rgba(255, 255, 255, .95);
+  --mc-blur: blur(28px) saturate(2.2);
+  --mc-shadow: 0 1px 2px rgba(20, 30, 60, .06), 0 12px 30px -8px rgba(20, 30, 70, .20); }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --mc-bg: rgba(44, 44, 50, .58); --mc-sheen: linear-gradient(180deg, rgba(255, 255, 255, .09), rgba(255, 255, 255, 0) 42%);
+  --mc-halo: #1d1d23; --mc-edge: rgba(255, 255, 255, .12); --mc-hi: rgba(255, 255, 255, .16);
+  --mc-shadow: 0 1px 2px rgba(0, 0, 0, .5), 0 14px 32px -8px rgba(0, 0, 0, .75); } }
+:root[data-theme="dark"] { --mc-bg: rgba(44, 44, 50, .58); --mc-sheen: linear-gradient(180deg, rgba(255, 255, 255, .09), rgba(255, 255, 255, 0) 42%);
+  --mc-halo: #1d1d23; --mc-edge: rgba(255, 255, 255, .12); --mc-hi: rgba(255, 255, 255, .16);
+  --mc-shadow: 0 1px 2px rgba(0, 0, 0, .5), 0 14px 32px -8px rgba(0, 0, 0, .75); }
+#v13band { padding-bottom: 20px; }
+#v13band .v13vp, html.tp #v13band .v13vp { margin: 10px var(--mc-side) 0; padding: var(--mc-pad); box-sizing: border-box;
+  background: var(--mc-sheen), var(--mc-bg); -webkit-backdrop-filter: var(--mc-blur); backdrop-filter: var(--mc-blur);
+  box-shadow: inset 0 0 0 1px var(--mc-edge), inset 0 1px 0 var(--mc-hi), var(--mc-shadow); }
+#v13band .v13vp > .v13in { overflow: hidden; border-radius: 10px; }
+/* everything on the map sits inside the inner box */
+#v13band .v13vp .v13main { left: calc(var(--mc-pad) + 2px); bottom: var(--mc-pad); }
+#v13band .v13vp .kn-mgate { top: calc(var(--mc-pad) + 4px); bottom: calc(var(--mc-pad) + 24px); }
+#v13band .v13vp .kn-mgate.l { left: calc(var(--mc-pad) + 10px) !important; }
+#v13band .v13vp .kn-mgate.r { right: calc(var(--mc-pad) + 10px) !important; }
+#v13band .v13vp .sl-chip { right: var(--mc-pad); bottom: var(--mc-pad); }
+#v13band .r8-handle { bottom: 24px; }
+html .r8-slim #v13band .r8-strip, #v13band.r8-slim .r8-strip, html .r8-slim .r8-strip { margin: 10px var(--mc-side) 0;
+  background: var(--mc-sheen), var(--mc-bg); -webkit-backdrop-filter: var(--mc-blur); backdrop-filter: var(--mc-blur);
+  box-shadow: inset 0 0 0 1px var(--mc-edge), inset 0 1px 0 var(--mc-hi), var(--mc-shadow); }
+#v13band.r8-slim, .r8-slim #v13band { padding-bottom: 14px; }
+@media (prefers-reduced-transparency: reduce), (prefers-contrast: more) {
+  :root { --mc-bg: #ffffff; --mc-sheen: linear-gradient(transparent, transparent); --mc-halo: #ffffff; }
+  html #v13band .v13vp, html.tp #v13band .v13vp, html .r8-slim #v13band .r8-strip, html #v13band.r8-slim .r8-strip, html .r8-slim .r8-strip { -webkit-backdrop-filter: none; backdrop-filter: none; box-shadow: inset 0 0 0 1px var(--mc-edge), var(--mc-shadow); }
+}
+@media (prefers-reduced-transparency: reduce) and (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --mc-bg: #1c1c1e; --mc-halo: #1c1c1e; } }
+/* on the glass, the gate captions take the secondary word colour at full strength, so they keep 4.5:1 like the lane names */
+#v13band .v13vp .kn-mgate { opacity: 1; }
+#v13band .v13vp .kn-mgate span { color: var(--text-2); }
+@media (prefers-color-scheme: dark) { html:not([data-theme="light"]) #v13band .v13vp { --text-2: #a7a7ad; } }
+html[data-theme="dark"] #v13band .v13vp { --text-2: #a7a7ad; }
+/* folded: the handle stays inside the slim card's foot */
+.r8-slim #v13band .r8-handle, #v13band.r8-slim .r8-handle { bottom: 15px; }

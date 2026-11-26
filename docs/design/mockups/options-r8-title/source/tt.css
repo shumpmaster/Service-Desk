@@ -1,0 +1,45 @@
+/* ================= round 8, answer 18: an accent reserved for home's large title (options over v39 with title A and search A of
+   options-r8-filter-home). html.tt-aP plate, tt-aH halo, tt-aM mark, tt-aW wordmark. --tt-p runs 0 to 1 as the page scrolls
+   the first 64 points; the accent condenses with it. Reduced motion: it snaps. Reduced transparency or more contrast: solid. ================= */
+html { --tt-p: 0; }
+.fh-lt { position: relative; transform-origin: 0 0; }
+html[class*="tt-a"] .fh-lt { transform: translateY(calc(var(--tt-p) * -10px)) scale(calc(1 - var(--tt-p) * .06)); opacity: calc(1 - var(--tt-p) * .9); }
+
+/* P: the title on a glass plate of its own, the same glass as the map card; the plate gives way to the bar's glass */
+html.tt-aP .fh-lt { margin: 6px 0 16px; padding: 16px 18px 14px; border-radius: 24px;
+  background: rgba(255, 255, 255, .5); -webkit-backdrop-filter: blur(26px) saturate(2); backdrop-filter: blur(26px) saturate(2);
+  border: 1px solid rgba(255, 255, 255, .7); box-shadow: inset 0 1px 0 rgba(255, 255, 255, .9), 0 10px 28px rgba(28, 40, 90, .09), 0 1px 2px rgba(28, 40, 90, .06); }
+html.tt-aP .fh-lt::after { content: ""; position: absolute; left: 18px; right: 18px; top: 0; height: 1px; border-radius: 1px; background: linear-gradient(90deg, transparent, rgba(255,255,255,.95), transparent); }
+html.tt-aP .fh-lt .asof { margin-top: 6px; }
+html[data-theme="dark"].tt-aP .fh-lt { background: rgba(44, 44, 50, .55); border-color: rgba(255, 255, 255, .09); box-shadow: inset 0 1px 0 rgba(255,255,255,.10), 0 10px 28px rgba(0,0,0,.45); }
+html[data-theme="dark"].tt-aP .fh-lt::after { background: linear-gradient(90deg, transparent, rgba(255,255,255,.22), transparent); }
+@media (prefers-color-scheme: dark) { html:not([data-theme="light"]).tt-aP .fh-lt { background: rgba(44, 44, 50, .55); border-color: rgba(255, 255, 255, .09); box-shadow: inset 0 1px 0 rgba(255,255,255,.10), 0 10px 28px rgba(0,0,0,.45); } }
+
+/* H: the ground's colour gathered behind the title, fading down into the page; a faint tint stays on the bar */
+html.tt-aH .fh-lt::before { content: ""; position: absolute; left: -24px; right: -24px; top: -140px; bottom: -70px; z-index: -1; pointer-events: none;
+  background: radial-gradient(55% 75% at 18% 55%, rgba(10, 108, 255, .22), transparent 70%), radial-gradient(50% 70% at 80% 40%, rgba(140, 110, 255, .24), transparent 72%);
+  opacity: calc(1 - var(--tt-p)); }
+html[data-theme="dark"].tt-aH .fh-lt::before { background: radial-gradient(55% 75% at 18% 55%, rgba(10, 132, 255, .30), transparent 70%), radial-gradient(50% 70% at 80% 40%, rgba(140, 110, 255, .30), transparent 72%); }
+html.tt-aH.fh-scrolled #view .hm-band { background-image: linear-gradient(90deg, rgba(10, 108, 255, .10), rgba(140, 110, 255, .10)) !important; }
+
+/* M: a small-caps eyebrow above a heavier title, and a short mark in the ground's blue and lavender; the mark moves to the bar's title */
+html.tt-aM .fh-lt { display: flex; flex-direction: column; }
+html.tt-aM .fh-lt .asof { order: -1; margin: 0 0 4px; font-size: 12px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; }
+html.tt-aM .fh-lt h1 { font-weight: 800; }
+html.tt-aM .fh-lt .tt-mark { display: block; width: 36px; height: 4px; border-radius: 2px; margin-top: 10px; background: linear-gradient(90deg, #3d73f5, #8b6cf2); }
+html.tt-aM #view .hm-band .hd-tx h1::before { content: ""; display: inline-block; width: 3px; height: 14px; border-radius: 2px; margin-right: 7px; vertical-align: -1px; background: linear-gradient(180deg, #3d73f5, #8b6cf2); }
+
+/* W: the large title as a two-tone wordmark from the ground's colours, deep enough to read; the bar keeps a plain ink title */
+html.tt-aW .fh-lt h1 { font-weight: 800; background: linear-gradient(90deg, #1f4fd1 0%, #5b3fc4 100%); -webkit-background-clip: text; background-clip: text; color: transparent; }
+html[data-theme="dark"].tt-aW .fh-lt h1 { background-image: linear-gradient(90deg, #9cc2ff 0%, #c8b6ff 100%); }
+
+@media (prefers-reduced-transparency: reduce), (prefers-contrast: more) {
+  html.tt-aP .fh-lt { -webkit-backdrop-filter: none; backdrop-filter: none; background: var(--surface, #fff); }
+  html[data-theme="dark"].tt-aP .fh-lt { background: #1c1c1e; }
+  html.tt-aH .fh-lt::before { display: none; }
+  html.tt-aH.fh-scrolled #view .hm-band { background-image: none !important; }
+}
+/* B: the bar is clear at the top so the glow reads through it, as title A leaves it */
+html.tt-aH:not(.fh-scrolled) #view .hm-band { background: transparent !important; background-image: none !important; box-shadow: none !important; }
+/* B: the live line one step darker on the glow, so it keeps 4.5:1 at its most tinted point */
+html.tt-aH:not([data-theme="dark"]) .fh-lt .asof { color: #4a4c51; }

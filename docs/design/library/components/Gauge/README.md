@@ -10,3 +10,4 @@ How far a phase, milestone or sprint has got, and whether it is all right: a tin
 - Tapping the gauge opens or folds its section (the owner, round 3: "the icons on the timeline should expand or collapse sections"). The whole row is the button, with the gauge as its mark; it carries aria-expanded.
 - Milestone and sprint shapes are still on hold (round 2): the circle and square inside are placeholders.
 - **v33 (round 8):** every ring is drawn the same: round caps on track and arc, the stroke at about 9% of the diameter; a value that changes lands on the bouncy spring (C3). The 7.5 number inside stays (R7 answer 11).
+- **v34 (round 8, answer 6):** where a milestone's criteria are not on record, the ring is dashed and empty, with no number (item 11). The 7.5 number stays everywhere else.

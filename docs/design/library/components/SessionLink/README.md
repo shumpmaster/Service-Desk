@@ -8,3 +8,4 @@ Where an event happened, one tap away. Chosen by the owner on 24 November 2026 (
 - The links are real: sessions from the commits' `Agent-Session:` trailers and `sessions/chief-of-staff/`; runs and pull requests from GitHub. A pipeline run is a log, not a conversation.
 - Icons: Phosphor (MIT), regular for rows, bold for controls and menus, fill for anything selected; Craft's own are Apple's SF Symbols, which a web page cannot use.
 - **v33 (round 8):** the bubble leads with **Open in Claude** and the run or pull request beside it, then what the session did (F3). Every tag is 20 high, radius 6, 12 text, on one baseline; Claude is a quiet grey fill, Why keeps its outline (L6; R5 answer 10).
+- **v34 (round 8, answer 6):** each tag names its session, such as "CoS 14 Nov" for a Chief of Staff session started that day; Run and PR stay as they are (item 9).

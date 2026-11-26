@@ -10,3 +10,4 @@ Home, grouped by what waits on the owner: one summary sentence, then a group for
 - **The quiet row**: a grey dot and "Nothing waits on you in …"; tapped, it opens the quiet projects as project rows, each with its strip. Shown here open.
 - Icons: Phosphor (MIT), regular for rows, bold for controls and menus, fill for anything selected; Craft's own are Apple's SF Symbols, which a web page cannot use.
 - **v33 (round 8):** the strip fits its card at 360; the wait time sits under the question, so the question keeps up to three lines (R5).
+- **v34 (round 8, answer 6):** times read in Chicago time; a clock time from before today carries its date (item 12).

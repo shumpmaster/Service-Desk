@@ -11,3 +11,4 @@ The BranchMap fitted to one milestone. Chosen by the owner on 16 November 2026 (
 - Colour as in BranchMap and StatusMark: red failed, yellow waiting on you, Now blue, main dark.
 - Icons: Phosphor (MIT), regular for rows, bold for controls and menus, fill for anything selected; Craft's own are Apple's SF Symbols, which a web page cannot use.
 - **v33 (round 8):** see BranchMap: the map moves instead of being rebuilt (M2); the dashed outline of a selected milestone is 1 point, 3 on 3 off, at 60% (L10).
+- **v34 (round 8, answer 6):** see BranchMap: one scale per phase, and planned milestones as dashed rings where a phase has no events.

@@ -556,3 +556,13 @@ button:focus-visible { outline: 2px solid var(--accent-select); outline-offset: 
 .dk-mo .fold .b p { margin: 0; padding: 0 14px 12px; font: 400 13px/18px var(--font-sans); color: var(--text-2); }
 .dk-mo .acts { display: flex; gap: 8px; flex-wrap: wrap; }
 @media (prefers-reduced-motion: reduce) { :is(.dk-circ, .dk-tab, .dk-round, .dk-chip, .dk-pair button, .dk-done, .dk-soft, .dk-tp .pill, .dk-tp .bk, .dk-press):active { scale: none; } }
+/* MapFold (round 8, answer 6, item 8) */
+.dk-mf { position: relative; border-radius: 20px; background: var(--surface-band, var(--surface)); box-shadow: 0 0 0 1px var(--separator); padding: 10px 12px 26px; }
+.dk-mf .map { height: 90px; border-radius: 12px; background: var(--accent-wash, rgba(10,108,255,.10)); display: grid; place-items: center; font: 400 13px var(--font-sans); color: var(--text-2); }
+.dk-mf .strip { display: flex; align-items: center; gap: 8px; font: 400 13px var(--font-sans); color: var(--text-2); }
+.dk-mf .strip b { font-weight: 600; color: var(--text-1); }
+.dk-mf .dots { margin-left: auto; display: flex; gap: 3px; }
+.dk-mf .dots i { width: 7px; height: 7px; border-radius: 2px; background: var(--separator); }
+.dk-mf .dots i.on { background: var(--accent); } .dk-mf .dots i.ok { background: var(--ok, #9fd6a8); } .dk-mf .dots i.bad { background: var(--bad, #f2a49a); }
+.dk-mf .hd { all: unset; position: absolute; left: 50%; bottom: 4px; width: 64px; height: 22px; margin-left: -32px; display: flex; align-items: center; justify-content: center; cursor: pointer; }
+.dk-mf .hd::after { content: ""; width: 36px; height: 5px; border-radius: 3px; background: var(--text-3, #8e8e93); opacity: .45; }

@@ -7,3 +7,4 @@ Selecting a milestone without losing the phase. Chosen by the owner on 25 Novemb
 - The FixedCentre arrow and the window follow the scroll as before.
 - Replaces MilestoneMap's zoom; MilestoneMap's drawing stays.
 - Icons: Phosphor (MIT), regular for rows, bold for controls and menus, fill for anything selected; Craft's own are Apple's SF Symbols, which a web page cannot use.
+- **v34 (round 8, answer 6):** a second tap on the selected milestone folds it and clears the selection; a third opens and selects it again (item 7).

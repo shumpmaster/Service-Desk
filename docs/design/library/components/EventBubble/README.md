@@ -12,3 +12,4 @@ What an event needs and why it happened, carried on the event itself as two smal
 - Requirements and reasons are not yet on record; until agents write them, a mockup's are examples, marked so.
 - Icons: Phosphor (MIT), regular for rows, bold for controls and menus, fill for anything selected; Craft's own are Apple's SF Symbols, which a web page cannot use.
 - **v33 (round 8):** every bubble has a close mark, and a tap outside or Escape closes it (U1); it opens from its tag and closes as the reverse (M5). Tapping a tag never moves the page: the tag stays where it was (F1). A bubble with too little room below opens above its row, or keeps to the room there is and scrolls inside (U2). The Needs tag stays on its row's line while its bubble is open.
+- **v34 (round 8, answer 6):** Why is a quiet grey fill like the link tag, with no outline, and wears a thin blue edge while its bubble is open (item 2; it sets aside R5 answer 10's outline).

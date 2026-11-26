@@ -996,6 +996,39 @@ V33 = {
 for _k, _v in V33.items():
     _h, _r = C[_k]; C[_k] = (_h, _r.rstrip() + '\n' + _v + '\n')
 
+
+# round 8, answer 6 (decisions/questions/P-005-design-round-8.md): the 12 held changes, each as recommended (v34)
+comp("MapFold", "Desk", 300, '<div class="dk-stage col" style="max-width:393px">'
+  '<div class="dk-mf"><div class="map"><span>the branch map</span></div><button type="button" class="hd" aria-label="Show or hide the map"></button></div>'
+  '<div class="dk-mf slim"><div class="strip"><b>2.2.2.10</b> · Design<span class="dots"><i class="ok"></i><i class="bad"></i><i class="on"></i><i></i><i></i><i></i><i></i></span></div><button type="button" class="hd" aria-label="Show or hide the map"></button></div>'
+  '<p class="dk-note">A handle at the band\'s foot folds the map to one line, the row at the pointer and the phase\'s milestones, and back.</p></div>',
+ """# MapFold
+
+Room for the list when you want it. Chosen by the owner on 26 November 2026 (decisions/questions/P-005-design-round-8.md, answer 6: "I approve all as recommended", item 8, the first review's U3).
+
+- **A handle** at the foot of the floating band, 36 by 5, grey at 45%, with a 44-point target.
+- **Tapped**, the map folds to one line: the number of the row at the pointer, the phase's name, and a small square per milestone in its status colour, Now in blue. Tapped again, the map comes back. The row at the pointer stays where it was.
+- **Still floating**, with the top row; nothing folds on its own as you scroll (the other option, folding on scroll, was not chosen).
+- The band is 334 open and 76 folded on a 393 by 852 phone.
+""")
+
+V34 = {
+ "TopPills": "- **v34 (round 8, answer 6):** Back, both pills and the bell capsule are 38 high, the same as home's capsule (item 1; it sets aside R7 answers 21 and 22's 34). A long project name such as Home-screen widget is still cut at 393: the phase pill would have to give up its name for it.",
+ "EventBubble": "- **v34 (round 8, answer 6):** Why is a quiet grey fill like the link tag, with no outline, and wears a thin blue edge while its bubble is open (item 2; it sets aside R5 answer 10's outline).",
+ "SessionLink": "- **v34 (round 8, answer 6):** each tag names its session, such as \"CoS 14 Nov\" for a Chief of Staff session started that day; Run and PR stay as they are (item 9).",
+ "ContextView": "- **v34 (round 8, answer 6):** event rows carry their fourth number (2.2.1.1) in place of the dot, and each link names its session (item 9).",
+ "FixedCentre": "- **v34 (round 8, answer 6):** the project opens, and a tap on the round button lands, with what waits on you (Stop card 5) at the pointer and its arrow on the map (item 4; it sets aside round 3 answer 4's \"Now just under the floating band\").",
+ "BranchMap": "- **v34 (round 8, answer 6):** one scale for the whole phase: the map no longer re-fits to the events in view, so as you read down the arrow only moves right (item 5; it sets aside R5 answers 4 and 7's fit to what is in view). A phase with no events yet draws its planned milestones as dashed rings on a dotted line, numbered, names cut to about nine letters (item 6).",
+ "MilestoneMap": "- **v34 (round 8, answer 6):** see BranchMap: one scale per phase, and planned milestones as dashed rings where a phase has no events.",
+ "MilestoneSelect": "- **v34 (round 8, answer 6):** a second tap on the selected milestone folds it and clears the selection; a third opens and selects it again (item 7).",
+ "LevelRails": "- **v34 (round 8, answer 6):** a milestone's label and number (MILESTONE 3.6) sit on a small line above, as fourth numbers do, and its name takes the full width on up to two lines (item 10). Times are in Chicago time, with a date on anything older than today, such as \"13 Nov, 3:32 pm\" (item 12).",
+ "Gauge": "- **v34 (round 8, answer 6):** where a milestone's criteria are not on record, the ring is dashed and empty, with no number (item 11). The 7.5 number stays everywhere else.",
+ "Motion": "- **v34 (round 8, answer 6):** the push now comes in from the right and goes back to the left, as other iPhone apps do, so Back's arrow points the way you came (item 3; it sets aside v11's push from the left).",
+ "WaitGroup": "- **v34 (round 8, answer 6):** times read in Chicago time; a clock time from before today carries its date (item 12).",
+}
+for _k, _v in V34.items():
+    _h, _r = C[_k]; C[_k] = (_h, _r.rstrip() + '\n' + _v + '\n')
+
 for name, (html, md) in C.items():
     d = os.path.join(OUT, "components", name); os.makedirs(d, exist_ok=True)
     open(os.path.join(d, "preview.html"), "w").write(html)

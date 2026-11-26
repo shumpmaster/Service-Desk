@@ -13,3 +13,4 @@ One set of timings for the whole desk (v33; decisions/questions/P-005-design-rou
 - **The sheet (M7):** follows the finger; a flick or a third of its height puts it away; dragging up gives a little; the scrim fades with the drag.
 - **The Context view (M8):** holding the round button fills a ring around it in 450 ms; the view lands first, then the first eight rows settle, 14 ms apart.
 - **Reduced motion:** no transforms or scroll animation; a 120 ms fade instead; a press stays as colour.
+- **v34 (round 8, answer 6):** the push now comes in from the right and goes back to the left, as other iPhone apps do, so Back's arrow points the way you came (item 3; it sets aside v11's push from the left).

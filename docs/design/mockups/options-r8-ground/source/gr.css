@@ -1,0 +1,44 @@
+/* ================= round 8, answer 15: slight colour in the background, options over v37 (gr.js switches them by the phone's hash).
+   The ground only: cards, rows, the list's words and the status colours are unchanged. With reduced transparency or more contrast, the ground turns flat again. ================= */
+:root { --gr-a: rgba(10, 108, 255, .14); --gr-b: rgba(140, 110, 255, .13); --gr-c: rgba(30, 180, 150, .10); --gr-warm: rgba(255, 170, 60, .14); --gr-cool: rgba(60, 150, 255, .12); }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --gr-a: rgba(10, 132, 255, .20); --gr-b: rgba(140, 110, 255, .17); --gr-c: rgba(30, 180, 150, .12); --gr-warm: rgba(255, 160, 40, .15); --gr-cool: rgba(60, 150, 255, .16); } }
+:root[data-theme="dark"] { --gr-a: rgba(10, 132, 255, .20); --gr-b: rgba(140, 110, 255, .17); --gr-c: rgba(30, 180, 150, .12); --gr-warm: rgba(255, 160, 40, .15); --gr-cool: rgba(60, 150, 255, .16); }
+/* per project (B): two hues each, all cool (blue, lavender, indigo, teal), so none reads as a status colour; home keeps the neutral mesh */
+html[data-gr-proj="tl"] { --gr-p1: rgba(10, 108, 255, .15); --gr-p2: rgba(120, 100, 255, .12); }
+html[data-gr-proj="wd"] { --gr-p1: rgba(20, 170, 170, .14); --gr-p2: rgba(60, 150, 255, .09); }
+html[data-gr-proj="ml"] { --gr-p1: rgba(120, 100, 255, .13); --gr-p2: rgba(60, 150, 255, .09); }
+html[data-gr-proj="om"] { --gr-p1: rgba(80, 90, 230, .12); --gr-p2: rgba(20, 170, 170, .09); }
+html[data-gr-proj="pf"] { --gr-p1: rgba(60, 120, 200, .12); --gr-p2: rgba(40, 180, 140, .09); }
+
+html[data-theme="dark"][data-gr-proj="tl"] { --gr-p1: rgba(10, 132, 255, .20); --gr-p2: rgba(120, 100, 255, .16); }
+html[data-theme="dark"][data-gr-proj="wd"] { --gr-p1: rgba(20, 170, 170, .17); --gr-p2: rgba(60, 150, 255, .12); }
+html[data-theme="dark"][data-gr-proj="ml"] { --gr-p1: rgba(120, 100, 255, .17); --gr-p2: rgba(60, 150, 255, .12); }
+html[data-theme="dark"][data-gr-proj="om"] { --gr-p1: rgba(80, 90, 230, .17); --gr-p2: rgba(20, 170, 170, .12); }
+html[data-theme="dark"][data-gr-proj="pf"] { --gr-p1: rgba(60, 120, 200, .17); --gr-p2: rgba(40, 180, 140, .12); }
+@media (prefers-color-scheme: dark) {
+  html:not([data-theme="light"])[data-gr-proj="tl"] { --gr-p1: rgba(10, 132, 255, .20); --gr-p2: rgba(120, 100, 255, .16); }
+  html:not([data-theme="light"])[data-gr-proj="wd"] { --gr-p1: rgba(20, 170, 170, .17); --gr-p2: rgba(60, 150, 255, .12); }
+  html:not([data-theme="light"])[data-gr-proj="ml"] { --gr-p1: rgba(120, 100, 255, .17); --gr-p2: rgba(60, 150, 255, .12); }
+  html:not([data-theme="light"])[data-gr-proj="om"] { --gr-p1: rgba(80, 90, 230, .17); --gr-p2: rgba(20, 170, 170, .12); }
+  html:not([data-theme="light"])[data-gr-proj="pf"] { --gr-p1: rgba(60, 120, 200, .17); --gr-p2: rgba(40, 180, 140, .12); }
+}
+/* on a tinted ground the two secondary greys step one shade darker in light, so words stay 4.5:1 at the most tinted point (measured) */
+html:is(.gr-A, .gr-B, .gr-C, .gr-D):not([data-theme="dark"]) { --text-2: #5a5c60; --ink-3: #555559; }
+@media (prefers-color-scheme: dark) { html:is(.gr-A, .gr-B, .gr-C, .gr-D):not([data-theme="light"]) { --text-2: #98989f; --ink-3: #aeaeb2; } }
+/* the colour layer, fixed behind everything; the page's own ground shows through */
+html.gr-A, html.gr-B, html.gr-C, html.gr-D { background: var(--ground); }
+html:is(.gr-A, .gr-B, .gr-C, .gr-D) body { background: transparent !important; }
+html:is(.gr-A, .gr-B, .gr-C, .gr-D) body::before { content: ""; position: fixed; inset: 0; z-index: -1; pointer-events: none; background: var(--gr-img); transition: background .6s; }
+html.gr-A { --gr-img: radial-gradient(120% 70% at 0% 0%, var(--gr-a), transparent 60%), radial-gradient(90% 60% at 100% 35%, var(--gr-b), transparent 60%), radial-gradient(110% 60% at 30% 100%, var(--gr-c), transparent 60%); }
+html.gr-B { --gr-img: radial-gradient(120% 70% at 0% 0%, var(--gr-p1, var(--gr-a)), transparent 60%), radial-gradient(100% 70% at 100% 60%, var(--gr-p2, var(--gr-b)), transparent 62%); }
+html.gr-C { --gr-img: linear-gradient(180deg, var(--gr-a) 0%, var(--gr-b) 28%, transparent 62%); }
+html.gr-D { --gr-img: radial-gradient(130% 70% at 50% 0%, var(--gr-mood, var(--gr-cool)), transparent 65%); }
+html.gr-D.gr-waits { --gr-mood: var(--gr-warm); }
+/* the map band and home's floating bar paint the same layer, lined up with the screen, so the colour runs on behind them */
+html:is(.gr-A, .gr-B, .gr-C, .gr-D) :is(#v13band, .v13band) { background: var(--gr-img) 0 0 / 100vw 100vh no-repeat fixed, var(--ground) !important; }
+html:is(.gr-A, .gr-B, .gr-C, .gr-D) #v13band::after { background: linear-gradient(var(--ground), transparent) !important; opacity: .0; }
+/* halos drawn in the ground's colour (map labels, discs) soften so they do not show as flat patches */
+html:is(.gr-A, .gr-B, .gr-C, .gr-D) .v13map .lb, html:is(.gr-A, .gr-B, .gr-C, .gr-D) .v13map .fl { stroke-opacity: .7; }
+@media (prefers-reduced-transparency: reduce), (prefers-contrast: more) {
+  html:is(.gr-A, .gr-B, .gr-C, .gr-D) body::before { display: none; }
+  html:is(.gr-A, .gr-B, .gr-C, .gr-D) :is(#v13band, .v13band) { background: var(--ground) !important; } }

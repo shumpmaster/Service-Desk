@@ -43,7 +43,7 @@ Each version is a layer over the one before, so behaviour stays fixed unless the
   - **Blue only for now or selected** (P-005-rebrand-style's one blue): the count, the bell's dot, the new-since and session dots in ink; the at-work dot the soft green of moving; Answer an ink button (it changes the colour drawn in round 8, answers 9 and 12).
   - **Fewer tags.** The kind, a grey state and the time on the number line ("2.2.2.10 · Stop · 9:42 am"); only tinted states before the title; Why and the session tag at the row's foot; a stop's Answer on a line of its own.
   - **Glass on what floats.** The top row, the tab bar, the round button and both menus 60% glass with a 24-point blur, a light top edge and a shine; sheets 80%; solid with reduced transparency. Sizes unchanged.
-- **Not in v37: colour in the background** (answer 15). Drawn as options on options-r8-ground/; to be asked.
+- **Not in v37: colour in the background** (answer 15). Drawn as options on options-r8-ground/ (https://claude.ai/artifact/2Ac5x8BBx47FZ2M95f4iva); to be asked.
 
 ## What v36 adds on a project's page, and the owner's word for it
 The owner's words: "Draw those options next" (round 8, answer 10); "I want all 8 as recommended" (answer 12). Options shown on the way: options-r8-purpose/ (https://claude.ai/artifact/HPSxCVJhhxZDeyZduyFpp5).

@@ -52,3 +52,8 @@ Read by the Chief of Staff as: draw how a gate, a decision, research and a stop 
 Found in the records before drawing: a gate is the owner's ruling on a phase (Design, Build, Launch; proceed, hold, recycle or kill on a case with the Critic's view; OPERATING_MODEL §3 and §4; docs/gates/P-005/); a decision is the owner's ruling, recorded verbatim in decisions/ and applied by the Orchestrator (decisions/P-005/stop-4.md, dor-fail-1.md); research is a request tagged to a milestone, a graded memo and a source check (intake/requests/Q-028.toml, research/Q-028*.md); a stop fires after three failed rounds and offers fixed choices (D-044; decisions/P-005/stop-5-notes.md, status/P-005.toml). In v34 a gate is a thin grey line with nothing to tap, its time still in UTC; a decision does not say it carries the owner's ruling; research shows as a sprint (Q-028) with no question or grades; a stop does not say why, what it holds up, or how to answer.
 
 Shown live: https://claude.ai/artifact/JPyDRb6ExZ2tjEXjq5PumF (docs/design/mockups/options-r8-kinds/): for each kind, v34 as it is, then A (one family: a sheet on tap, a single "Yours" mark on what is the owner's; recommended for all four) and B. The Answer buttons are examples; no record says the desk can record a stop card's answer. To be asked.
+
+Asked in chat: "You can rule on all four in one message, for example "all A" or "A, but stop B"."
+8. "Honestly love every option. Especially the research functionality"
+
+Read by the Chief of Staff as: the options suit; which of A and B for each kind is not yet said, so it is confirmed once before building.

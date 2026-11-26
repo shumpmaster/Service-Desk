@@ -1,0 +1,69 @@
+/* ================= round 8, answer 14: the look and feel, option A of each, built into v37 (round 8, answers 14 and 15).
+   Colour stays the soft status colours and the one blue; shapes untouched. ================= */
+:root { --lk-lane: #e3e3e8; --lk-main: #cfcfd5; --lk-dot: #b9b9c0; --lk-inkbtn: #1c1d21; --lk-inkbtn-t: #ffffff; --lk-ink-dot: #3a3b40; --lk-ok: #34a853; --lk-ok-ring: rgba(52, 168, 83, .22);
+  --lk-glass: rgba(255, 255, 255, .60); --lk-glass-hi: rgba(255, 255, 255, .85); --lk-glass-lo: rgba(255, 255, 255, .25); --lk-glass-sheet: rgba(255, 255, 255, .80); }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --lk-lane: #252528; --lk-main: #38383c; --lk-dot: #4a4a4f; --lk-inkbtn: #f2f2f7; --lk-inkbtn-t: #000000; --lk-ink-dot: #d1d1d6; --lk-ok: #30d158; --lk-ok-ring: rgba(48, 209, 88, .25);
+  --lk-glass: rgba(44, 44, 48, .66); --lk-glass-hi: rgba(255, 255, 255, .22); --lk-glass-lo: rgba(255, 255, 255, .06); --lk-glass-sheet: rgba(36, 36, 40, .84); } }
+:root[data-theme="dark"] { --lk-lane: #252528; --lk-main: #38383c; --lk-dot: #4a4a4f; --lk-inkbtn: #f2f2f7; --lk-inkbtn-t: #000000; --lk-ink-dot: #d1d1d6; --lk-ok: #30d158; --lk-ok-ring: rgba(48, 209, 88, .25);
+  --lk-glass: rgba(44, 44, 48, .66); --lk-glass-hi: rgba(255, 255, 255, .22); --lk-glass-lo: rgba(255, 255, 255, .06); --lk-glass-sheet: rgba(36, 36, 40, .84); }
+
+/* ---------- 1. A calmer map band ---------- */
+/* 1A: thin, light lanes; slimmer rings; routine commits outside the window as small dots; a quieter window and outline; gate captions without a slab */
+html #v13in svg path.g { stroke: var(--lk-lane) !important; stroke-width: 3px !important; }
+html #v13in svg path.g.main { stroke: var(--lk-main) !important; stroke-width: 4px !important; }
+html #v13in svg circle.disc { stroke-width: 1.5px; }
+/* v37: the dot is the station's own disc, drawn small, so it stays exactly where the station is (the map's arrow aims at it) */
+html #v13in svg g.st.lk-r:not(.vis):not(.now) .ic { display: none !important; }
+html #v13in svg g.st.lk-r:not(.vis):not(.now) circle.disc { r: 3.5px; fill: var(--lk-dot) !important; stroke: none !important; }
+html #v13in svg rect.win { opacity: .55; stroke: var(--now-word); stroke-opacity: .35; stroke-width: 1px; }
+html #v13in svg .sl-band { opacity: 0 !important; }
+html #v13in svg .sl-edge { opacity: .35 !important; }
+html .kn-mgate { border-left-width: 1px; opacity: .85; }
+html .kn-mgate span { background: none; font-size: 10px; letter-spacing: .06em; text-transform: uppercase; color: var(--ink-4, #8e8e93);
+  text-shadow: 0 0 3px var(--ground), 0 0 3px var(--ground), 0 0 3px var(--ground); }
+
+/* ---------- 2. Blue only for "now or selected" ---------- */
+/* 2A: counts, the bell's dot, new marks and session dots in ink; at work in the soft green of "moving" */
+html :is(.tp-pill .n, .chip .n, .p-badge, .sg-badge) { background: var(--lk-inkbtn) !important; color: var(--lk-inkbtn-t) !important; box-shadow: none !important; }
+html .bdot { background: var(--lk-ink-dot) !important; }
+html .pp-dot { background: var(--lk-ink-dot) !important; }
+html .ss-dot { background: var(--ink-4, #8e8e93) !important; }
+html :is(.pp-work, .pp-band-work) { background: rgba(120, 120, 128, .10) !important; }
+html :is(.pp-work, .pp-band-work) .d { background: var(--lk-ok) !important; animation-name: lk-pulse !important; }
+@keyframes lk-pulse { 0% { box-shadow: 0 0 0 0 var(--lk-ok-ring); } 70% { box-shadow: 0 0 0 7px rgba(0, 0, 0, 0); } 100% { box-shadow: 0 0 0 0 rgba(0, 0, 0, 0); } }
+/* 2A: answering is an ink button; blue is left to the pointer, the map's window and arrow, the selection, NOW and the selected tab */
+html :is(.kn-ansrow, .kn-sheet .kn-open, .pp-btn.main, .kn-sheet button.main, .kn-pick) { background: var(--lk-inkbtn) !important; color: var(--lk-inkbtn-t) !important; }
+
+/* ---------- 3. Fewer tags per row ---------- */
+/* 3A: the kind, a grey state (Done, Planned) and the time join the small number line; tinted states stay as tags; Why and the session move to the row's foot */
+html #v13list .v13ev:has(> .tx > .no4) > .tx { display: flex !important; flex-direction: row !important; flex-wrap: wrap; align-items: center !important; justify-content: flex-start !important; text-align: left; column-gap: 6px; row-gap: 3px; }
+html #v13list .v13ev:has(> .tx > .no4) > .tx > * { order: 4; flex: 1 1 100%; min-width: 0; }
+html #v13list .v13ev:has(> .tx > .no4) > .tx > .no4 { order: 0; }
+html #v13list .v13ev:has(> .tx > .no4) > .tx > .l1 { display: contents; }
+html #v13list .v13ev:has(> .tx > .no4) .l1 > * { order: 1; flex: none; }
+html #v13list .v13ev:has(> .tx > .no4) .l1 > :is(b, .tm, .v13tag:not(.bad):not(.wait)) { display: none !important; }
+html #v13list .v13ev:has(> .tx > .no4) > .tx > .l2 { order: 2; }
+html #v13list .v13ev:has(> .tx > .no4) > .tx > :is(.l3, .kn-say) { order: 3; }
+html #v13list .v13ev:has(> .tx > .no4) .l1 > :is(.w2-q, .ss-q) { order: 5; margin-top: 3px; }
+html #v13list .v13ev:has(> .tx > .no4) > .tx > .kn-open { order: 6; flex: none; }
+html #v13list .v13ev:has(> .tx > .no4) > .tx > :is(.w2-bub, .ss-bub, .n4-bub) { order: 7; }
+html #v13list .lk-meta { font-weight: 500; color: var(--text-2); }
+
+/* ---------- 4. More glass on the floating controls and sheets ---------- */
+html :is(.pl-row .circ, .pl-row .tp-pill, .pl-row .capsule, .tabbar, #roundbtn, .tp-menu, .menu) {
+  background-color: var(--lk-glass) !important;
+  background-image: linear-gradient(180deg, var(--lk-glass-hi) 0%, rgba(255, 255, 255, 0) 46%) !important;
+  -webkit-backdrop-filter: blur(24px) saturate(1.9) !important; backdrop-filter: blur(24px) saturate(1.9) !important;
+  box-shadow: inset 0 1px 0 var(--lk-glass-hi), inset 0 -1px 0 var(--lk-glass-lo), inset 0 0 0 .5px var(--lk-glass-lo), 0 0 0 .5px rgba(0, 0, 0, .06), 0 8px 24px rgba(0, 0, 0, .10), 0 1px 3px rgba(0, 0, 0, .06) !important; }
+html :is(.kn-sheet, .pp-sheet, .sheet) {
+  background-color: var(--lk-glass-sheet) !important;
+  -webkit-backdrop-filter: blur(30px) saturate(1.8) !important; backdrop-filter: blur(30px) saturate(1.8) !important;
+  box-shadow: inset 0 1px 0 var(--lk-glass-hi), 0 -8px 30px rgba(0, 0, 0, .12) !important; }
+@media (prefers-reduced-transparency: reduce) {
+  html :is(.pl-row .circ, .pl-row .tp-pill, .pl-row .capsule, .tabbar, #roundbtn, .tp-menu, .menu, .kn-sheet, .pp-sheet, .sheet) {
+    background-color: var(--surface) !important; background-image: none !important; -webkit-backdrop-filter: none !important; backdrop-filter: none !important; } }
+
+/* v37: 3A's rough edge: Answer gets a line of its own, under Why and the session tag */
+html #v13list .v13ev:has(> .tx > .no4):has(> .tx > .kn-ansrow) > .tx::after { content: ''; order: 6; flex: 0 0 100%; height: 0; }
+html #v13list .v13ev:has(> .tx > .no4) > .tx > .kn-open.kn-ansrow { order: 7; margin-top: 4px; }
+html #v13list .v13ev:has(> .tx > .no4) > .tx > :is(.w2-bub, .ss-bub, .n4-bub) { order: 8; }

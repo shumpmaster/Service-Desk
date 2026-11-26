@@ -1109,6 +1109,70 @@ V35 = {
 for _k, _v in V35.items():
     _h, _r = C[_k]; C[_k] = (_h, _r.rstrip() + '\n' + _v + '\n')
 
+# round 8, answers 10 and 12 (decisions/questions/P-005-design-round-8.md): what serves no purpose cut, what was missing added, option A of each (v36)
+def wl_item(ico, t, holds, w, since, ans=True):
+    return (f'<li><span class="ic">{ic(ico)}</span><span class="bd"><span class="t">{t}</span><span class="s">Holds up {holds} · <span class="w">{w}</span> · since {since}</span>'
+            f'<span class="acts"><span class="dk-wbtn main">Answer</span><span class="dk-wbtn">Go to it</span></span></span></li>')
+comp("WaitSheet", "Desk", 640, '<div class="dk-stage col" style="max-width:393px"><div class="dk-ksheet"><div class="grab"></div><span class="x" aria-label="Close">' + ic("x", "bold") + '</span>'
+  + '<div class="kd">Waiting on you</div><h2>4 things wait on you in The timeline</h2><p class="ex">The longest first among the same kind; each says what it holds up and how long it has waited.</p><ul class="dk-wl">'
+  + wl_item("hand-palm", "Stop card 5: S-011 failed three plan reviews. What happens next?", "M6, M7, M8", "1 h 43 min", "9:42 am")
+  + wl_item("question", "Which phone widths must the timeline fit?", "M7, M8", "2 h 39 min", "8:46 am")
+  + wl_item("question", "Is the spec’s reading of “each thing reaches my phone” enough for M8?", "M8", "2 h 39 min", "8:46 am")
+  + '</ul><p class="ex">A question’s Answer is an example: no record says the desk can record it.</p></div></div>',
+ """# WaitSheet
+
+Everything that waits on the owner in a project, one tap away. Chosen by the owner on 26 November 2026 (decisions/questions/P-005-design-round-8.md, answers 10 and 12, "I want all 8 as recommended"; item 4, option A on docs/design/mockups/options-r8-purpose/).
+
+- **Opened by the count on the project pill** (TopPills): the count already says how many wait; tapping it shows them. The list itself stays as it is.
+- **Each row**: the kind's icon (a stop's hand, a question's mark), what is asked in plain words, what it holds up, how long it has waited (in the waiting tag's colour) and since when; **Answer** opens the stop card's choices (KindSheet) or the question; **Go to it** closes the sheet and puts the row at the pointer (FixedCentre).
+- **Order**: the longest wait first among the same kind; the stop first.
+- A sheet of BottomSheet's shape and motion; the close mark, a tap on the scrim and Escape close it.
+- Records: status/P-005.toml (what waits); decisions/P-005/stop-5-notes.md; PR #446 (the three questions). A question's Answer is an example until the desk can record it (docs/design/requests/2026-11-26-timeline-records.md).
+""")
+comp("AtWork", "Desk", 200, '<div class="dk-stage col" style="max-width:393px"><div class="dk-work"><span class="d" aria-hidden="true"></span><span class="t"><b>At work now · Chief of Staff</b> (CoS 14 Nov)<small>Following S-011 through its plan reviews · since 7:52 am · the pipeline waits on your answer</small></span></div>'
+  + '<p class="dk-note">Under the row the page opens on; tapped, a sheet says who is at work, on what, since when, their helpers, and what the pipeline is doing.</p></div>',
+ """# AtWork
+
+Who is at work now, and on what. Chosen on 26 November 2026 (round 8, answers 10 and 12; item 5, option A).
+
+- **Where**: one row right under what waits on the owner (the row the page opens on), so it costs the band no room (round 7 answers 21 and 22; MapFold).
+- **The row**: a small blue dot that pulses (still with reduced motion), "At work now", who (a Chief of Staff session and its tag, such as CoS 14 Nov), what it set out to do, since when, and what the pipeline is doing.
+- **Tapped**, a sheet (BottomSheet) lists the session, its helpers (running or finished) and the pipeline's last step.
+- The one blue: the dot and the row's wash; no new colour.
+- Records: the Chief of Staff's session lines (sessions/chief-of-staff/, start and what it set out to do, helpers); dispatch-log/ (the pipeline's last dispatch). Whether a pipeline run is under way right now is not on record: the desk would read GitHub's run status (docs/design/requests/2026-11-26-timeline-records.md).
+""")
+comp("NewMark", "Desk", 150, '<div class="dk-stage col" style="max-width:393px"><div style="font:600 12px/16px var(--font-sans);color:var(--text-3)"><span class="dk-dot"></span>2.2.2.9</div>'
+  + '<div style="font:400 13px/17px var(--font-sans);color:var(--text-2)">Design · 3 of 8 milestones reached · <span style="color:var(--accent-text);font-weight:600">9 new</span></div>'
+  + '<p class="dk-note">A blue dot before the number of each row new since you last looked, and the count on the phase heading.</p></div>',
+ """# NewMark
+
+What is new since the owner last looked. Chosen on 26 November 2026 (round 8, answers 10 and 12; item 6, option A; the owner's ask in decisions/questions/P-001-design-discovery.md, answer 8).
+
+- **A blue dot**, 7 across, before the fourth number of each row that happened since the owner last looked; **"· 9 new"** in blue on the phase heading's line. Nothing moves.
+- The dots clear once seen.
+- When the owner last looked is not on record; the desk would keep it on the phone. The time in the mockup (13 Nov, 11:00 pm) is an example (docs/design/requests/2026-11-26-timeline-records.md).
+""")
+comp("WaitTime", "Desk", 150, '<div class="dk-stage col" style="max-width:393px"><div class="dk-l3"><span class="dk-wait">' + ic("clock") + 'waited 3 h 53 min</span></div><div class="dk-l3"><span class="dk-wait live">' + ic("clock") + 'waiting 1 h 43 min</span></div>'
+  + '<p class="dk-note">On the row that waited: a finished wait in grey, a running one in the waiting tag\'s colour.</p></div>',
+ """# WaitTime
+
+How long each wait on the owner lasted, or is lasting. Chosen on 26 November 2026 (round 8, answers 10 and 12; item 7, option A).
+
+- **On the row that waited** (a stop, a merge with questions), on the line under its title, with a small Phosphor `clock`: "waited 3 h 53 min" in grey once answered; "waiting 1 h 43 min" in the waiting tag's colour while it runs. A slow answer shows where it happened.
+- Records: the card times in dispatch-log/2026-11.jsonl and the answers in decisions/P-005/.
+""")
+V36 = {
+ "Gauge": "- **v36 (round 8, answer 12):** the drawing gives the share, so the words never repeat it: a sprint reads \"stopped · your call · 9 of 12 done\", no percent beside a ring, squares or strip, and a phase heading drops its percent (item 1).",
+ "LevelRails": "- **v36 (round 8, answer 12):** each count is said once (item 1, see Gauge); a row that happened since the owner last looked wears NewMark's dot (item 6).",
+ "EventWeight": "- **v36 (round 8, answer 12):** the line under an event drops the usual actor for its kind (a commit's spec writer, a review's plan reviewer, a decision's orchestrator, a check's Actions); \"by you\", an unusual actor and any line that adds something stay (item 2). A wait shows on its row (WaitTime, item 7).",
+ "NowBlock": "- **v36 (round 8, answer 12): retired from a project's page.** The page already lands on what waits (FixedCentre), so the stop it repeated wears a blue NOW tag instead (item 3; it sets aside round 3 answer 4's Now card).",
+ "FixedCentre": "- **v36 (round 8, answer 12):** with no Now card, the landing and the round button's tap find the waiting stop by its own mark; it wears a blue NOW tag (item 3). WaitSheet's Go to it lands a row at the pointer.",
+ "SessionLink": "- **v36 (round 8, answer 12):** the bubble also says what the session used: its helpers and their tokens, and a context meter (item 8). Only helpers' tokens are on record; a session's own tokens and context peak are blank in every end line, so the meter is an example (docs/design/requests/2026-11-26-timeline-records.md).",
+ "TopPills": "- **v36 (round 8, answer 12):** the count on the project pill opens WaitSheet; the rest of the pill still opens the projects (item 4).",
+}
+for _k, _v in V36.items():
+    _h, _r = C[_k]; C[_k] = (_h, _r.rstrip() + '\n' + _v + '\n')
+
 for name, (html, md) in C.items():
     d = os.path.join(OUT, "components", name); os.makedirs(d, exist_ok=True)
     open(os.path.join(d, "preview.html"), "w").write(html)

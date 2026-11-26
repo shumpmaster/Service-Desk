@@ -8,3 +8,4 @@ How heavy an event looks in a project's list comes from what it is, so the few t
 - Colour does not change: neutral greys and the soft status tints only. The order and the tree stay.
 - Icons: Phosphor (MIT), regular for rows, bold for controls and menus, fill for anything selected; Craft's own are Apple's SF Symbols, which a web page cannot use.
 - **v35 (round 8, answers 8 and 9):** a decision of the owner's says so (Yours, By proxy) and quotes the words it applies; a stop waiting on the owner reads Yours · waiting, the rule that fired and what it holds up, with Answer. See KindRows and YoursMark.
+- **v36 (round 8, answer 12):** the line under an event drops the usual actor for its kind (a commit's spec writer, a review's plan reviewer, a decision's orchestrator, a check's Actions); "by you", an unusual actor and any line that adds something stay (item 2). A wait shows on its row (WaitTime, item 7).

@@ -11,3 +11,4 @@ How far a phase, milestone or sprint has got, and whether it is all right: a tin
 - Milestone and sprint shapes are still on hold (round 2): the circle and square inside are placeholders.
 - **v33 (round 8):** every ring is drawn the same: round caps on track and arc, the stroke at about 9% of the diameter; a value that changes lands on the bouncy spring (C3). The 7.5 number inside stays (R7 answer 11).
 - **v34 (round 8, answer 6):** where a milestone's criteria are not on record, the ring is dashed and empty, with no number (item 11). The 7.5 number stays everywhere else.
+- **v36 (round 8, answer 12):** the drawing gives the share, so the words never repeat it: a sprint reads "stopped · your call · 9 of 12 done", no percent beside a ring, squares or strip, and a phase heading drops its percent (item 1).

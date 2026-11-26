@@ -611,3 +611,28 @@ button:focus-visible { outline: 2px solid var(--accent-select); outline-offset: 
 .dk-ksheet .opt { display: block; text-align: left; padding: 9px 12px; border-radius: 12px; background: var(--fill); font: 400 13px/17px var(--font-sans); color: var(--text-2); }
 .dk-ksheet .opt b { display: block; font: 600 15px/20px var(--font-sans); color: var(--text-1); }
 .dk-ksheet .opt.rec { box-shadow: inset 0 0 0 1.5px var(--accent); }
+
+/* round 8, answers 10 and 12 (v36): WaitSheet, AtWork, NewMark, WaitTime */
+.dk-wl { list-style: none; margin: 0; padding: 0; border-radius: var(--radius-12); background: var(--fill); }
+.dk-wl li { display: flex; gap: 10px; padding: 10px 12px; border-top: 1px solid var(--separator); align-items: flex-start; }
+.dk-wl li:first-child { border-top: 0; }
+.dk-wl .ic { flex: none; width: 22px; height: 22px; color: var(--text-3); }
+.dk-wl .ic .i { width: 22px; height: 22px; }
+.dk-wl .bd { flex: 1; min-width: 0; }
+.dk-wl .t, .dk-wl .s { display: block; }
+.dk-wl .t { font: 600 15px/20px var(--font-sans); color: var(--text-1); }
+.dk-wl .s { font: 400 13px/18px var(--font-sans); color: var(--text-3); margin-top: 2px; }
+.dk-wl .s .w { color: var(--status-wait-tag); font-weight: 600; }
+.dk-wl .acts { display: flex; gap: 8px; margin-top: 8px; flex-wrap: wrap; }
+.dk-wbtn { min-height: 32px; padding: 0 12px; display: inline-flex; align-items: center; border-radius: 16px; font: 600 13px/16px var(--font-sans); color: var(--accent-on-tint); background: var(--accent-tint); }
+.dk-wbtn.main { color: var(--on-accent); background: var(--accent); }
+.dk-work { display: flex; gap: 10px; align-items: flex-start; padding: 8px 12px; border-radius: var(--radius-12); background: var(--accent-tint); }
+.dk-work .d { flex: none; width: 8px; height: 8px; margin-top: 6px; border-radius: 50%; background: var(--accent); }
+.dk-work .t { font: 400 14px/19px var(--font-sans); color: var(--text-1); }
+.dk-work .t b { font-weight: 600; }
+.dk-work .t small { display: block; color: var(--text-3); font-size: 13px; line-height: 17px; margin-top: 1px; }
+.dk-dot { display: inline-block; width: 7px; height: 7px; border-radius: 50%; background: var(--accent); margin-right: 5px; vertical-align: 1px; }
+.dk-l3 { font: 400 13px/18px var(--font-sans); color: var(--text-3); }
+.dk-wait { display: inline-flex; align-items: center; gap: 3px; font-weight: 600; color: var(--text-3); }
+.dk-wait.live { color: var(--status-wait-tag); }
+.dk-wait .i { width: 12px; height: 12px; }

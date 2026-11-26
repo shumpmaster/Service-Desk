@@ -1,0 +1,54 @@
+/* ================= v40, round 8 answers 18 and 19: home's title combines the accents A, B and C of options-r8-title so it no longer
+   looks like the cards below it. Not a card: a glass band the full width of the screen, from the top of the screen to a hairline under
+   the title, with no rounded sides and no shadow (A's glass); the ground's blue and lavender gathered behind it (B's glow); the live line
+   as a small-caps label above a heavier title, and a short blue-to-lavender mark under it (C). --tt-p runs 0 to 1 over the first 64
+   points of scroll (title.js): the title lifts and fades, the band and glow fade, and the slim bar takes over with a faint tint and the
+   mark beside its small title. Reduced motion: it snaps. Reduced transparency or more contrast: a solid band, no glow, no tint. ================= */
+html { --tt-p: 0; --tt-up: 78px; --tt-l: 16px; --tt-r: 16px; }
+html.fh-tA #view .fh-lt { position: relative; z-index: 0; display: flex; flex-direction: column; margin: 0 0 6px; padding: 10px 4px 18px; }
+/* the band's glass and the glow behind it reach up to the top of the screen and out to both edges */
+html.fh-tA #view .fh-lt::before, html.fh-tA #view .fh-lt::after { content: ""; position: absolute; pointer-events: none;
+  top: calc(-1 * var(--tt-up)); bottom: 0; left: calc(-1 * var(--tt-l)); right: calc(-1 * var(--tt-r)); }
+html.fh-tA #view .fh-lt::before { z-index: -2; opacity: calc(1 - var(--tt-p) * .85);
+  background: radial-gradient(60% 80% at 16% 62%, rgba(10, 108, 255, .26), transparent 72%), radial-gradient(55% 78% at 84% 38%, rgba(140, 110, 255, .28), transparent 74%); }
+html.fh-tA #view .fh-lt::after { z-index: -1; opacity: calc(1 - var(--tt-p));
+  background: linear-gradient(180deg, rgba(255, 255, 255, .30), rgba(255, 255, 255, .46));
+  -webkit-backdrop-filter: blur(26px) saturate(1.9); backdrop-filter: blur(26px) saturate(1.9);
+  box-shadow: inset 0 -1px 0 rgba(60, 60, 67, .14), inset 0 -2px 0 rgba(255, 255, 255, .55); }
+/* the label above, the heavier title, the mark under it; they lift and fade as the bar takes over */
+html.fh-tA #view .fh-lt .asof { order: -1; margin: 0 0 4px; font-size: 12px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: #4f5156; }
+html.fh-tA #view .fh-lt h1 { font-weight: 800; }
+html.fh-tA #view .fh-lt .tt-mark { display: block; width: 36px; height: 4px; border-radius: 2px; margin-top: 10px; background: linear-gradient(90deg, #3d73f5, #8b6cf2); }
+html.fh-tA #view .fh-lt > * { transform-origin: 0 0; transform: translateY(calc(var(--tt-p) * -10px)) scale(calc(1 - var(--tt-p) * .06)); opacity: calc(1 - var(--tt-p) * .9); }
+/* the slim bar: clear at the top, so the band reads through it; once scrolled, the bar's glass with a faint tint and the mark */
+html.fh-tA:not(.fh-scrolled) #view .hm-band { background: transparent !important; background-image: none !important; box-shadow: none !important; }
+html.fh-tA.fh-scrolled #view .hm-band { background-image: linear-gradient(90deg, rgba(10, 108, 255, .10), rgba(140, 110, 255, .10)) !important; }
+html.fh-tA #view .hm-band .hd-tx h1::before { content: ""; display: inline-block; width: 3px; height: 14px; border-radius: 2px; margin-right: 7px; vertical-align: -1px; background: linear-gradient(180deg, #3d73f5, #8b6cf2); }
+/* the cards below keep their own shape: white, rounded, a soft lift that the band does not have */
+html.fh-tA #view .sg-grp { box-shadow: 0 1px 2px rgba(28, 40, 90, .05), 0 6px 18px rgba(28, 40, 90, .05); }
+/* dark */
+html[data-theme="dark"].fh-tA #view .fh-lt::before { background: radial-gradient(60% 80% at 16% 62%, rgba(10, 132, 255, .34), transparent 72%), radial-gradient(55% 78% at 84% 38%, rgba(140, 110, 255, .34), transparent 74%); }
+html[data-theme="dark"].fh-tA #view .fh-lt::after { background: linear-gradient(180deg, rgba(36, 36, 44, .28), rgba(36, 36, 44, .50)); box-shadow: inset 0 -1px 0 rgba(255, 255, 255, .12); }
+html[data-theme="dark"].fh-tA #view .fh-lt .asof { color: #b4b4ba; }
+html[data-theme="dark"].fh-tA #view .fh-lt .tt-mark, html[data-theme="dark"].fh-tA #view .hm-band .hd-tx h1::before { background: linear-gradient(90deg, #6ea2ff, #b09cff); }
+html[data-theme="dark"].fh-tA.fh-scrolled #view .hm-band { background-image: linear-gradient(90deg, rgba(10, 132, 255, .14), rgba(140, 110, 255, .14)) !important; }
+html[data-theme="dark"].fh-tA #view .sg-grp { box-shadow: none; }
+@media (prefers-color-scheme: dark) {
+  html:not([data-theme="light"]).fh-tA #view .fh-lt::before { background: radial-gradient(60% 80% at 16% 62%, rgba(10, 132, 255, .34), transparent 72%), radial-gradient(55% 78% at 84% 38%, rgba(140, 110, 255, .34), transparent 74%); }
+  html:not([data-theme="light"]).fh-tA #view .fh-lt::after { background: linear-gradient(180deg, rgba(36, 36, 44, .28), rgba(36, 36, 44, .50)); box-shadow: inset 0 -1px 0 rgba(255, 255, 255, .12); }
+  html:not([data-theme="light"]).fh-tA #view .fh-lt .asof { color: #b4b4ba; }
+  html:not([data-theme="light"]).fh-tA #view .fh-lt .tt-mark, html:not([data-theme="light"]).fh-tA #view .hm-band .hd-tx h1::before { background: linear-gradient(90deg, #6ea2ff, #b09cff); }
+  html:not([data-theme="light"]).fh-tA.fh-scrolled #view .hm-band { background-image: linear-gradient(90deg, rgba(10, 132, 255, .14), rgba(140, 110, 255, .14)) !important; }
+  html:not([data-theme="light"]).fh-tA #view .sg-grp { box-shadow: none; }
+}
+/* reduced transparency or more contrast: a solid band with its hairline, no glow, no tint */
+@media (prefers-reduced-transparency: reduce), (prefers-contrast: more) {
+  html.fh-tA #view .fh-lt::before { display: none; }
+  html.fh-tA #view .fh-lt::after { -webkit-backdrop-filter: none; backdrop-filter: none; background: var(--surface, #fff); }
+  html[data-theme="dark"].fh-tA #view .fh-lt::after { background: #1c1c1e; }
+  html.fh-tA.fh-scrolled #view .hm-band { background-image: none !important; }
+}
+@media (prefers-reduced-transparency: reduce) and (prefers-color-scheme: dark), (prefers-contrast: more) and (prefers-color-scheme: dark) {
+  html:not([data-theme="light"]).fh-tA #view .fh-lt::after { background: #1c1c1e; }
+}
+.fh-plnote { margin: 10px 8px 0; font: 400 12px/1.35 var(--font-ui, system-ui); color: var(--text-2, #5a5c60); font-style: italic; }

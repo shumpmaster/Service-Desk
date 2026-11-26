@@ -1192,6 +1192,40 @@ V37 = {
 for _k, _v in V37.items():
     _h, _r = C[_k]; C[_k] = (_h, _r.rstrip() + '\n' + _v + '\n')
 
+# round 8, answer 16 (decisions/questions/P-005-design-round-8.md): the ground, option A, and the map as a raised card (v38)
+comp("Ground", "Foundations", 360, '<div class="dk-stage col"><div class="dk-ground"><div class="card"><b>A card on the ground</b><span>Words in text-2-on-field, 4.5:1 or better</span></div>'
+  '<div class="glass dk-circ" aria-hidden="true">' + ic("bell", "bold") + '</div></div>'
+  '<p class="dk-note">Three pale fields, blue, lavender and a touch of mint, fixed behind everything; faint deep glows in dark. Flat with reduced transparency or more contrast.</p></div>',
+ """# Ground
+
+The page's background: slight colour, not flat grey. Chosen by the owner on 26 November 2026 (decisions/questions/P-005-design-round-8.md, answers 15 and 16: "I'm really trying to introduce some slight color variation into the background I think"; "I like option a"), from docs/design/mockups/options-r8-ground/.
+
+- **Three fields** over the plain `ground`: `ground-field-a` (blue, from the top left), `ground-field-b` (lavender, from the right a third of the way down), `ground-field-c` (mint, from the bottom), each fading out by 60%. In dark they are faint deep glows on near-black.
+- **Fixed** to the screen, the same on every page, so it is never mistaken for a status. The glass controls catch it.
+- **Words**: on the field, secondary words use `text-2-on-field`, one shade darker in light, so they keep 4.5:1 at the most tinted point (4.93:1 measured). Cards, rows and status colours are unchanged.
+- **The floating band** paints the same field, lined up with the screen, so the colour runs on behind it. iPhone Safari does not keep a fixed background on an element, so the field is a fixed layer behind the page and the band is told its own place on the screen as it moves.
+- **Reduced transparency or more contrast**: the plain ground alone.
+- It loosens the neutral grey ground of decisions/questions/P-005-rebrand-style.md and the one-blue rule, for the background only.
+""")
+comp("MapCard", "Desk", 330, '<div class="dk-stage col" style="max-width:393px"><div class="dk-mapcard"><div class="mc"><span>the branch map</span><i class="hd"></i></div><div class="below">the list, under the card\'s shadow</div></div>'
+  '<p class="dk-note">Inset 10 from the screen, radius 20, a hairline edge and a light top edge, a soft shadow onto the list and a 12-point gap under it.</p></div>',
+ """# MapCard
+
+The branch map as a raised card, so it steps out and does not blend into the timeline below. Asked for by the owner on 26 November 2026 (decisions/questions/P-005-design-round-8.md, answer 16: "For the branch chart can you put an outline around it and step it out a bit that way it has some depth and doesn't inherently blend in with the timeline below").
+
+- **The card**: `map-card` (74% white, 78% grey in dark) over the ground's field, inset 10 from each edge of the screen, `radius-20`, a hairline `map-card-edge` with `glass-edge` along the top, and `shadow-map-card`, which falls onto the list.
+- **A 12-point gap** under the card, inside the floating band, so rows pass under the band before they reach the card.
+- **Inside**, the map draws as ruled (BranchMap, MilestoneMap): its width is the card's; label halos take the card's colour; the selected milestone's dashed edge is rounded and kept clear of the card's edge.
+- **Folded** (MapFold), the card becomes a slim card with the same edge and shadow, the handle inside its foot.
+- **Reduced transparency**: a solid card. **More contrast**: a darker edge.
+""")
+V38 = {
+ "BranchMap": "- **v38 (round 8, answer 16):** drawn inside MapCard: the map's width is the card's, its halos take the card's colour, and the selected milestone's dashed edge is rounded and kept clear of the card's edge.",
+ "MapFold": "- **v38 (round 8, answer 16):** it folds the card (MapCard) to a slim card with the same edge and shadow; the handle sits inside the card's foot.",
+}
+for _k, _v in V38.items():
+    _h, _r = C[_k]; C[_k] = (_h, _r.rstrip() + '\n' + _v + '\n')
+
 for name, (html, md) in C.items():
     d = os.path.join(OUT, "components", name); os.makedirs(d, exist_ok=True)
     open(os.path.join(d, "preview.html"), "w").write(html)

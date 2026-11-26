@@ -1,0 +1,11 @@
+<!-- @dsCard group="Desk" height=520 -->
+<!doctype html>
+<html lang="en">
+<head><meta charset="utf-8"><title>MapFilter</title></head>
+<body>
+<div class="dk-stage col" style="max-width:393px"><div class="dk-mapcard"><div class="mc"><div class="in"><span>the branch map</span></div><button class="dk-fbtn on" aria-label="Showing Yours; tap the cross to show everything"><svg class="i" aria-hidden="true" focusable="false" viewBox="0 0 256 256" fill="currentColor"><path d="M204,136a12,12,0,0,1-12,12H64a12,12,0,0,1,0-24H192A12,12,0,0,1,204,136Zm28-60H24a12,12,0,0,0,0,24H232a12,12,0,0,0,0-24Zm-80,96H104a12,12,0,0,0,0,24h48a12,12,0,0,0,0-24Z"/></svg><span>Yours</span><svg class="i" aria-hidden="true" focusable="false" viewBox="0 0 256 256" fill="currentColor"><path d="M208.49,191.51a12,12,0,0,1-17,17L128,145,64.49,208.49a12,12,0,0,1-17-17L111,128,47.51,64.49a12,12,0,0,1,17-17L128,111l63.51-63.52a12,12,0,0,1,17,17L145,128Z"/></svg></button><i class="hd"></i></div></div><div class="dk-fpanel"><h4>Show on the map and in the list</h4><div class="chips"><button aria-pressed="false">Everything</button><button aria-pressed="true">Yours <span>4</span></button><button aria-pressed="false">Turning points <span>9</span></button><button aria-pressed="false">Reviews and checks <span>7</span></button><button aria-pressed="false">Research <span>2</span></button><button aria-pressed="false">Main only <span>4</span></button></div><p>What is left out goes faint on the map and quiet in the list; the pointer and the arrow carry on.</p></div></div>
+<script>
+document.addEventListener('click', function (e) { var b = e.target.closest('[aria-pressed]'); if (!b) return; b.parentNode.querySelectorAll('[aria-pressed]').forEach(function (x) { x.setAttribute('aria-pressed', String(x === b)); }); });
+</script>
+</body>
+</html>

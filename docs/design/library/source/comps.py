@@ -1229,6 +1229,56 @@ V38["MapFold"] += "\n- **v39 (round 8, answer 17):** the slim card is glass too,
 for _k, _v in V38.items():
     _h, _r = C[_k]; C[_k] = (_h, _r.rstrip() + '\n' + _v + '\n')
 
+# ---------------- v40, round 8 answers 16, 18 and 19 ----------------
+comp("MapFilter", "Desk", 520, '<div class="dk-stage col" style="max-width:393px"><div class="dk-mapcard"><div class="mc"><div class="in"><span>the branch map</span></div>'
+  '<button class="dk-fbtn on" aria-label="Showing Yours; tap the cross to show everything">' + ic("funnel-simple", "bold") + '<span>Yours</span>' + ic("x", "bold") + '</button><i class="hd"></i></div></div>'
+  '<div class="dk-fpanel"><h4>Show on the map and in the list</h4><div class="chips">'
+  '<button aria-pressed="false">Everything</button><button aria-pressed="true">Yours <span>4</span></button><button aria-pressed="false">Turning points <span>9</span></button>'
+  '<button aria-pressed="false">Reviews and checks <span>7</span></button><button aria-pressed="false">Research <span>2</span></button><button aria-pressed="false">Main only <span>4</span></button></div>'
+  '<p>What is left out goes faint on the map and quiet in the list; the pointer and the arrow carry on.</p></div></div>',
+ """# MapFilter
+
+A quick filter for the branch map, a small glass button in the map card's top corner. Asked for by the owner on 26 November 2026 (decisions/questions/P-005-design-round-8.md, answer 16: "Can you add a quick filtering option for the branch?"); option A of docs/design/mockups/options-r8-filter-home/, taken in answer 19 ("Go with the recommendations on the others").
+
+- **The button** sits inside the card's inner box (`map-card-pad` from the corner, MapCard's rule), glass with the card's hairline edge, 30 high with a 44 hit area. With nothing picked it is the funnel alone; with a cut picked it names it in the selected blue with a cross that clears it.
+- **The panel** opens under the button: six cuts with their counts, Everything, Yours, Turning points (stops, decisions, merges, gates and what waits on you), Reviews and checks, Research, Main only. Picking one closes it.
+- **What is left out** goes faint on the map (14%) and quiet in the list (32%); the pointer, the arrow and the landing carry on.
+- Lane names beside the button step left to keep clear of it; the right gate's caption steps down.
+""", PRESS)
+comp("HomeHeader", "Headings", 300, '<div class="dk-stage col phone" style="height:300px"><div class="dk-hh"><div class="bar"><div class="dk-capsule glass"><button aria-label="Search">' + ic("magnifying-glass", "bold") + '</button><button aria-label="Needs you">' + ic("bell", "fill") + '</button><button aria-label="More">' + MORE + '</button></div></div>'
+  '<div class="lab"><i></i>Live · as of 11:25 am CT</div><h1>Timeline</h1><i class="mk"></i></div>'
+  '<div class="dk-hh-below"><p><b>5 things wait on you</b>, in 2 projects.</p><div class="card">a project card: white, rounded, lifted</div></div></div>',
+ """# HomeHeader
+
+Home's title on a glass band of its own, so it no longer looks like the cards below it. The owner's words (decisions/questions/P-005-design-round-8.md): answer 18, "I like option a here, but I want a better visual segregation of the title. Effectively some accenting or something that is reserved for the title and just condenses when scrolled as shown"; answer 19, "On the titles could we combine A, b and c somehow, my current concern is how the title looks identical to the cards". It combines the accents A, B and C of docs/design/mockups/options-r8-title/.
+
+- **Not a card** (A's glass): a band the full width of the screen, from the top of the screen to a hairline under the title, with no rounded sides and no shadow; the capsule (search, bell, More) sits in it.
+- **The glow** (B): the ground's blue and lavender gathered behind the band, under the glass.
+- **The label and the mark** (C): the live line as a small-caps label above a heavier title (34, weight 800), and a short blue-to-lavender mark under it.
+- **Condensing**: over the first 64 points of scroll the title lifts and fades, the band and glow fade, and the slim bar takes over with a faint blue-to-lavender tint and the mark beside its small title. Reduced motion: it snaps. Reduced transparency or more contrast: a solid band with its hairline, no glow, no tint.
+- **The cards below** keep their own shape: white, rounded, with a soft lift the band does not have.
+- Words: the label 5.8:1 or better, the title 13:1 or better, at their most tinted points (build-v40/README.md).
+""")
+comp("ProjectLine", "Desk", 170, '<div class="dk-stage col" style="max-width:393px"><div class="dk-pline"><span class="d"></span><span><b>Chief of Staff</b> at work since 7:52 am</span><span class="new"><i></i>9 new</span></div>'
+  '<div class="dk-pline"><span class="d idle"></span><span>Nothing at work · it waits on you</span><span class="new">nothing new</span></div>'
+  '<p class="dk-note">Examples until the desk records who is at work and when you last looked.</p></div>',
+ """# ProjectLine
+
+One line in each project's group on home: who is at work and how much is new since you last looked. Option B of "more on home" in docs/design/mockups/options-r8-filter-home/ (decisions/questions/P-005-design-round-8.md, answer 16: "I'm also wondering if more can be done with the home page?"; taken in answer 19).
+
+- A green dot and the name of who is at work, with since when; a grey dot and "Nothing at work · it waits on you" when nothing is.
+- On the right, an ink dot and how many things are new, or "nothing new".
+- **Examples** until the records request is met (docs/design/requests/2026-11-26-timeline-records.md: the pipeline at work now; when the owner last looked); home says so under its groups.
+""")
+V40 = {
+ "LargeTitle": "- **v40 (round 8, answers 18 and 19):** back on home as HomeHeader's title: 34, weight 800, under a small-caps live label, with a short accent mark, on a full-width glass band that condenses into the slim bar.",
+ "SearchField": "- **v40 (round 8, answers 16 and 19):** home's full-width search row is gone; a magnifier in the capsule opens the field over the bar, with Cancel (option A of options-r8-filter-home).",
+ "DeskHome": "- **v40 (round 8, answers 16, 18 and 19):** the title is HomeHeader; search is the capsule's magnifier; each project's group carries a ProjectLine.",
+ "BranchMap": "- **v40 (round 8, answers 16 and 19):** MapFilter's button sits in the card's top corner, inside the inner box; what a cut leaves out goes faint.",
+}
+for _k, _v in V40.items():
+    _h, _r = C[_k]; C[_k] = (_h, _r.rstrip() + '\n' + _v + '\n')
+
 for name, (html, md) in C.items():
     d = os.path.join(OUT, "components", name); os.makedirs(d, exist_ok=True)
     open(os.path.join(d, "preview.html"), "w").write(html)

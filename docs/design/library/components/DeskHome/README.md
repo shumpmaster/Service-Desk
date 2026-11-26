@@ -4,3 +4,4 @@ The Desk's home screen assembled from the elements on a 393 by 852 phone, laid o
 
 - Status bar 54; the capsule 6 below it; the large title at y 136; search at y 188; recent documents as a carousel; Needs you rows; Projects as a section with rows; the tab bar and the round Now button floating at the foot.
 - To move something, comment on this card with what should go where.
+- **v40 (round 8, answers 16, 18 and 19):** the title is HomeHeader; search is the capsule's magnifier; each project's group carries a ProjectLine.

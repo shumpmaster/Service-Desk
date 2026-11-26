@@ -90,3 +90,8 @@ Asked in chat: "Shall I start the plain-words test, or write the handoff here?"
 13. "Okay one final design question before picking up the remaining questions. How does the general color scheme and vibe look? Just visually? I know the glass look is very in these days"
 
 Read by the Chief of Staff as: a question for the Chief of Staff's own view of v36's colour and feel, glass included, before the remaining items; answered in chat from v36's home and project page in light and dark, with options offered rather than any change made.
+
+Answered in chat: v36's palette and restraint hold, home looks finished, glass sits only on the floating controls (the map band made solid in v33, polish review L1); held back by the map band reading as an engineering diagram, blue standing for too many things, and too many tags per row. Suggested: a calmer map; blue only for now or selected; fewer tags per row; and a little more glass on the floating controls and sheets. Offered as options.
+14. "Draw all 4"
+
+Read by the Chief of Staff as: draw the four as options on v36, each as it is in v36, then options, live, on a page, light and dark: (1) a calmer map; (2) blue only for now or selected; (3) fewer tags per row; (4) more glass on the floating controls and sheets. Colour stays the soft status colours and the one blue.

@@ -1,0 +1,70 @@
+/* ================= round 8, answer 10: what serves no purpose, and what is missing. Options over v35 (pp.js). ================= */
+/* 1A: the drawn share is not said again in words */
+html.ppo-1A #v13list .v13phh .pc { display: none; }
+/* 3: the Now card */
+html.ppo-3A #v13list .pl.v13now, html.ppo-3B #v13list .pl.v13now { display: none; }
+.pp-now { display: inline-flex; align-items: center; gap: 4px; flex: none; font: 700 11px/18px var(--font-ui); letter-spacing: .06em; color: #fff; background: var(--blue-fill); padding: 0 7px; border-radius: var(--r-tag, 6px); }
+.pp-nowbar { position: fixed; left: 12px; right: 12px; z-index: 30; display: flex; align-items: center; gap: 8px; min-height: 36px; padding: 0 8px 0 12px; border-radius: 18px;
+  background: var(--surface); box-shadow: 0 0 0 1px var(--sep), 0 4px 14px rgba(0, 0, 0, .08); font: 400 13px/17px var(--font-ui); color: var(--ink); cursor: pointer; border: 0; text-align: left; }
+.pp-nowbar b { font-weight: 700; font-size: 11px; letter-spacing: .06em; color: var(--blue-text); }
+.pp-nowbar .w { margin-left: auto; color: var(--status-wait-tag, #8a5a00); font-weight: 600; white-space: nowrap; }
+.pp-nowbar .t { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
+/* 4: what waits on you */
+html.ppo-4A .tp-pill.pj .n { box-shadow: 0 0 0 3px var(--blue-ring); }
+.pp-wl { list-style: none; margin: 0; padding: 0; border-radius: var(--r-inner, 12px); background: rgba(120, 120, 128, .08); }
+.pp-wl li { display: flex; gap: 10px; padding: 10px 12px; border-top: 1px solid var(--sep); align-items: flex-start; }
+.pp-wl li:first-child { border-top: 0; }
+.pp-wl .ic { flex: none; width: 22px; height: 22px; color: var(--ink-3); margin-top: 1px; }
+.pp-wl .ic svg { width: 22px; height: 22px; }
+.pp-wl .bd { flex: 1; min-width: 0; }
+.pp-wl .t, .pp-wl .s, .pp-wl .acts { display: block; }
+.pp-wl .acts { display: flex; }
+.pp-wl .t { font: 600 15px/20px var(--font-ui); color: var(--ink); }
+.pp-wl .s { font: 400 13px/18px var(--font-ui); color: var(--ink-3); margin-top: 2px; }
+.pp-wl .s .w { color: var(--status-wait-tag, #8a5a00); font-weight: 600; }
+.pp-wl .acts { display: flex; gap: 8px; margin-top: 8px; flex-wrap: wrap; }
+.pp-btn { all: unset; box-sizing: border-box; cursor: pointer; min-height: 32px; padding: 0 12px; display: inline-flex; align-items: center; border-radius: 16px; font: 600 13px/16px var(--font-ui); color: var(--blue-text); background: var(--blue-wash); }
+.pp-btn.main { color: #fff; background: var(--blue-fill); }
+.pp-btn:active { transform: scale(.96); }
+.pp-grp { margin: 6px 0 10px 8px; padding: 8px 10px 4px; border-radius: var(--r-inner, 12px); background: var(--status-wait-tag-bg, rgba(255, 196, 0, .14)); }
+.pp-grp .h { font: 600 12px/16px var(--font-ui); letter-spacing: .06em; text-transform: uppercase; color: var(--status-wait-tag, #8a5a00); display: flex; gap: 6px; align-items: center; padding: 2px 2px 6px; }
+.pp-grp button.r { all: unset; box-sizing: border-box; cursor: pointer; display: flex; gap: 10px; width: 100%; padding: 8px 2px; border-top: 1px solid var(--sep); align-items: center; min-height: 44px; }
+.pp-grp button.r:first-of-type { border-top: 0; }
+.pp-grp button.r .t { flex: 1; min-width: 0; font: 400 15px/19px var(--font-ui); color: var(--ink); }
+.pp-grp button.r .t small { display: block; font-size: 13px; line-height: 17px; color: var(--ink-3); }
+.pp-grp button.r .w { flex: none; font: 600 13px/17px var(--font-ui); color: var(--status-wait-tag, #8a5a00); }
+/* 5: who is at work */
+.pp-work { all: unset; box-sizing: border-box; cursor: pointer; display: flex; gap: 10px; align-items: flex-start; margin: 4px 0 8px 34px; padding: 8px 12px; width: calc(100% - 42px); border-radius: var(--r-inner, 12px); background: var(--blue-wash); }
+.pp-work .d, .pp-band-work .d { flex: none; width: 8px; height: 8px; margin-top: 6px; border-radius: 50%; background: var(--blue-fill); box-shadow: 0 0 0 0 var(--blue-ring); animation: pp-pulse 1.8s ease-out infinite; }
+.pp-work .t { font: 400 14px/19px var(--font-ui); color: var(--ink); }
+.pp-work .t b { font-weight: 600; }
+.pp-work .t small { display: block; color: var(--ink-3); font-size: 12.5px; line-height: 17px; margin-top: 1px; }
+@keyframes pp-pulse { 0% { box-shadow: 0 0 0 0 rgba(10, 108, 255, .45); } 70% { box-shadow: 0 0 0 7px rgba(10, 108, 255, 0); } 100% { box-shadow: 0 0 0 0 rgba(10, 108, 255, 0); } }
+@media (prefers-reduced-motion: reduce) { .pp-work .d, .pp-band-work .d { animation: none; } }
+.pp-band-work { all: unset; box-sizing: border-box; cursor: pointer; display: flex; align-items: center; gap: 8px; width: 100%; padding: 2px 16px 6px; font: 400 13px/17px var(--font-ui); color: var(--ink-2); }
+.pp-band-work .d { margin-top: 0; }
+.pp-band-work span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
+.pp-band-work b { font-weight: 600; color: var(--ink); }
+/* 6: new since you last looked */
+.pp-dot { display: inline-block; width: 7px; height: 7px; border-radius: 50%; background: var(--blue-fill); margin-right: 5px; vertical-align: 1px; }
+.pp-newl { display: flex; align-items: center; gap: 8px; margin: 6px 0 6px 34px; font: 600 12px/16px var(--font-ui); letter-spacing: .02em; color: var(--blue-text); }
+.pp-newl::before, .pp-newl::after { content: ""; flex: 1; height: 1px; background: var(--blue-edge); }
+.pp-newl::before { flex: 0 0 10px; }
+.pp-newc { color: var(--blue-text); font-weight: 600; }
+/* 7: how long it waited */
+.pp-wait { display: inline-flex; align-items: center; gap: 3px; font-weight: 600; color: var(--ink-3); }
+.pp-wait.live { color: var(--status-wait-tag, #8a5a00); }
+.pp-wait svg { width: 12px; height: 12px; }
+/* 8: tokens and context */
+.pp-use { margin-top: 8px; padding-top: 8px; border-top: 1px solid var(--sep); font: 400 13px/18px var(--font-ui); color: var(--ink-2); }
+.pp-use b { font-weight: 600; color: var(--ink); }
+.pp-use .ex, .pp-sheet .ex { color: var(--ink-3); font-style: italic; }
+.pp-meter { display: inline-block; width: 64px; height: 6px; border-radius: 3px; background: rgba(120, 120, 128, .2); vertical-align: 1px; margin: 0 4px; overflow: hidden; }
+.pp-meter i { display: block; height: 100%; background: var(--ink-4); border-radius: 3px; }
+.pp-tok { color: var(--ink-3); }
+/* sheets */
+.pp-sheet table { width: 100%; border-collapse: collapse; font: 400 14px/19px var(--font-ui); color: var(--ink); }
+.pp-sheet td { padding: 7px 0; border-top: 1px solid var(--sep); vertical-align: top; }
+.pp-sheet td:last-child { text-align: right; white-space: nowrap; padding-left: 10px; }
+.pp-sheet tr:first-child td { border-top: 0; }
+.pp-by { font: 400 13px/18px var(--font-ui); color: var(--ink-3); margin-top: 6px; }

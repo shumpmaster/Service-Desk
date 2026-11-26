@@ -1,0 +1,28 @@
+/* ================= v38: the branch map as a raised card (round 8, answer 16: "put an outline around it and step it out a bit that way
+   it has some depth and doesn't inherently blend in with the timeline below"). Inset 10 from the screen's edges, radius 20 from the
+   scale, a hairline edge, a soft shadow that falls onto the list, and a gap under it. Inside, the map draws exactly as v37 ruled it.
+   The fold (MapFold) folds the card to a slim card of the same edge. ================= */
+:root { --mc-bg: rgba(255, 255, 255, .74); --mc-halo: #fbfbfd; --mc-edge: rgba(60, 60, 67, .16); --mc-hi: rgba(255, 255, 255, .9);
+  --mc-shadow: 0 1px 2px rgba(20, 30, 60, .06), 0 10px 28px -6px rgba(20, 30, 70, .18); }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --mc-bg: rgba(30, 30, 34, .78); --mc-halo: #1b1b1f; --mc-edge: rgba(255, 255, 255, .10); --mc-hi: rgba(255, 255, 255, .07);
+  --mc-shadow: 0 1px 2px rgba(0, 0, 0, .5), 0 12px 30px -6px rgba(0, 0, 0, .7); } }
+:root[data-theme="dark"] { --mc-bg: rgba(30, 30, 34, .78); --mc-halo: #1b1b1f; --mc-edge: rgba(255, 255, 255, .10); --mc-hi: rgba(255, 255, 255, .07);
+  --mc-shadow: 0 1px 2px rgba(0, 0, 0, .5), 0 12px 30px -6px rgba(0, 0, 0, .7); }
+#v13band { padding-bottom: 12px; z-index: 30; }
+#v13band .v13vp { margin: 2px 10px 0; border-radius: 20px; background: var(--mc-bg); border: 0; padding-top: 6px;
+  box-shadow: inset 0 0 0 1px var(--mc-edge), inset 0 1px 0 var(--mc-hi), var(--mc-shadow); --ground: var(--mc-halo); isolation: isolate; }
+#v13band .r8-handle { bottom: 14px; }
+html .r8-slim #v13band .r8-strip, #v13band.r8-slim .r8-strip, html .r8-slim .r8-strip { margin: 2px 10px 0; padding: 9px 14px 21px; border-radius: 16px; background: var(--mc-bg);
+  box-shadow: inset 0 0 0 1px var(--mc-edge), inset 0 1px 0 var(--mc-hi), var(--mc-shadow); }
+@media (prefers-reduced-transparency: reduce), (prefers-contrast: more) {
+  :root { --mc-bg: #ffffff; } #v13band .v13vp, html .r8-slim .r8-strip { box-shadow: inset 0 0 0 1px var(--mc-edge), var(--mc-shadow); }
+}
+@media (prefers-reduced-transparency: reduce) and (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --mc-bg: #1c1c1e; } }
+@media (prefers-contrast: more) { :root { --mc-edge: rgba(60, 60, 67, .45); } }
+/* inside the card the map's halos take the card's own colour, and the selected milestone's dashed edge keeps clear of the card's edge */
+#v13band .v13vp svg text { stroke: var(--mc-halo) !important; }
+#v13band .v13vp svg .sl-edge, #v13band .v13vp svg .sl-band { rx: 12px; ry: 12px; transform-box: fill-box; transform-origin: center; transform: scale(.975, .965); }
+/* folded, the slim card keeps the band low: a smaller gap and the handle inside the card's foot */
+#v13band.r8-slim, .r8-slim #v13band { padding-bottom: 8px; }
+html .r8-slim .r8-strip { padding: 8px 14px 18px !important; }
+.r8-slim #v13band .r8-handle, #v13band.r8-slim .r8-handle { bottom: 9px; }

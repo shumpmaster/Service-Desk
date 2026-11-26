@@ -1,0 +1,22 @@
+/* ================= v38: the ground, option A (round 8, answers 15 and 16; options-r8-ground/source/gr.css, fixed to A).
+   Three pale fields fixed behind everything (blue, lavender, a touch of mint); faint deep glows in dark. Cards, rows, words and the
+   status colours are unchanged; the two secondary greys step one shade darker on the tint so words keep 4.5:1. Reduced transparency
+   or more contrast: flat again. iPhone Safari does not honour a fixed background on an element, so the field is a fixed layer
+   (body::before, which Safari does keep fixed), and the band paints the same field from its own top, where it sits. ================= */
+:root { --gr-a: rgba(10, 108, 255, .14); --gr-b: rgba(140, 110, 255, .13); --gr-c: rgba(30, 180, 150, .10); }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --gr-a: rgba(10, 132, 255, .20); --gr-b: rgba(140, 110, 255, .17); --gr-c: rgba(30, 180, 150, .12); } }
+:root[data-theme="dark"] { --gr-a: rgba(10, 132, 255, .20); --gr-b: rgba(140, 110, 255, .17); --gr-c: rgba(30, 180, 150, .12); }
+:root { --gr-img: radial-gradient(120% 70% at 0% 0%, var(--gr-a), transparent 60%), radial-gradient(90% 60% at 100% 35%, var(--gr-b), transparent 60%), radial-gradient(110% 60% at 30% 100%, var(--gr-c), transparent 60%); }
+html:not([data-theme="dark"]) { --text-2: #5a5c60; --ink-3: #555559; }
+@media (prefers-color-scheme: dark) { html:not([data-theme="light"]) { --text-2: #98989f; --ink-3: #aeaeb2; } }
+html { background: var(--ground); }
+html body { background: transparent !important; }
+html body::before { content: ""; position: fixed; inset: 0; z-index: -1; pointer-events: none; background: var(--gr-img), var(--ground); }
+/* the band (and home's floating bar) sit at the top of the screen, so the field drawn from their own top lines up with the fixed layer */
+:is(#v13band, .v13band) { background: var(--ground) !important; background-image: var(--gr-img) !important; background-size: 100vw 100vh !important; background-repeat: no-repeat !important;
+  background-position: calc(-1 * var(--gr-x, 0px)) calc(-1 * var(--gr-y, 0px)) !important; }
+#v13band::after { opacity: 0; }
+@media (prefers-reduced-transparency: reduce), (prefers-contrast: more) {
+  html body::before { background: var(--ground); }
+  :is(#v13band, .v13band) { background: var(--ground) !important; }
+}

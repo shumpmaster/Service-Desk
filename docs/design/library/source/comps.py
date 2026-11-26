@@ -1029,6 +1029,86 @@ V34 = {
 for _k, _v in V34.items():
     _h, _r = C[_k]; C[_k] = (_h, _r.rstrip() + '\n' + _v + '\n')
 
+# round 8, answers 8 and 9 (decisions/questions/P-005-design-round-8.md): gates, decisions, research and stops, option A of each (v35)
+def you(t="Yours"): return f'<span class="dk-you">{ic("user", "bold")}{t}</span>'
+def kst(c, t): return f'<span class="dk-kst {c}">{t}</span>'
+def gate_row(st, name, l3, ico, mark=True):
+    return (f'<div class="dk-gate" role="button" tabindex="0"><span class="dk-gico {ico}">{ic("flag")}</span><span class="dk-gtx"><span class="lv">Gate</span>'
+            f'<span class="l1"><b>{name}</b>{kst(st[0], st[1])}{you() if mark else ""}</span><span class="l3">{l3}</span></span>{ic("caret-right", "bold", "i chev")}</div>')
+comp("YoursMark", "Desk", 120, '<div class="dk-stage col" style="max-width:393px;gap:10px"><div style="display:flex;gap:8px;flex-wrap:wrap">'
+  + you() + you("By proxy") + you("Yours to rule") + '<span class="dk-kst wait">Yours · waiting</span></div>'
+  + '<p class="dk-note">One mark on what is the owner\'s: a gate, a decision of yours, a stop waiting on you.</p></div>',
+ """# YoursMark
+
+One mark on what is the owner's own. Chosen by the owner on 26 November 2026 (decisions/questions/P-005-design-round-8.md, answers 8 and 9: "Honestly love every option. Especially the research functionality"; "I want you to go with ever option you recommended so if those are all A then do that").
+
+- **Yours**: a quiet grey fill (the press fill), 12 semibold, a small Phosphor `user` (bold), radius 6, the same height as every tag.
+- **By proxy**: a decision made for the owner under a standing proxy (the Chief of Staff, L-0049).
+- **Yours to rule**: on a gate's sheet before it opens.
+- **Yours · waiting**: a stop waiting on the owner takes the waiting tag's colour with these words.
+- No new colour: the mark is neutral, the state keeps the soft status colours.
+""")
+comp("GateRow", "Desk", 440, '<div class="dk-stage col" style="max-width:393px">'
+  + gate_row(("ok", "Passed"), "Design gate", "You said proceed · 13 Nov, 10:10 am · after one hold", "ok", False)
+  + gate_row(("idle", "Not reached"), "Build gate", "You approve Design’s criteria, then they freeze · 1 of 7 milestones reached", "next")
+  + gate_row(("idle", "Not reached"), "Launch gate", "The go-live and the graduation · the last ruling on the desk", "")
+  + f'<div style="display:flex;justify-content:space-between;margin-top:14px"><span class="dk-mgate ok">{ic("flag")}Design gate · passed</span><span class="dk-mgate">Build gate · yours{ic("flag")}</span></div>'
+  + '<p class="dk-note">On the map, the gate in and the gate out mark the band\'s edges; in the phase menu each gate row says passed, yours, or yours, next.</p></div>',
+ """# GateRow
+
+A gate is the owner's ruling on a whole phase, so it is a row of its own, closing the phase it ends. Chosen on 26 November 2026 (round 8, answers 8 and 9; option A on docs/design/mockups/options-r8-kinds/).
+
+- **The row**: a 30 ring with Phosphor `flag`; GATE in the level label; the gate's name, its state (Passed, Not reached, Waiting on you) and Yours while it is still the owner's to rule; one line under it (your ruling and when, or what it decides); a chevron. Hairlines above and below.
+- **The ring**: a passed gate washed green; the next gate dashed; a later one plain.
+- **On the map**: the gate into the phase marks the band's left edge, the gate out its right edge, each with its name and passed or yours.
+- **In the phase menu**: each gate row carries its flag and passed (with the date), yours, or yours, next.
+- **Tapped**, it opens its sheet (KindSheet): what it decides, what it waits for (each milestone and its state), what the owner will get, and the four choices: proceed, hold, recycle, kill.
+- Times in Chicago time, as everywhere (round 8, answer 6, item 12).
+- Records: OPERATING_MODEL.md §3 and §4 (phase gates, S-024); docs/gates/P-005/; decisions/P-005/dor-2.md, dor-3.md.
+""")
+def kev(kind_ico, kind, tags, title, l3, extra="", tm=""):
+    return (f'<div class="dk-ev"><span class="dk-ev-ico">{ic(kind_ico)}</span><span class="tx"><span class="l1"><b>{kind}</b>{tags}<span class="tm">{tm}</span></span>'
+            f'<span class="l2" style="display:block">{title}</span>{extra}<span class="l3" style="display:block">{l3}</span></span></div>')
+comp("KindRows", "Desk", 420, '<div class="dk-stage col" style="max-width:393px">'
+  + kev("chat-circle-text", "Decision", kst("ok", "Done") + you(), "New spec S-011, rounds reset", "by orchestrator", '<span class="dk-say">Applies your words: <q>criteria-wrong (Recommended)</q></span>', "6:07 am")
+  + kev("chat-circle-text", "Decision", kst("ok", "Done") + you("By proxy"), "You said resubmit", "by the Chief of Staff", '<span class="dk-say">Under your proxy: <q>resubmit</q></span>', "12 Nov, 10:48 pm")
+  + '<div class="dk-ev"><span class="dk-ev-ico">' + ic("magnifying-glass") + '</span><span class="tx"><span class="l1"><b style="font:600 11px/14px var(--font-sans);letter-spacing:.06em;text-transform:uppercase;color:var(--text-2)">Research</b><b>Q-028</b><span class="dk-memo">Memo</span></span><span class="l3">Passed its source check on the 3rd try · 13 Nov</span></span></div>'
+  + kev("hand-palm", "Stop", '<span class="dk-kst wait">Yours · waiting</span>', "Stop card 5", "Three plan reviews failed · holds up M6, M7, M8", '', "9:42 am").replace('</span></span></div>', '</span><button type="button" class="dk-kopen big">Answer stop card 5</button></span></div>', 1)
+  + '</div>',
+ """# KindRows
+
+How a decision, research and a stop read in the list. Chosen on 26 November 2026 (round 8, answers 8 and 9; option A of each on docs/design/mockups/options-r8-kinds/).
+
+- **Decision**: Done and Yours (or By proxy) on its first line; under the title, the owner's own words it applies, quoted: "Applies your words: “criteria-wrong (Recommended)”", "Your words:" where the owner said it, "Under your proxy:" for a proxy ruling. Tapped, its sheet shows the ruling, what it changed, the choices it had and its record.
+- **Research**: RESEARCH in place of SPRINT, its id and a Memo tag; the line under it says how its source check went. On the map its lane reads "Research Q-028". Tapped (or its Memo), its sheet shows the question, the decision it serves, what happened step by step, how sure it is, and its records.
+- **Stop**: Yours · waiting in the waiting tag's colour; the line under it says the rule that fired and what it holds up; an Answer button opens the card's choices with the recommended one edged in blue. The button is an example: no record says the desk's answer link can record a stop card's answer, so the mockup sends nothing.
+- Each kind keeps its own Phosphor icon (chat-circle-text, magnifying-glass, hand-palm); the milestone and sprint shapes stay on hold.
+- Records: decisions/P-005/ (stop-4, dor-fail-1, stop-5-notes); docs/LEDGER.md L-0049; research/Q-028*.md, intake/requests/Q-028.toml; status/P-005.toml; OPERATING_MODEL.md §4, the stop rule (D-044).
+""")
+comp("KindSheet", "Desk", 560, '<div class="dk-stage col" style="max-width:393px"><div class="dk-ksheet"><div class="grab"></div><span class="x" aria-label="Close">' + ic("x", "bold") + '</span>'
+  + '<div class="kd">' + ic("hand-palm") + 'Stop</div><h2>S-011 failed three plan reviews: what happens next?</h2><div class="row"><span class="dk-kst wait">Waiting on you</span>' + you() + '</div>'
+  + '<h3>Why it stopped</h3><p>Three plan reviews of S-011 failed · holds up M6, M7, M8</p>'
+  + '<h3>Your answer</h3><div class="opts"><span class="opt rec"><b>criteria-wrong</b>A new spec replaces S-011; the plan rounds reset; not a strike.</span><span class="opt"><b>re-specify</b>The same new spec, counted as a strike.</span><span class="opt"><b>confirm</b>One focused check, offered once.</span></div>'
+  + '<p class="ex">An example: the mockup records nothing.</p></div></div>',
+ """# KindSheet
+
+The sheet a gate, a decision, research or a stop opens when tapped: one shape for all four. Chosen on 26 November 2026 (round 8, answers 8 and 9).
+
+- A bottom sheet (BottomSheet's motion: opens on the spring in 450, closes in 280; a close mark, a tap on the scrim and Escape each close it).
+- **Top**: the kind's icon and word, the title, its state and Yours.
+- **Then, by kind**: a gate, what it decides, what it waits for, what you will get and the four choices; a decision, your words, who applied it and when, what it changed, the choices it had; research, the question, the decision it serves, what happened (each step with its state), how sure it is; a stop, why it stopped, what it holds up, and your answer (the recommended choice edged in blue).
+- **Last**: Records, the files behind every fact on the sheet. Anything the records do not hold is marked as an example.
+""")
+V35 = {
+ "EventWeight": "- **v35 (round 8, answers 8 and 9):** a decision of the owner's says so (Yours, By proxy) and quotes the words it applies; a stop waiting on the owner reads Yours · waiting, the rule that fired and what it holds up, with Answer. See KindRows and YoursMark.",
+ "BranchMap": "- **v35 (round 8, answers 8 and 9):** the gate into the phase and the gate out mark the band's edges (GateRow); a research lane reads \"Research Q-028\".",
+ "PopoverMenu": "- **v35 (round 8, answers 8 and 9):** in the phase menu each gate row carries its flag and passed (with its date), yours, or yours, next (GateRow).",
+ "LevelRails": "- **v35 (round 8, answers 8 and 9):** a gate is a row of its own closing its phase (GateRow); research takes RESEARCH in place of SPRINT, with a Memo tag (KindRows).",
+ "BottomSheet": "- **v35 (round 8, answers 8 and 9):** gates, decisions, research and stops open as sheets of one shape (KindSheet).",
+}
+for _k, _v in V35.items():
+    _h, _r = C[_k]; C[_k] = (_h, _r.rstrip() + '\n' + _v + '\n')
+
 for name, (html, md) in C.items():
     d = os.path.join(OUT, "components", name); os.makedirs(d, exist_ok=True)
     open(os.path.join(d, "preview.html"), "w").write(html)

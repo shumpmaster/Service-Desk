@@ -7,3 +7,4 @@ How heavy an event looks in a project's list comes from what it is, so the few t
 - **Routine**: a commit (a draft or a revision) and other agent housekeeping. One quiet line: a 20 outlined icon in `text-2` with no corner mark, the title in 14 `text-2`, then any Needs or Why tag and the time in 12; the kind word, the plain Done tag and the by-line go. A failed or waiting tag would still show.
 - Colour does not change: neutral greys and the soft status tints only. The order and the tree stay.
 - Icons: Phosphor (MIT), regular for rows, bold for controls and menus, fill for anything selected; Craft's own are Apple's SF Symbols, which a web page cannot use.
+- **v35 (round 8, answers 8 and 9):** a decision of the owner's says so (Yours, By proxy) and quotes the words it applies; a stop waiting on the owner reads Yours · waiting, the rule that fired and what it holds up, with Answer. See KindRows and YoursMark.

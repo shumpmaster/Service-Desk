@@ -41,3 +41,10 @@ Asked in chat: "You can rule in one message, for example "all recommended except
 6. "I approve all as recommended"
 
 Carried out, to be built into the library and mockup v34: (1) the top row 38 high; (2) Why takes the quiet fill the link tag uses, with a thin blue edge while its bubble is open (setting aside R5 answer 10's outline); (3) a project pushes in from the right and goes back to the left (setting aside v11's push from the left); (4) the page opens, and the round button's tap lands, with the waiting event (Stop card 5) at the pointer and its arrow on the map; (5) one map scale per phase; (6) a phase with no events draws its planned milestones as dashed rings; (7) a second tap on a selected milestone clears the selection; (8) a handle at the band's foot folds the map to one line; (9) each link tag names its session, and the Context view numbers its event rows and names each link; (10) MILESTONE and its number on a small line above, the name below at full width on up to two lines; (11) a dashed ring with no number where no criteria are on record; (12) times in America/Chicago, with a date on anything older than today.
+
+Shown in chat: the library (version 38) and mockup v34 (https://claude.ai/artifact/RyjSnTNcBh52FjPhxt148f). The project pill still cuts "Home-screen widget"; fitting it would need the phase pill to show its number alone, a ruling left open.
+
+Asked in chat: "Shall I start drawing gates, decisions, research and stops?"
+7. "Start drawing"
+
+Read by the Chief of Staff as: draw how a gate, a decision, research and a stop show on the timeline (carried from round 3 and part 18): each as it is in v34, then options, live, on a page; colour stays the soft status colours and the one blue; the milestone and sprint shapes stay on hold.

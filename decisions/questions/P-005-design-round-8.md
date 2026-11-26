@@ -104,3 +104,14 @@ Asked in chat: "Rule however suits you, for example "all A" or "all A but 2 B". 
 Read by the Chief of Staff as: the four options are taken as recommended (A for each, as the owner's standing word, answer 9: "go with every option you recommended"), to be built into v37. "Glass" in answer 13 meant the page's background: the owner wants slight colour variation in the background, which loosens the neutral grey ground of P-005-rebrand-style and the "one blue" colour rule for the background only. To be drawn as options on v37, the background as it is, then options, light and dark, with the glass controls over it.
 
 Shown in chat: the library (version 44) and mockup v37 (https://claude.ai/artifact/TBAYsGPbg5cZ7u4Uzr8Y5u). Shown live: https://claude.ai/artifact/2Ac5x8BBx47FZ2M95f4iva (docs/design/mockups/options-r8-ground/): the ground as it is in v37, then A, three pale colour fields fixed behind everything, faint deep glows in dark (recommended); B, a pair of cool hues per project, home neutral; C, a wash from the top fading halfway down; D, warm while something waits, cool when all is moving. On a tinted ground the two secondary greys go one shade darker to keep 4.5:1; reduced transparency or more contrast falls back to flat. To be asked.
+
+Asked in chat: "Which background do you want? I'll build it into v38."
+16. "I like option a, but 2 things I want to incorporate and one I want to brainstorm. 
+
+For the branch chart can you put an outline around it and step it out a bit that way it has some depth and doesn't inherently blend in with the timeline below. 
+
+Can you add a quick filtering option for the branch? 
+
+And third I want to take a look at the home page. I don't really like how the title sits. Or that search bar. I'm also wondering if more can be done with the home page? No is an acceptable recommendation as well"
+
+Read by the Chief of Staff as: (1) the ground is A, three pale colour fields fixed behind everything, faint deep glows in dark, to be built into v38; (2) the branch map gets an outline and is stepped out from the list, a raised card with some depth, so it no longer blends into the timeline below; it names the change, so it is built into v38 and shown there; (3) a quick filter for the branch map: what it filters and how it looks are not said, so drawn as options; (4) home: the title's placement, the search bar, and whether more can be done with the page, "no" being an acceptable answer: drawn as options, home as it is first, with a recommendation.

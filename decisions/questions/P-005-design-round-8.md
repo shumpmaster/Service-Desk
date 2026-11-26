@@ -62,3 +62,5 @@ Asked by the question tool: "For gates, decisions, research and stops (https://c
 9. "I want you to go with ever option you recommended so if those are all A then do that"
 
 Carried out, to be built into the library and mockup v35: A for all four kinds. A gate is a row of its own closing its phase, with its state and Yours, marked on the map, opening a sheet (what it decides, the milestones it waits for, the four choices), its menu row carrying its state, and its time in America/Chicago. A decision carries Yours (or By proxy) and "Applies your words" under its title, opening a sheet. Research reads RESEARCH in place of SPRINT with a Memo tag, opening a sheet (the question, the decision it serves, its steps, grades and records); its map lane reads "Research Q-028". A stop reads "Yours · waiting" with the rule that fired, what it holds up and an Answer button opening the card's choices (an example: no record says the desk can record an answer).
+
+Shown in chat: the library (version 40) and mockup v35 (https://claude.ai/artifact/T225w8x4JnUZj57wUCR9c2).

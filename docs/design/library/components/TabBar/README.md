@@ -6,3 +6,4 @@ The main sections as icons only, in a floating 62-high glass capsule, with the r
 - Icons 27, bold, `text-1`. The selected tab sits in a 74 by 54 `fill-selected` pill and switches to its filled icon in `accent`.
 - Craft has four tabs; the desk has three (Desk, Plan, Needs you), so the bar is narrower. Each tab keeps an accessible name.
 - Tap a tab here to try it. Icons: Phosphor (MIT), regular for rows, bold for controls and menus, fill for anything selected; Craft's own are Apple's SF Symbols, which a web page cannot use.
+- **v37 (look item 4A):** glass (surface-floating, a 24-point blur, glass-edge along the top and a faint shine); the selected tab keeps the blue.

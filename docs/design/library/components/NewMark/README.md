@@ -5,3 +5,4 @@ What is new since the owner last looked. Chosen on 26 November 2026 (round 8, an
 - **A blue dot**, 7 across, before the fourth number of each row that happened since the owner last looked; **"· 9 new"** in blue on the phase heading's line. Nothing moves.
 - The dots clear once seen.
 - When the owner last looked is not on record; the desk would keep it on the phone. The time in the mockup (13 Nov, 11:00 pm) is an example (docs/design/requests/2026-11-26-timeline-records.md).
+- **v37 (look item 2A):** the dots and the "9 new" count are ink (ink-dot), not blue.

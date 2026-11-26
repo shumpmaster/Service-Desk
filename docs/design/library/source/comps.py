@@ -1173,6 +1173,25 @@ V36 = {
 for _k, _v in V36.items():
     _h, _r = C[_k]; C[_k] = (_h, _r.rstrip() + '\n' + _v + '\n')
 
+# round 8, answers 14 and 15 (decisions/questions/P-005-design-round-8.md): the look and feel, option A of each (v37)
+V37 = {
+ "BranchMap": "- **v37 (round 8, answers 14 and 15; look item 1A, a calmer map):** lanes 3 wide in map-lane, main 4 wide in map-main; rings 1.5 thick; a routine commit outside the window is a small dot (map-dot); the window a faint tint with a hairline edge; the dashed outline lighter; gate captions in small capitals with no slab. Every ruling on the map stays.",
+ "MilestoneMap": "- **v37 (look item 1A):** drawn on the calmer map (BranchMap): thinner, lighter lanes, routine commits outside the window as dots, a quieter window.",
+ "EventWeight": "- **v37 (round 8, answers 14 and 15; look item 3A, fewer tags):** the kind, a grey state (Done, Planned) and the time join the small number line (\"2.2.2.10 · Stop · 9:42 am\"); only the tinted states (NOW, Yours · waiting, Failed) stay before the title; Why and the session tag move to the row's foot, and a stop's Answer takes a line of its own under them.",
+ "KindRows": "- **v37 (look items 2A and 3A):** a stop's Answer is an ink button (ink-button) on a line of its own at the row's foot; the kind joins the number line.",
+ "YoursMark": "- **v37 (look item 3A):** Yours · waiting stays a tinted tag before the title; Yours on a done decision joins the row as before.",
+ "WaitSheet": "- **v37 (look item 2A):** Answer is an ink button (ink-button); blue is left to now and the selection.",
+ "AtWork": "- **v37 (look item 2A):** the dot is the soft green of moving (status-moving-dot), on a grey wash, not blue.",
+ "NewMark": "- **v37 (look item 2A):** the dots and the \"9 new\" count are ink (ink-dot), not blue.",
+ "TopPills": "- **v37 (look items 2A and 4A):** the count on the project pill is ink (ink-button); the pills, Back, the bell and More are glass (surface-floating, glass-edge); the bell's dot is ink.",
+ "TabBar": "- **v37 (look item 4A):** glass (surface-floating, a 24-point blur, glass-edge along the top and a faint shine); the selected tab keeps the blue.",
+ "RoundButton": "- **v37 (look item 4A):** glass, as the tab bar.",
+ "PopoverMenu": "- **v37 (look item 4A):** both menus are glass (surface-floating).",
+ "BottomSheet": "- **v37 (look item 4A):** sheets are glass (surface-sheet, 80%, a 30-point blur); solid with reduced transparency.",
+}
+for _k, _v in V37.items():
+    _h, _r = C[_k]; C[_k] = (_h, _r.rstrip() + '\n' + _v + '\n')
+
 for name, (html, md) in C.items():
     d = os.path.join(OUT, "components", name); os.makedirs(d, exist_ok=True)
     open(os.path.join(d, "preview.html"), "w").write(html)

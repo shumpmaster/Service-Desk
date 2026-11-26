@@ -7,3 +7,4 @@ One mark on what is the owner's own. Chosen by the owner on 26 November 2026 (de
 - **Yours to rule**: on a gate's sheet before it opens.
 - **Yours · waiting**: a stop waiting on the owner takes the waiting tag's colour with these words.
 - No new colour: the mark is neutral, the state keeps the soft status colours.
+- **v37 (look item 3A):** Yours · waiting stays a tinted tag before the title; Yours on a done decision joins the row as before.

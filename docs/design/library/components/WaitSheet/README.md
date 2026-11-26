@@ -7,3 +7,4 @@ Everything that waits on the owner in a project, one tap away. Chosen by the own
 - **Order**: the longest wait first among the same kind; the stop first.
 - A sheet of BottomSheet's shape and motion; the close mark, a tap on the scrim and Escape close it.
 - Records: status/P-005.toml (what waits); decisions/P-005/stop-5-notes.md; PR #446 (the three questions). A question's Answer is an example until the desk can record it (docs/design/requests/2026-11-26-timeline-records.md).
+- **v37 (look item 2A):** Answer is an ink button (ink-button); blue is left to now and the selection.

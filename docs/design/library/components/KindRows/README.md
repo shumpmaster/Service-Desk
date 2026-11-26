@@ -7,3 +7,4 @@ How a decision, research and a stop read in the list. Chosen on 26 November 2026
 - **Stop**: Yours · waiting in the waiting tag's colour; the line under it says the rule that fired and what it holds up; an Answer button opens the card's choices with the recommended one edged in blue. The button is an example: no record says the desk's answer link can record a stop card's answer, so the mockup sends nothing.
 - Each kind keeps its own Phosphor icon (chat-circle-text, magnifying-glass, hand-palm); the milestone and sprint shapes stay on hold.
 - Records: decisions/P-005/ (stop-4, dor-fail-1, stop-5-notes); docs/LEDGER.md L-0049; research/Q-028*.md, intake/requests/Q-028.toml; status/P-005.toml; OPERATING_MODEL.md §4, the stop rule (D-044).
+- **v37 (look items 2A and 3A):** a stop's Answer is an ink button (ink-button) on a line of its own at the row's foot; the kind joins the number line.

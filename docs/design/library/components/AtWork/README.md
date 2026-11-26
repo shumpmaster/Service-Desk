@@ -7,3 +7,4 @@ Who is at work now, and on what. Chosen on 26 November 2026 (round 8, answers 10
 - **Tapped**, a sheet (BottomSheet) lists the session, its helpers (running or finished) and the pipeline's last step.
 - The one blue: the dot and the row's wash; no new colour.
 - Records: the Chief of Staff's session lines (sessions/chief-of-staff/, start and what it set out to do, helpers); dispatch-log/ (the pipeline's last dispatch). Whether a pipeline run is under way right now is not on record: the desk would read GitHub's run status (docs/design/requests/2026-11-26-timeline-records.md).
+- **v37 (look item 2A):** the dot is the soft green of moving (status-moving-dot), on a grey wash, not blue.

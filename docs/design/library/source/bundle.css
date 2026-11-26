@@ -636,3 +636,8 @@ button:focus-visible { outline: 2px solid var(--accent-select); outline-offset: 
 .dk-wait { display: inline-flex; align-items: center; gap: 3px; font-weight: 600; color: var(--text-3); }
 .dk-wait.live { color: var(--status-wait-tag); }
 .dk-wait .i { width: 12px; height: 12px; }
+
+/* v37 (round 8, answers 14 and 15): the look and feel, option A of each: blue only for now or selected (2A); glass on what floats (4A) */
+.dk-dot { background: var(--ink-dot, #3a3b40); }
+.dk-wbtn.main { color: var(--ink-button-text, #fff); background: var(--ink-button, #1c1d21); }
+.dk-work .d { background: var(--status-moving-dot, #34a853); }

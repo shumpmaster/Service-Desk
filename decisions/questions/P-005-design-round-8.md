@@ -57,3 +57,8 @@ Asked in chat: "You can rule on all four in one message, for example "all A" or 
 8. "Honestly love every option. Especially the research functionality"
 
 Read by the Chief of Staff as: the options suit; which of A and B for each kind is not yet said, so it is confirmed once before building.
+
+Asked by the question tool: "For gates, decisions, research and stops (https://claude.ai/artifact/JPyDRb6ExZ2tjEXjq5PumF), each kind has an A and a B that can't both be built. Which should go into v35?" Options: "All A (Recommended)"; "All A, but stop B"; "Mix A and B".
+9. "I want you to go with ever option you recommended so if those are all A then do that"
+
+Carried out, to be built into the library and mockup v35: A for all four kinds. A gate is a row of its own closing its phase, with its state and Yours, marked on the map, opening a sheet (what it decides, the milestones it waits for, the four choices), its menu row carrying its state, and its time in America/Chicago. A decision carries Yours (or By proxy) and "Applies your words" under its title, opening a sheet. Research reads RESEARCH in place of SPRINT with a Memo tag, opening a sheet (the question, the decision it serves, its steps, grades and records); its map lane reads "Research Q-028". A stop reads "Yours · waiting" with the rule that fired, what it holds up and an Answer button opening the card's choices (an example: no record says the desk can record an answer).

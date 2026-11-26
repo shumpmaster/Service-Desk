@@ -196,7 +196,7 @@ Round 3 is verbatim in `decisions/questions/P-005-design-round-3.md` (cited by a
 - The milestone and sprint shapes (the circle and square inside the gauges are placeholders); how planned work is drawn (v34 draws an empty phase's planned milestones as dashed rings on the map, R8 answer 6, item 6).
 - Settled in round 8 (answers 14 and 15): a calmer map, blue only for now or selected, fewer tags, glass on what floats (v37).
 - Settled in round 8 (answer 16): slight colour in the background, option A (v38); it loosens P-005-rebrand-style's neutral ground for the background only. The branch map as a raised card (v38).
-- Open (round 8, answer 16): a quick filter for the branch map, and home's title, search and whether more can be done there; drawn on options-r8-filter-home/.
+- Open (round 8, answer 16): a quick filter for the branch map, and home's title, search and whether more can be done there; drawn on options-r8-filter-home/ (https://claude.ai/artifact/6TWCcgPc6gch7sAGtxhZ2e).
 - Whether the phase pill may drop its name so a long project name fits (U8).
 - Real action records: a change to the operating model, written up for the building session in `../requests/2026-11-15-agent-action-records.md`. The step's actions in v13 are still an example.
 - The records the design assumes (start times, which event needs which, the session behind each run, criteria, addresses, answers from the desk, the run at work now, when you last looked, sessions' and runs' tokens): written up for the building session in `../requests/2026-11-26-timeline-records.md`.

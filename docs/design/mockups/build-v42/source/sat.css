@@ -1,0 +1,15 @@
+/* ================= v42, round 8 answer 25, part 1: "empty space is definitely not gone" (the owner's phone, inside the Claude app,
+   docs/design/references/2026-11-27-v41-home-on-phone.jpg). Three things stacked at the top of the screen:
+   1. html took the `.sg` class, and an old `.sg { margin: 18px 0 0 }` rule meant for an element gave the whole page an 18 top margin;
+   2. the page's own 4 of top padding sat above the band;
+   3. the band added env(safe-area-inset-top) in full. Inside the Claude app the reported inset is far larger than a phone's own
+      (about 200 on the owner's screenshot), so the title fell under a tall empty strip.
+   Now the top inset is counted once, in --sat, and nothing else adds top space. It is capped at 100: a phone's own inset is never
+   more than 59 (the Dynamic Island), so on a phone it is used as it is; inside the Claude app, whose floating toolbar (close, chat,
+   share, more) ends about 95 down while the app reports about 200, the page starts just under that toolbar instead of 100 lower.
+   (Simulating 200 reproduces the owner's screenshot: v41's capsule at 234, the phone's at about 237.) A cap at 59 would put home's
+   capsule under the app's own toolbar, so 100 it is. The capsule row starts at --sat + 12, the live label on its row, the title under it. ===== */
+:root { --sat: min(env(safe-area-inset-top, 0px), 100px); }
+html.sg, html.sg.sg { margin: 0; }
+html .page { padding-top: 0; }
+html .hd-band, html .hm-band { padding-top: var(--sat) !important; }

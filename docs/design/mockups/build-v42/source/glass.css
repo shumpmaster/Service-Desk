@@ -1,0 +1,52 @@
+/* ================= v42, round 8 answer 25, part 2: "can we please increase the glass look as well?" Every glass surface (home's
+   cards and title band, the map card, the top row's controls, the tab bar, the round button, sheets and menus) becomes clearly
+   glass: more see-through, a stronger blur and saturation, a bright rim (a light top edge, a fainter left edge, a soft inner glow at
+   the top) and a light-to-clear edge. The ground's colour fields are a little stronger in light so the glass has colour to catch.
+   Text keeps 4.5:1 on every surface (measured, build-v42/README.md); reduced transparency or more contrast: solid, as before. ===== */
+:root { --gr-a: rgba(10, 108, 255, .22); --gr-b: rgba(140, 110, 255, .21); --gr-c: rgba(30, 180, 150, .15);
+  --g42-rim: rgba(255, 255, 255, .95); --g42-rim-s: rgba(255, 255, 255, .55); --g42-glow: rgba(255, 255, 255, .55); --g42-edge: rgba(60, 60, 67, .12);
+  --g42-sheen: linear-gradient(160deg, rgba(255, 255, 255, .55), rgba(255, 255, 255, .10) 34%, rgba(255, 255, 255, 0) 58%, rgba(255, 255, 255, .18));
+  --mc-bg: rgba(255, 255, 255, .34); --mc-sheen: var(--g42-sheen); --mc-blur: blur(34px) saturate(2.6); --mc-edge: var(--g42-edge); --mc-hi: var(--g42-rim);
+  --hc-bg: rgba(255, 255, 255, .40); --hc-chip: rgba(255, 255, 255, .42);
+  --lk-glass: rgba(255, 255, 255, .38); --lk-glass-hi: rgba(255, 255, 255, .92); --lk-glass-lo: rgba(255, 255, 255, .30); --lk-glass-sheet: rgba(250, 250, 253, .66);
+  --g42-band: linear-gradient(180deg, rgba(255, 255, 255, .14), rgba(255, 255, 255, .30)); }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --gr-a: rgba(10, 132, 255, .24); --gr-b: rgba(140, 110, 255, .21); --gr-c: rgba(30, 180, 150, .14);
+  --g42-rim: rgba(255, 255, 255, .28); --g42-rim-s: rgba(255, 255, 255, .12); --g42-glow: rgba(255, 255, 255, .10); --g42-edge: rgba(255, 255, 255, .10);
+  --g42-sheen: linear-gradient(170deg, rgba(255, 255, 255, .12), rgba(255, 255, 255, 0) 40%, rgba(255, 255, 255, 0) 70%, rgba(255, 255, 255, .05));
+  --mc-bg: rgba(40, 40, 46, .42); --hc-bg: rgba(40, 40, 46, .44); --hc-chip: rgba(255, 255, 255, .07);
+  --lk-glass: rgba(44, 44, 50, .44); --lk-glass-hi: rgba(255, 255, 255, .26); --lk-glass-lo: rgba(255, 255, 255, .08); --lk-glass-sheet: rgba(34, 34, 40, .70);
+  --g42-band: linear-gradient(180deg, rgba(36, 36, 44, .14), rgba(36, 36, 44, .34)); } }
+:root[data-theme="dark"] { --gr-a: rgba(10, 132, 255, .24); --gr-b: rgba(140, 110, 255, .21); --gr-c: rgba(30, 180, 150, .14);
+  --g42-rim: rgba(255, 255, 255, .28); --g42-rim-s: rgba(255, 255, 255, .12); --g42-glow: rgba(255, 255, 255, .10); --g42-edge: rgba(255, 255, 255, .10);
+  --g42-sheen: linear-gradient(170deg, rgba(255, 255, 255, .12), rgba(255, 255, 255, 0) 40%, rgba(255, 255, 255, 0) 70%, rgba(255, 255, 255, .05));
+  --mc-bg: rgba(40, 40, 46, .42); --hc-bg: rgba(40, 40, 46, .44); --hc-chip: rgba(255, 255, 255, .07);
+  --lk-glass: rgba(44, 44, 50, .44); --lk-glass-hi: rgba(255, 255, 255, .26); --lk-glass-lo: rgba(255, 255, 255, .08); --lk-glass-sheet: rgba(34, 34, 40, .70);
+  --g42-band: linear-gradient(180deg, rgba(36, 36, 44, .14), rgba(36, 36, 44, .34)); }
+/* the rim: a bright top edge, a fainter left one, a soft glow inside the top, the hairline */
+:root { --g42-rimset: inset 0 1px 0 var(--g42-rim), inset 1px 0 0 var(--g42-rim-s), inset 0 14px 18px -14px var(--g42-glow), inset 0 0 0 1px var(--g42-edge); }
+/* the map card and its slim fold */
+html #v13band .v13vp, html.tp #v13band .v13vp, html .r8-slim #v13band .r8-strip, html #v13band.r8-slim .r8-strip, html .r8-slim .r8-strip {
+  box-shadow: var(--g42-rimset), var(--mc-shadow); }
+/* home's cards */
+html #view section.sg-grp.sg-grp.sg-grp { -webkit-backdrop-filter: blur(34px) saturate(2.6); backdrop-filter: blur(34px) saturate(2.6);
+  background: var(--g42-sheen), var(--hc-bg); box-shadow: var(--g42-rimset), var(--mc-shadow); }
+/* home's title band: thinner glass, the glow behind it a little stronger */
+html.fh-tA #view .fh-lt::after { background: var(--g42-band); -webkit-backdrop-filter: blur(30px) saturate(2.4); backdrop-filter: blur(30px) saturate(2.4); }
+/* the floating controls, the tab bar, the round button, the menus */
+html :is(.pl-row .circ, .pl-row .tp-pill, .pl-row .capsule, .tabbar, #roundbtn, .tp-menu, .menu) {
+  -webkit-backdrop-filter: blur(30px) saturate(2.4) !important; backdrop-filter: blur(30px) saturate(2.4) !important;
+  background-image: var(--g42-sheen) !important;
+  box-shadow: var(--g42-rimset), 0 0 0 .5px rgba(0, 0, 0, .05), 0 10px 28px rgba(0, 0, 0, .12), 0 1px 3px rgba(0, 0, 0, .06) !important; }
+/* sheets */
+html :is(.kn-sheet, .pp-sheet, .sheet, .ws-sheet) { -webkit-backdrop-filter: blur(40px) saturate(2.2) !important; backdrop-filter: blur(40px) saturate(2.2) !important;
+  background-image: var(--g42-sheen) !important; box-shadow: var(--g42-rimset), 0 -10px 34px rgba(0, 0, 0, .14) !important; }
+@media (prefers-reduced-transparency: reduce), (prefers-contrast: more) {
+  :root { --gr-a: transparent; --gr-b: transparent; --gr-c: transparent; --g42-sheen: linear-gradient(transparent, transparent); --g42-glow: transparent; }
+  html :is(.pl-row .circ, .pl-row .tp-pill, .pl-row .capsule, .tabbar, #roundbtn, .tp-menu, .menu, .kn-sheet, .pp-sheet, .sheet, .ws-sheet) {
+    background-color: var(--surface) !important; background-image: none !important; -webkit-backdrop-filter: none !important; backdrop-filter: none !important; }
+  html #view section.sg-grp.sg-grp.sg-grp { -webkit-backdrop-filter: none; backdrop-filter: none; background: var(--hc-bg); }
+}
+/* on the thinner glass the map's words step one shade further from the glass, so they keep 4.5:1 where they cross a lane */
+html:not([data-theme="dark"]) #v13band .v13vp { --text-2: #46484d; }
+@media (prefers-color-scheme: dark) { html:not([data-theme="light"]) #v13band .v13vp { --text-2: #bdbdc3; } }
+html[data-theme="dark"] #v13band .v13vp { --text-2: #bdbdc3; }

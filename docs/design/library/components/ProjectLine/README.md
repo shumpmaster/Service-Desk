@@ -5,3 +5,4 @@ One line in each project's group on home: who is at work and how much is new sin
 - A green dot and the name of who is at work, with since when; a grey dot and "Nothing at work · it waits on you" when nothing is.
 - On the right, an ink dot and how many things are new, or "nothing new".
 - **Examples** until the records request is met (docs/design/requests/2026-11-26-timeline-records.md: the pipeline at work now; when the owner last looked); home says so under its groups.
+- **v41 (round 8, answer 20):** worded to read on one line at 393 ("Chief of Staff · since 7:52 am", "Nothing at work"), starting under the strip; at 360 the at-work line wraps cleanly, its count kept whole. On the glass cards (answer 21) it sits on a light chip with a hairline.

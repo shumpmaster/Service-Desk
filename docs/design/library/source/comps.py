@@ -1247,7 +1247,7 @@ A quick filter for the branch map, a small glass button in the map card's top co
 """, PRESS)
 comp("HomeHeader", "Headings", 300, '<div class="dk-stage col phone" style="height:300px"><div class="dk-hh"><div class="bar"><div class="dk-capsule glass"><button aria-label="Search">' + ic("magnifying-glass", "bold") + '</button><button aria-label="Needs you">' + ic("bell", "fill") + '</button><button aria-label="More">' + MORE + '</button></div></div>'
   '<div class="lab"><i></i>Live · as of 11:25 am CT</div><h1>Timeline</h1><i class="mk"></i></div>'
-  '<div class="dk-hh-below"><p><b>5 things wait on you</b>, in 2 projects.</p><div class="card">a project card: white, rounded, lifted</div></div></div>',
+  '<div class="dk-hh-below"><p><b>5 things wait on you</b>, in 2 projects.</p><div class="card"><span class="dk-ev41"><b>Stop 2.2.2.10</b> · Stop card 5 · S-011</span>a project card: glass, rounded, lifted</div></div></div>',
  """# HomeHeader
 
 Home's title on a glass band of its own, so it no longer looks like the cards below it. The owner's words (decisions/questions/P-005-design-round-8.md): answer 18, "I like option a here, but I want a better visual segregation of the title. Effectively some accenting or something that is reserved for the title and just condenses when scrolled as shown"; answer 19, "On the titles could we combine A, b and c somehow, my current concern is how the title looks identical to the cards". It combines the accents A, B and C of docs/design/mockups/options-r8-title/.
@@ -1259,8 +1259,8 @@ Home's title on a glass band of its own, so it no longer looks like the cards be
 - **The cards below** keep their own shape: white, rounded, with a soft lift the band does not have.
 - Words: the label 5.8:1 or better, the title 13:1 or better, at their most tinted points (build-v40/README.md).
 """)
-comp("ProjectLine", "Desk", 170, '<div class="dk-stage col" style="max-width:393px"><div class="dk-pline"><span class="d"></span><span><b>Chief of Staff</b> at work since 7:52 am</span><span class="new"><i></i>9 new</span></div>'
-  '<div class="dk-pline"><span class="d idle"></span><span>Nothing at work · it waits on you</span><span class="new">nothing new</span></div>'
+comp("ProjectLine", "Desk", 170, '<div class="dk-stage col" style="max-width:393px"><div class="dk-pline"><span class="d"></span><span><b>Chief of Staff</b> · since 7:52 am</span><span class="new"><i></i>9 new</span></div>'
+  '<div class="dk-pline"><span class="d idle"></span><span>Nothing at work</span><span class="new">nothing new</span></div>'
   '<p class="dk-note">Examples until the desk records who is at work and when you last looked.</p></div>',
  """# ProjectLine
 
@@ -1277,6 +1277,16 @@ V40 = {
  "BranchMap": "- **v40 (round 8, answers 16 and 19):** MapFilter's button sits in the card's top corner, inside the inner box; what a cut leaves out goes faint.",
 }
 for _k, _v in V40.items():
+    _h, _r = C[_k]; C[_k] = (_h, _r.rstrip() + '\n' + _v + '\n')
+
+V41 = {
+ "HomeHeader": "- **v41 (round 8, answer 20: \"Why so much empty space here?\"):** the title block rises into the slim bar's slot: the live label rides on the capsule's row, centred on it, the title directly under it, the mark under the title, the band 14 below the mark; the header ends at 129 instead of 177 at 393. The slot catches no taps but the capsule's until the bar takes over, at 52 of the 64 points (32 with reduced motion, where it snaps), so the large and the small title never both vanish.",
+ "ProjectLine": "- **v41 (round 8, answer 20):** worded to read on one line at 393 (\"Chief of Staff · since 7:52 am\", \"Nothing at work\"), starting under the strip; at 360 the at-work line wraps cleanly, its count kept whole. On the glass cards (answer 21) it sits on a light chip with a hairline.",
+ "WaitGroup": "- **v41 (round 8, answers 21 and 22):** each project's group is a glass card like MapCard (translucent over the ground, blur 28 and saturate 2.2, hairline edge, light top edge and sheen, soft shadow), rounded and inset, apart from HomeHeader's square full-width band; solid under reduced transparency or more contrast; its secondary words one step lighter in dark (#a7a7ad), every word 4.5:1 or better at its most tinted point. Each waiting row names the event it hangs from on a small line above the question: its kind and number in ink, its title, and its sprint (\"Stop 2.2.2.10 · Stop card 5 · S-011\"; \"Merge 2.2.2.5 · PR #446\u2019s questions · S-011\"; \"Review 1.8.1.2 · Readiness check failed · The brief\"), one line where it fits, wrapping with the place whole, never cut. Tapping the row does what it did.",
+ "MapFilter": "- **v41 (round 8, answer 23: \"When things are filtered I would like the table to adjust and show me only that filtered view.\"):** the list shows only what a cut matches. Rows left out are hidden, not dimmed; the phase, milestone and sprint headings that hold matches stay as context, each with a small count of what is hidden under it (\"9 hidden\"); headings with no match fold away, and a plan's actions hide with their plan. When nothing open matches, one line says so and how to see everything. The map still fades what is left out. The row at the pointer keeps its place as rows go and come back (from the landing, \"Yours\" keeps Stop card 5 at the pointer); clearing with the cross brings the whole list back the same way. Hiding takes the fold's close (240) and showing its open (320), on the standard curve; reduced motion snaps. What each station is stays known across the map's redraws, so the map keeps to the phase in view. Rows shown per cut on S-011's landing: Everything 12 events, Yours 4, Turning points 4, Reviews and checks 4, Main only 1, Research none open.",
+ "DeskHome": "- **v41 (round 8, answers 20 to 22):** no empty slot above the title (HomeHeader); the project groups are glass (WaitGroup); each waiting row names its event.",
+}
+for _k, _v in V41.items():
     _h, _r = C[_k]; C[_k] = (_h, _r.rstrip() + '\n' + _v + '\n')
 
 for name, (html, md) in C.items():

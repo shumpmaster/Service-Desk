@@ -671,6 +671,9 @@ button:focus-visible { outline: 2px solid var(--accent-select); outline-offset: 
   background: linear-gradient(180deg, rgba(255,255,255,.30), rgba(255,255,255,.46)), radial-gradient(60% 80% at 16% 62%, rgba(10,108,255,.26), transparent 72%), radial-gradient(55% 78% at 84% 38%, rgba(140,110,255,.28), transparent 74%), var(--ground);
   box-shadow: inset 0 -1px 0 rgba(60,60,67,.14); }
 .dk-hh .bar { display: flex; justify-content: flex-end; padding: 10px 0 18px; }
+/* v41 (round 8, answer 20): the label rides on the capsule's row; no empty slot above the title */
+.dk-hh .bar { position: absolute; right: 20px; top: 10px; padding: 0; }
+.dk-hh { padding-top: 20px; }
 .dk-hh .dk-capsule { width: auto; }
 .dk-hh .lab { display: flex; align-items: center; gap: 6px; font: 600 12px var(--font-sans); letter-spacing: .08em; text-transform: uppercase; color: #4f5156; }
 .dk-hh .lab i { width: 7px; height: 7px; border-radius: 50%; background: var(--status-moving-dot, #34a853); }
@@ -679,6 +682,10 @@ button:focus-visible { outline: 2px solid var(--accent-select); outline-offset: 
 .dk-hh-below { padding: 14px 16px; background: radial-gradient(120% 70% at 0% 0%, var(--ground-field-a), transparent 60%), var(--ground); height: 100%; }
 .dk-hh-below p { margin: 0 4px 10px; font: 400 17px var(--font-sans); color: var(--text-1); }
 .dk-hh-below .card { padding: 14px 16px; border-radius: 20px; background: var(--surface); font: 400 13px var(--font-sans); color: var(--text-2); box-shadow: 0 1px 2px rgba(28,40,90,.05), 0 6px 18px rgba(28,40,90,.05); }
+/* v41 (round 8, answer 21): home's project cards are glass, like the map card */
+.dk-hh-below .card { background: linear-gradient(165deg, rgba(255,255,255,.62), rgba(255,255,255,.08) 38%, rgba(255,255,255,0) 60%, rgba(255,255,255,.22)), rgba(255,255,255,.56); -webkit-backdrop-filter: blur(28px) saturate(2.2); backdrop-filter: blur(28px) saturate(2.2); box-shadow: inset 0 0 0 1px rgba(60,60,67,.14), inset 0 1px 0 rgba(255,255,255,.95), 0 1px 2px rgba(20,30,60,.06), 0 12px 30px -8px rgba(20,30,70,.20); }
+.dk-ev41 { display: block; margin: 0 0 2px; font: 500 12px/16px var(--font-sans); color: var(--text-2); }
+.dk-ev41 b { font-weight: 600; color: var(--text-1); }
 @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .dk-hh { background: linear-gradient(180deg, rgba(36,36,44,.28), rgba(36,36,44,.5)), radial-gradient(60% 80% at 16% 62%, rgba(10,132,255,.34), transparent 72%), radial-gradient(55% 78% at 84% 38%, rgba(140,110,255,.34), transparent 74%), var(--ground); box-shadow: inset 0 -1px 0 rgba(255,255,255,.12); }
   :root:not([data-theme="light"]) .dk-hh .lab { color: #b4b4ba; } :root:not([data-theme="light"]) .dk-hh .mk { background: linear-gradient(90deg, #6ea2ff, #b09cff); } }
 :root[data-theme="dark"] .dk-hh { background: linear-gradient(180deg, rgba(36,36,44,.28), rgba(36,36,44,.5)), radial-gradient(60% 80% at 16% 62%, rgba(10,132,255,.34), transparent 72%), radial-gradient(55% 78% at 84% 38%, rgba(140,110,255,.34), transparent 74%), var(--ground); box-shadow: inset 0 -1px 0 rgba(255,255,255,.12); }

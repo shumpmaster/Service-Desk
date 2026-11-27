@@ -242,3 +242,5 @@ Asked in chat, after the handoff was written:
 33. "Okay the last thing I want is a fable 5.2 review designed to identify any other screens or pages that might be beneficial to add then put it into the handoff"
 
 Read by the Chief of Staff as: the design reviewer, on the model the owner named, reviews v46 for screens or pages the desk lacks that would help the owner; its findings are recorded verbatim and added to the handoff as an open item for the next session, without building anything.
+
+Carried out: the design reviewer's review of v46 for screens the desk lacks, recorded verbatim at docs/design/audit-2026-11-27-v46-screens.md, and put into the handoff (docs/handoff/2026-11-27-chief-of-staff-p005-19.md) as the first open item, with its order for the next design session (the Needs-you tab; a gate open for ruling with a reader for any record; a project with no plan and the empty and can't-read states; the Plan tab; sessions and handovers; the bell and More) and the start prompt pointing to it.

@@ -145,3 +145,8 @@ A comment on v40 (https://claude.ai/artifact/5j4dpvLNkHNta9LoKfLy5m, thread f4c2
 20. "Why so much empty space here?"
 
 Found: at the top of home, the slim bar's place (22 to 78 points, hidden until you scroll) sits empty to the left of the capsule, so the live label and the title start below it, about 50 points lower than they need to. Read by the Chief of Staff as: close the gap, to be built into v41: the live label on the capsule's row, the title right under it, the band shorter by the empty space, the condensing into the slim bar kept.
+
+A comment on v40 (thread c2ec6965), on home's waiting row "Longest wait · The widget failed its readiness check" inside the widget's group, sent to Claude:
+21. "Can we make this Liquid Glass style too?"
+
+Read by the Chief of Staff as: home's project groups (the white cards holding each project's line and its waiting rows) become glass like the map card, catching the ground's colours, distinct from the full-width title band; text kept at 4.5:1, solid under reduced transparency. To be built into v41 with answer 20; the reading is confirmed in the thread.

@@ -1,0 +1,10 @@
+/* v41, round 8 answer 23: the filtered list shows only what matches; what is hidden is counted on the heading that holds it */
+#v13list .fh41-hide { display: none !important; }
+html.fh41-on #v13list .fh-out { opacity: 1; }
+.fh41-n { display: inline-block; margin-left: 8px; padding: 0 7px; height: 18px; border-radius: 9px; vertical-align: 2px;
+  font: 500 11px/18px var(--font-ui, system-ui); letter-spacing: 0; text-transform: none; color: var(--text-2, #5a5c60); background: var(--fill, rgba(120, 120, 128, .12)); white-space: nowrap; }
+:root[data-theme="dark"] .fh41-n { color: #a7a7ad; background: rgba(255, 255, 255, .08); }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .fh41-n { color: #a7a7ad; background: rgba(255, 255, 255, .08); } }
+.fh41-empty { margin: 14px 8px; font: 400 14px/1.4 var(--font-ui, system-ui); color: var(--text-2, #5a5c60); }
+:root[data-theme="dark"] .fh41-empty { color: #a7a7ad; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .fh41-empty { color: #a7a7ad; } }

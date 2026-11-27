@@ -1,0 +1,15 @@
+/* ================= v41, round 8 answer 20: "Why so much empty space here?" Home's title band sat under the slim bar's slot (56 high,
+   empty left of the capsule), so the live label began at 88 and the title at 107. Now the title block rises into that slot: the live
+   label sits on the capsule's row, left, centred on it; the title directly under it; the mark under the title; the band ends 14 below
+   the mark. The slot takes no room of its own and, until the bar takes over, catches no taps but the capsule's. ================= */
+html.fh-tA #view .fh-lt { margin-top: calc(-1 * var(--hd41-slot, 56px)); padding: var(--hd41-pad, 24px) 4px 14px; }
+html.fh-tA #view .fh-lt .asof { max-width: calc(100% - 112px); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-height: 15px; line-height: 15px; }
+html.fh-tA #view .fh-lt .tt-mark { margin-top: 8px; }
+/* the slot: see-through to taps until the bar takes over, except the capsule (and the search field when it is open) */
+html.fh-tA:not(.fh-scrolled):not(.fh-sopen) #view .hm-band { pointer-events: none; }
+html.fh-tA:not(.fh-scrolled):not(.fh-sopen) #view .hm-band .capsule, html.fh-tA:not(.fh-scrolled):not(.fh-sopen) #view .hm-band .capsule * { pointer-events: auto; }
+/* the search field opens over the label's row: the label steps aside while it is open */
+html.fh-tA.fh-sopen #view .fh-lt .asof { visibility: hidden; }
+/* more on home: each line reads on one line at 393 and wraps cleanly at 360 */
+.fh-pline > span:nth-of-type(2) { min-width: 0; }
+html #view .sg-grp .fh-pline { margin-left: 46px; gap: 6px; }  /* the line starts under the strip, as the strip does */

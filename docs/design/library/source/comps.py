@@ -1466,6 +1466,129 @@ for _k, _v in V46.items():
     if _k in C:
         _h, _r = C[_k]; C[_k] = (_h, _r.rstrip() + '\n' + _v + '\n')
 
+# round 9, answers 3 and 4 (decisions/questions/P-005-design-round-9.md): the Needs-you tab, the sheets for each kind of ask, the pull request's checks named (v48)
+R9A3 = "“I like the earlier option you recommended. For this one, can you find a way to incorporate the actual checks instead of just “checks passed””"
+R9A4 = "“A and no”"
+def ny_mark(st, icon):
+    return f'<span class="dk-nym {st}">{ic(icon, "bold")}</span>'
+def ny_row(st, icon, top, t, meta="", tm="", extra=""):
+    return (f'<div class="dk-nyrow">{ny_mark(st, icon)}<span class="bd"><span class="top">{top}' + (f'<span class="tm">{tm}</span>' if tm else '') + '</span>'
+            f'<span class="t">{t}</span>' + (f'<span class="meta">{meta}</span>' if meta else '') + extra + '</span></div>')
+def chip(p): return f'<span class="dk-nychip">{p}</span>'
+EXM = '<i class="dk-nyex">example</i>'
+def ny_wait(n, proj, ev, q, why, wait, a="Decide what’s next", b="Show on timeline"):
+    return (f'<div class="dk-prl-row"><span class="n">{n}</span><div class="b"><span class="chip">{proj}</span><span class="ev">{ev}</span>'
+            f'<span class="q">{q}</span><span class="why"><b>{why}</b> · waiting {wait}</span>'
+            f'<span class="acts"><span class="dk-wbtn main">{a}</span>' + (f'<span class="dk-wbtn">{b}</span>' if b else '') + '</span></div></div>')
+NYTAB = tabbar("needs").replace('aria-label="Needs you">', 'aria-label="Needs you, 2 waiting">', 1).replace('</button></nav>', '<span class="dk-nybadge" aria-hidden="true">2</span></button></nav>')
+comp("NeedsTab", "Desk", 1900, '<div class="dk-stage col" style="max-width:393px"><div class="dk-ny">'
+  + '<div class="lt"><span class="asof"><i></i>Live · as of 11:25 am CT</span><h1>Needs you</h1></div>'
+  + '<p class="dk-prl-sum"><b>2 things wait on you.</b> You answered 6 in the last 24 hours.</p>'
+  + '<div class="dk-prl-h">Waiting on you<small>2</small></div><div class="dk-prl">'
+  + ny_wait(1, "Home-screen widget", "<b>The widget’s brief failed its readiness check</b> <span class=\"code\">Readiness card · 1.8.1.3</span>", "Your call: resubmit the widget’s brief, or stop?", "Holds up the Discovery phase", "9 days")
+  + ny_wait(2, "The timeline", "<b>Work stopped</b> <span class=\"code\">Stop card 5 · 2.2.2.10 · S-011</span>", "S-011 failed three plan reviews: what happens next?", "Holds up 3 milestones (M6, M7, M8)", "1 h 43 min")
+  + '</div><div class="dk-prl-h">Other kinds of ask \u00b7 examples</div><p class="dk-nynote">One example of each other kind, so its sheet can be seen. None waits on you; they count nowhere.</p><div class="dk-prl dk-nykinds">'
+  + ny_wait("", "operating model", "<b>A pull request to merge</b> <span class=\"code\">Pull request</span> " + EXM, "Merge the session names and the handover flag into the operating model?", "Holds up the desk’s session names", "1 h 5 min", "Merge or not", "")
+  + '<p class="dk-note" style="padding:8px 0">Then a question, a deploy and a handed-over session, one row each, each opening its sheet (AskSheets).</p></div>'
+  + '<div class="dk-prl-h">Sent, being recorded<small>1</small></div><div class="dk-nycard">'
+  + ny_row("wait", "clock", chip("operating model") + EXM, "<b>You chose “Merge”:</b> two new lessons go into the operating model <span class=\"code\">Pull request</span>", "Sent 11:24 am · finished on GitHub; shown as answered once the desk reads the record")
+  + '</div><div class="dk-prl-h">Kicked back<small>1</small></div><p class="dk-nynote">Not recorded after about 5 minutes. Nothing changed; it stays here until you try again.</p><div class="dk-nycard">'
+  + ny_row("bad", "arrow-counter-clockwise", chip("portfolio") + EXM, "<b>You chose “Merge”:</b> the portfolio’s yearly summary page <span class=\"code\">Pull request</span>", "Sent 11:12 am · not recorded after 5 minutes, so nothing changed", extra='<span class="acts"><span class="dk-wbtn main">Try again</span></span>')
+  + '</div><div class="dk-nyquiet"><i></i><span>With the AI team: <b>1</b></span>' + ic("caret-right", "bold", "rc") + '</div>'
+  + '<div class="dk-prl-h">Answered<small>last 24 hours · 6</small></div><div class="dk-nycard">'
+  + ny_row("ok", "check", chip("The timeline"), "<b>You chose “360 and 414”:</b> the timeline fits phones 360 and 414 points wide, with no sideways scroll <span class=\"code\">S-011 widths · A</span>", tm="8:47 am")
+  + ny_row("ok", "check", chip("The timeline"), "<b>You chose “criteria-wrong”:</b> a new spec replaces the first plan, its checks start again, and it is not a strike <span class=\"code\">Stop card 4 · S-010</span>", tm="13 Nov, 10:58 pm")
+  + '<div class="dk-nyfold"><span>Earlier</span><small>3</small>' + ic("caret-right", "bold", "rc") + '</div></div>'
+  + '<div class="dk-nytabs">' + NYTAB + '</div></div>'
+  + '<p class="dk-note">The tab is a view of its own: its icon lit, its badge the waiting count. Desk returns home where it was.</p></div>',
+ f"""# NeedsTab
+
+The Needs-you tab: one list of everything that is the owner's, waiting or done. Chosen by the owner on 27 November 2026 (decisions/questions/P-005-design-round-9.md, answer 3, a comment on the Needs-you options page: {R9A3}; option A of docs/design/mockups/options-r9-needs/, as recommended). Mockup v48.
+
+- **A view of its own**, opened by the third tab (TabBar): its icon lit, the Plan tab off while it shows, its badge the waiting count.
+- **The counts agree with home**: the badge, the "Waiting on you" heading and the sentence count only what really waits, the same as home's PriorityList (2 in the mockup: "2 things wait on you. You answered 6 in the last 24 hours."). The example kinds add nothing to any count. **Desk** returns home where it was, with home's PriorityList. From a project's page the tab first closes the project.
+- **The large title** as home's: the live label, "Needs you", the short mark; a slim bar takes the title once it scrolls away. Under it one sentence: how many things wait, and how many were answered in the last 24 hours.
+- **Its sections, top down:** **Waiting on you** (home's PriorityList rows themselves, in home's order, and only those); **Other kinds of ask · examples**, just below it (one row each for a question, a pull request, a deploy and a session to start, each marked example and opening its sheet, AskSheets; not ranked, a plain grey disc in place of a number, and counted nowhere); **Sent, being recorded** (an answer finished on GitHub that the desk has not yet read); **Kicked back** (not recorded after about 5 minutes: nothing changed, with Try again; it never moves back to Waiting); **With the AI team** (one quiet line with the count, opening the session at work); **Answered** (the last 24 hours open, each saying what was chosen and what it did, its code after in grey; older ones folded under **Earlier**). Tapping an answered row reads it (the question, the owner's words, the choices it had, what it changed) or opens its card.
+- **Marks**: a small disc in the soft status colours: green check for answered, yellow clock for being recorded, red turn-back for kicked back, a grey pair for the AI team. Colour: the soft status colours, the one blue for the selected tab, the ground.
+- **Examples, marked so**: the Sent and Kicked-back rows, the other kinds of ask and the session's name; no record carries them yet. The answered rows are the owner's real rulings of 12 to 14 November (the mockup's own days).
+- Plain words first, codes after in grey (PlainTitle); text 4.5:1 or better. {SRC}
+""")
+
+comp("AskSheets", "Desk", 2400, '<div class="dk-stage col" style="max-width:393px">'
+  + '<div class="dk-ksheet"><div class="grab"></div><span class="x" aria-label="Close">' + ic("x", "bold") + '</span>'
+  + '<div class="kd">' + ic("question") + 'Question</div><p class="dk-nyw">A question: the AI team needs your call before it goes on. Each question has its own answer.</p>'
+  + '<h2>Should every merge send a phone alert, or only what needs you?</h2><p class="dk-nysub">Question · The timeline ' + EXM + '</p><div class="row"><span class="dk-kst wait">Waiting on you</span>' + you() + '</div>'
+  + '<h3>Your answer</h3><div class="opts"><span class="opt rec"><b>Only what needs you</b>Merges show here and on the bell; your phone stays quiet for them.<span class="key">only-needs</span></span><span class="opt"><b>Every merge too</b>Each merge also sends an alert to your phone.<span class="key">every-merge</span></span></div>'
+  + '<h3>Or in your own words</h3><div class="dk-nyown">Say it your way; it is recorded as you write it</div><div class="dk-nyacts"><span class="dk-wbtn main big">Send your words</span></div></div>'
+  + '<div class="dk-ksheet"><div class="grab"></div><span class="x" aria-label="Close">' + ic("x", "bold") + '</span>'
+  + '<div class="kd">' + ic("git-pull-request") + 'Pull request</div><p class="dk-nyw">A pull request is a set of changes waiting to be merged into a project.</p>'
+  + '<h2>Merge the session names and the handover flag into the operating model?</h2><p class="dk-nysub">Pull request #212 · operating model ' + EXM + '</p><div class="row"><span class="dk-kst wait">Waiting on you</span>' + you() + '</div>'
+  + '<h3>Automatic checks <span class="c">3 of 4 passed, 1 running</span></h3><p class="dk-note">Every check named, then the AI reviews (CheckList).</p>'
+  + '<h3>Your answer</h3><div class="opts"><span class="opt"><b>Merge</b>Opens the pull request on GitHub at its merge button; one tap there merges it, and the session names reach the desk. It changes the rules, so merging also gives your own say that the rules ask for.<span class="key">merge</span></span><span class="opt"><b>Not yet</b>It stays open and stays here. The AI team is told you held it; nothing changes.<span class="key">hold</span></span></div></div>'
+  + '<div class="dk-ksheet"><div class="grab"></div><span class="x" aria-label="Close">' + ic("x", "bold") + '</span>'
+  + '<div class="kd">' + ic("rocket-launch") + 'Deploy</div><p class="dk-nyw">A deploy puts a new version live. The desk’s deploys wait for your approval.</p>'
+  + '<h2>The desk’s new version is ready to go live</h2><p class="dk-nysub">Deploy · The timeline ' + EXM + '</p><div class="row"><span class="dk-kst wait">Waiting on you</span>' + you() + '</div>'
+  + '<h3>What goes live</h3><ul class="dk-nyck"><li>' + ny_mark("ok", "check") + '<span>Built and checked<small>its run passed</small></span></li><li><i class="m"></i><span>The timeline page on the desk<small>what you see changes; nothing is lost</small></span></li></ul>'
+  + '<h3>Your answer</h3><div class="opts"><span class="opt"><b>Approve</b>Opens the run’s approval page on GitHub; one tap there sends it live.<span class="key">approve</span></span><span class="opt"><b>Hold</b>Nothing goes live. It waits here until you approve, and the AI team is told.<span class="key">hold</span></span></div></div>'
+  + '<div class="dk-ksheet"><div class="grab"></div><span class="x" aria-label="Close">' + ic("x", "bold") + '</span>'
+  + '<div class="kd">' + ic("play-circle") + 'Start the next session</div><p class="dk-nyw">An AI session works until its conversation is full or its work is handed on. Starting the next one is yours.</p>'
+  + '<h2>Start the next session for Model-Lab’s Chief of Staff?</h2><p class="dk-nysub">Handover · Model-Lab ' + EXM + '</p><div class="row"><span class="dk-kst wait">Waiting on you</span>' + you() + '</div>'
+  + '<h3>The session</h3><ul class="dk-nyck"><li><i class="m"></i><span>Writing up the lab’s overnight merges<small>Chief of Staff · began 13 Nov, 6:40 pm · ended 14 Nov, 10:50 am</small></span></li></ul>'
+  + '<h3>Why a handover is needed</h3><p><span class="dk-kst wait">Handover needed</span> its conversation was nearly full, so it ended with work open and wrote a handover</p>'
+  + '<h3>The handover opens</h3><div class="q dk-nyho">Where things stand: four pull requests merged overnight. Next: check the lab’s results page against the new runs, then put the summary to you.</div>'
+  + '<div class="dk-nyacts"><span class="dk-wbtn main big">Start the next session</span></div></div>'
+  + '<p class="dk-note">Each opens from its row in NeedsTab. A tap on a choice says what follows; the mockup sends nothing.</p></div>',
+ f"""# AskSheets
+
+The sheets for the other kinds of ask in the Needs-you tab: a question, a pull request to merge, a deploy to approve, and starting the next session. Chosen by the owner on 27 November 2026 (decisions/questions/P-005-design-round-9.md, answer 3: {R9A3}; answer 4: {R9A4}; the sheets as drawn in option A of docs/design/mockups/options-r9-needs/, the pull request's checks as option A of docs/design/mockups/options-r9-pr-checks/). Mockup v48.
+
+- **One shape for all four**, KindSheet's: the kind's icon and word, one line on what this kind of thing is, the title, the project and code in grey (an example mark while no record carries it), its state and Yours; then what the kind needs; then **Your answer**, each choice saying what follows, its key beneath in grey. The recommended choice is edged in the one blue, never picked for you.
+- **A question**: its choices, then **Or in your own words** (a box, recorded as written) and **Send your words**. Each question has its own answer (P-001 trial-view notes 1, note 15).
+- **A pull request to merge**: its checks, every one named (CheckList); then **Merge** or **Not yet**. Merging opens the pull request at its merge button on GitHub. When the change touches the rules, the Merge choice says so: merging also gives the owner's own say that the rules ask for. That say is never shown as a check waiting on the owner (answer 4, "no").
+- **A deploy to approve**: what goes live and that it was built and checked; **Approve** (the run's approval page on GitHub) or **Hold**.
+- **Start the next session**: the session (its name, who, when it began and ended), why a handover is needed (HandoverFlag), the handover's opening lines fading out, and **Start the next session**, which opens a new Claude session with the handover as its first message.
+- **Every answer finishes with one tap on GitHub's page** (decisions/questions/P-005-acting.md); the desk holds no key that writes. Until the record lands the row shows under Sent, being recorded (NeedsTab).
+- A sheet of BottomSheet's shape and motion; the close mark, a tap on the scrim and Escape close it. Records last, as KindSheet. {SRC}
+""")
+
+def ck_row(st, icon, name, word, line, meta, wst=None):
+    return (f'<div class="dk-ckr">{ny_mark(st, icon)}<span class="bd"><span class="top"><span class="n">{name}</span><span class="dk-ckst {wst or st}">{word}</span></span>'
+            f'<span class="l">{line}</span><span class="meta">{meta}</span></span>{ic("caret-right", "bold", "rc")}</div>')
+comp("CheckList", "Desk", 1380, '<div class="dk-stage col" style="max-width:393px"><div class="dk-ksheet">'
+  + '<h3>Automatic checks <span class="c">3 of 4 passed, 1 running</span></h3><div class="dk-ck">'
+  + ck_row("wait", "clock", "The pull request’s form", "Running", "Checking again: its description was edited at 11:24 am.", '12 s so far · <span class="code">pr-body / pr-body</span>')
+  + ck_row("ok", "check", "The rules", "Passed", "All 47 rules passed.", '4 min 31 s · <span class="code">governance / governance</span>')
+  + ck_row("ok", "check", "The build and tests", "Passed", "The desk builds, and every test passes.", '3 min 48 s · <span class="code">desk-build / build</span>')
+  + ck_row("ok", "check", "The signal to the desk", "Passed", "It told the desk this needs you, and that no question is open.", '14 s · <span class="code">governance / owner-signal</span>')
+  + '</div><h3>AI reviews <span class="c">2 of 2 passed</span></h3><div class="dk-ck">'
+  + ck_row("ok", "check", "The reviewer", "PASS", "Ran the tests and the rules; each change was made by the agent that owns that part.", '9:48 am · <span class="code">reviews/212/reviewer.md</span>')
+  + ck_row("ok", "check", "The design reviewer", "PASS", "Read the session names as the desk shows them, at 360 and 414 wide: plain and readable.", '10:14 am · <span class="code">reviews/212/design-reviewer.md</span>')
+  + '</div><h3>Your answer</h3><div class="opts"><span class="opt"><b>Merge</b>Opens the pull request on GitHub at its merge button; one tap there merges it. It changes the rules, so merging also gives your own say that the rules ask for.<span class="key">merge</span></span></div></div>'
+  + '<div class="dk-ksheet"><span class="dk-ckback">' + ic("caret-left", "bold") + 'The pull request</span><div class="kd">' + ic("git-pull-request") + 'The run on GitHub</div><h2>The rules</h2><p class="dk-nysub">governance / governance · run 4182 · 9:07 am ' + EXM + '</p>'
+  + '<div class="row"><span class="dk-ckst ok">Passed</span><span class="dk-nysub" style="margin:0">4 min 31 s</span></div><h3>Its steps</h3><ul class="dk-nyck">'
+  + '<li>' + ny_mark("ok", "check") + '<span>Check out<small>3 s</small></span></li><li>' + ny_mark("ok", "check") + '<span>Tests<small>npm ci, build, test · 3 min 52 s</small></span></li><li>' + ny_mark("ok", "check") + '<span>Governance checks<small>47 rules · 36 s</small></span></li></ul>'
+  + '<div class="dk-nyacts"><span class="dk-wbtn main big">Open on GitHub</span></div></div>'
+  + '<p class="dk-note">Each row opens its run, or its review’s record; Back returns to the pull request.</p></div>',
+ f"""# CheckList
+
+A pull request's checks, each one named, in place of "Its checks passed". Chosen by the owner on 27 November 2026 (decisions/questions/P-005-design-round-9.md, answer 3: {R9A3}; then, asked "A, B or C?" and whether "the last is yours" should show or fold into the Merge answer, answer 4: {R9A4}; option A of docs/design/mockups/options-r9-pr-checks/). Mockup v48.
+
+- **Two groups** on the pull-request sheet (AskSheets): **Automatic checks**, GitHub's runs on the pull request's last change (the pull request's form, the rules, the build and tests, the signal to the desk), and **AI reviews** (the reviewer, the design reviewer: each verdict with one line from its record). Each heading counts in plain words ("3 of 4 passed, 1 running", "2 of 2 passed").
+- **Each row**: a small disc in the soft status colours, the check's plain name, its state word (Passed, Running, Failed; PASS or FAIL for a review), one line on what it found, then its time and its code in grey (`governance / governance`, `reviews/212/reviewer.md`). Failed, then running, sort to the top; the rest keep their order.
+- **Tap through**: a run opens the run on GitHub (what it does, its steps with their times, Open on GitHub); a review opens its record (who and against what, what it ran, its notes). Each reader has **‹ The pull request** to come back.
+- **The owner's own say is not a check.** A change to the rules needs the owner's own verdict (governance/risk-paths.toml, R3). It is not drawn as a check waiting on the owner and carries no Yours mark: the rules row reads Passed ("All 47 rules passed"), the heading counts without it, and the **Merge** choice says that merging also gives the owner's own say that the rules ask for (answer 4, "no").
+- The names are the real ones: .github/workflows/governance.yml (jobs governance and owner-signal), desk-build.yml, pr-body.yml; the 47 rules of `governance/checks/govlib.py list-checks`; the reviews of governance/risk-paths.toml, recorded in reviews/<PR>/<reviewer>.md. The pull request, its number, times and review words are examples. scrub-proof.yml never runs on a pull request, so it is not drawn.
+- Colour: the soft status colours only (green passed, yellow running, red failed); the Passed word darkened a fifth in light so it reads at 4.5:1 on its wash. {SRC}
+""")
+V48 = {
+ "TabBar": "- **v48 (round 9, answer 3):** the Needs-you tab opens the NeedsTab view (one list of what is the owner's), its icon lit and its badge the waiting count, the same number as home's PriorityList (only what really waits; examples never count) (a small ink disc, 18 high, ringed in the bar's colour); Desk returns home with its PriorityList. Plan is off while the view shows.",
+ "PriorityList": "- **v48 (round 9, the fault found with answer 3):** the list is kept on coming back: after Back from a project's page, or Desk, home shows the PriorityList again (since v45 it fell back to the older grouped cards, because the widget's row, renamed by v44, lost its event line and the list waited for it). Its rows are also NeedsTab's Waiting on you.",
+ "KindSheet": "- **v48 (round 9, answers 3 and 4):** four more kinds use its shape in the Needs-you tab: a question, a pull request, a deploy and starting the next session (AskSheets); the pull request's checks are each named (CheckList).",
+}
+for _k, _v in V48.items():
+    if _k in C:
+        _h, _r = C[_k]; C[_k] = (_h, _r.rstrip() + '\n' + _v + '\n')
+
 for name, (html, md) in C.items():
     d = os.path.join(OUT, "components", name); os.makedirs(d, exist_ok=True)
     open(os.path.join(d, "preview.html"), "w").write(html)

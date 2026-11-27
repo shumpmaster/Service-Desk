@@ -795,3 +795,81 @@ button:focus-visible { outline: 2px solid var(--accent-select); outline-offset: 
 .dk-pss .m.ok { box-shadow: inset 0 0 0 1.5px var(--status-ok-arc, #34a853); }
 .dk-pss .m.bad { box-shadow: inset 0 0 0 1.5px var(--status-bad-arc, #d6453d); }
 .dk-pss .go { all: unset; box-sizing: border-box; display: inline-flex; align-items: center; min-height: 44px; padding: 0 18px; border-radius: 22px; cursor: pointer; font: 600 15px/20px var(--font-sans); background: var(--ink-button, #1c1d21); color: var(--ink-button-text, #fff); }
+
+/* NeedsTab, AskSheets, CheckList (v48; round 9, answers 3 and 4): the Needs-you tab's one list, the sheets for each kind of ask, the pull request's checks */
+.dk-ny { position: relative; display: flex; flex-direction: column; gap: 6px; padding-bottom: 92px; }
+.dk-ny .lt { display: flex; flex-direction: column; padding: 6px 4px 0; }
+.dk-ny .asof { display: flex; align-items: center; gap: 6px; font: 600 12px/15px var(--font-sans); letter-spacing: .08em; text-transform: uppercase; color: var(--text-2); }
+.dk-ny .asof i { width: 7px; height: 7px; border-radius: 50%; background: var(--status-moving-dot); }
+.dk-ny h1 { margin: 4px 0 0; font: 800 34px/1.12 var(--font-sans); letter-spacing: -.01em; color: var(--text-1); }
+.dk-ny .code, .dk-ksheet .code { font: 400 12px/16px var(--font-sans); color: var(--text-2); margin-left: 2px; }
+.dk-nyex { font: italic 400 12px/16px var(--font-sans); color: var(--text-2); }
+.dk-nychip { align-self: flex-start; font: 600 12px/20px var(--font-sans); padding: 0 8px; border-radius: 10px; background: rgba(120,120,128,.14); color: var(--text-1-soft); }
+.dk-nycard { padding: 2px 14px; border-radius: 20px; background: var(--surface); box-shadow: 0 0 0 .5px var(--separator), 0 8px 24px rgba(30,40,80,.06); }
+.dk-nyrow { display: flex; gap: 12px; align-items: flex-start; padding: 12px 0; }
+.dk-nycard > * + * { border-top: 1px solid var(--separator); }
+.dk-nyrow .bd { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 3px; }
+.dk-nyrow .top { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+.dk-nyrow .tm { margin-left: auto; font: 400 13px/18px var(--font-sans); color: var(--text-2); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.dk-nyrow .t { font: 400 15px/20px var(--font-sans); color: var(--text-1); }
+.dk-nyrow .t b { font-weight: 600; }
+.dk-nyrow .meta { font: 400 13px/18px var(--font-sans); color: var(--text-2); }
+.dk-nyrow .acts { display: flex; gap: 8px; margin-top: 6px; }
+.dk-nym { flex: none; width: 26px; height: 26px; border-radius: 13px; display: grid; place-items: center; }
+.dk-nym .i { width: 14px; height: 14px; }
+.dk-nym.ok { background: var(--status-ok-wash); color: var(--status-ok); box-shadow: inset 0 0 0 1.5px var(--status-ok-arc); }
+.dk-nym.wait { background: var(--status-wait-wash); color: var(--status-wait-tag); box-shadow: inset 0 0 0 1.5px var(--status-wait-arc); }
+.dk-nym.bad { background: var(--status-bad-wash); color: var(--status-bad); box-shadow: inset 0 0 0 1.5px var(--status-bad-arc); }
+.dk-nym.team { background: rgba(120,120,128,.12); color: var(--text-2); }
+.dk-nynote { margin: 0 6px; font: 400 13px/18px var(--font-sans); color: var(--text-2); }
+.dk-nyquiet { display: flex; align-items: center; gap: 10px; min-height: 44px; margin-top: 8px; padding: 0 6px; font: 400 15px/20px var(--font-sans); color: var(--text-2); }
+.dk-nyquiet b { color: var(--text-1); font-weight: 600; }
+.dk-nyquiet i { width: 8px; height: 8px; border-radius: 50%; background: var(--text-3); }
+.dk-nyquiet .rc, .dk-nyfold .rc, .dk-ckr .rc { width: 14px; height: 14px; color: var(--text-3); margin-left: auto; flex: none; }
+.dk-nyfold { display: flex; align-items: center; gap: 6px; min-height: 44px; font: 600 15px/20px var(--font-sans); color: var(--text-1); }
+.dk-nyfold small { font: 400 13px/18px var(--font-sans); color: var(--text-2); }
+.dk-nytabs { position: absolute; left: 0; bottom: 6px; }
+.dk-tab { position: relative; }
+.dk-nybadge { position: absolute; top: 3px; right: 9px; min-width: 18px; height: 18px; padding: 0 5px; box-sizing: border-box; border-radius: 9px; display: grid; place-items: center;
+  font: 700 11px/18px var(--font-sans); font-variant-numeric: tabular-nums; color: var(--ink-button-text); background: var(--ink-dot); box-shadow: 0 0 0 2px var(--surface); }
+[data-theme="dark"] .dk-nybadge { color: #1c1c1e; background: #e5e5ea; box-shadow: 0 0 0 2px #2c2c2e; }
+.dk-tab[aria-current="true"] .dk-nybadge { right: 17px; }
+.dk-ksheet .dk-nyw { margin: 4px 0 0; font-size: 13px; line-height: 18px; color: var(--text-2); }
+.dk-nysub { margin: 0 0 8px; font: 400 13px/17px var(--font-sans); color: var(--text-2); }
+.dk-ksheet .opt .key { display: block; margin-top: 3px; font: 400 12px/16px ui-monospace, SFMono-Regular, Menlo, monospace; color: var(--text-2); }
+.dk-ksheet .opt { color: var(--text-1-soft); }
+.dk-nyown { padding: 10px 12px; border-radius: 12px; background: var(--fill); font: 400 15px/21px var(--font-sans); color: var(--text-2); min-height: 42px; box-sizing: border-box; }
+.dk-nyacts { display: flex; gap: 8px; margin-top: 10px; }
+.dk-wbtn.big { min-height: 44px; padding: 0 18px; border-radius: 22px; font-size: 15px; }
+.dk-nyck { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+.dk-nyck li { display: flex; gap: 10px; align-items: flex-start; }
+.dk-nyck li > span:last-child { display: flex; flex-direction: column; }
+.dk-nyck small { font-size: 13px; line-height: 17px; color: var(--text-2); }
+.dk-nyck .m { flex: none; width: 26px; height: 26px; border-radius: 50%; box-shadow: inset 0 0 0 1.5px var(--text-3); box-sizing: border-box; }
+.dk-nyho { font-size: 15px; line-height: 21px; max-height: 84px; overflow: hidden; -webkit-mask-image: linear-gradient(#000 55%, transparent); mask-image: linear-gradient(#000 55%, transparent); }
+.dk-ksheet h3 .c { font-weight: 400; color: var(--text-2); margin-left: 4px; }
+.dk-ck { border-radius: 12px; background: var(--fill); overflow: hidden; }
+.dk-ckr { display: flex; gap: 10px; align-items: flex-start; padding: 10px 12px; }
+.dk-ckr + .dk-ckr { border-top: 1px solid var(--separator); }
+.dk-ckr .dk-nym { width: 20px; height: 20px; } .dk-ckr .dk-nym .i { width: 11px; height: 11px; }
+.dk-ckr .bd { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.dk-ckr .top { display: flex; align-items: center; gap: 8px; }
+.dk-ckr .n { font: 600 15px/20px var(--font-sans); color: var(--text-1); }
+.dk-ckr .top .dk-ckst { margin-left: auto; }
+.dk-ckr .l { font: 400 14px/19px var(--font-sans); color: var(--text-1-soft); }
+.dk-ckr .meta { font: 400 13px/18px var(--font-sans); color: var(--text-2); }
+.dk-ckr .rc { margin-top: 3px; }
+.dk-ckst { font: 600 12px/20px var(--font-sans); padding: 0 8px; border-radius: 10px; white-space: nowrap; }
+.dk-ckst.ok { color: color-mix(in srgb, var(--status-ok) 80%, #000); background: var(--status-ok-wash); }
+[data-theme="dark"] .dk-ckst.ok { color: var(--status-ok); }
+.dk-ckst.wait { color: var(--status-wait-tag); background: var(--status-wait-tag-bg); }
+.dk-ckst.bad { color: var(--status-bad-tag); background: var(--status-bad-tag-bg); }
+.dk-ckback { display: inline-flex; align-items: center; gap: 2px; min-height: 44px; margin: -6px 0 2px -6px; font: 600 15px/20px var(--font-sans); color: var(--text-1); }
+.dk-ckback .i { width: 16px; height: 16px; }
+.dk-ny { --ink: var(--text-1); --ink-2: var(--text-2); }
+[data-theme="dark"] .dk-ny .dk-prl { background: rgba(44,44,46,.44); box-shadow: inset 0 1px 0 rgba(255,255,255,.14), 0 0 0 .5px rgba(84,84,88,.6); }
+[data-theme="dark"] .dk-ny .dk-prl-row + .dk-prl-row { border-top-color: rgba(84,84,88,.6); }
+[data-theme="dark"] .dk-ny .dk-prl-row .n { background: #f2f2f7; color: #1c1d21; }
+[data-theme="dark"] .dk-ny .dk-prl-row .acts .dk-wbtn:not(.main) { color: var(--text-1); }
+.dk-nykinds .dk-prl-row .n { background: rgba(120,120,128,.16); }
+[data-theme="dark"] .dk-ny .dk-nykinds .dk-prl-row .n { background: rgba(120,120,128,.3); }

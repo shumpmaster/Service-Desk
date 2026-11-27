@@ -1,0 +1,36 @@
+/* ================= v48: the pull-request sheet's checks, option A of options-r9-pr-checks/ (checks.js; round 9, answers 3 and 4).
+   Dressed by v47's sheet (.kn-sheet ul.ck, .ny-st, .pw-code). Colour: the soft status colours only (ok, wait for running, bad), and the ground. ================= */
+.ny-sheet h3 .pc-c { font-weight: 400; color: var(--text-2); margin-left: 4px; }
+.ny-sheet ul.pc-list > li.pc-li { display: block; padding: 0; }
+.pc-r { all: unset; box-sizing: border-box; display: flex; gap: 10px; align-items: flex-start; width: 100%; padding: 10px 12px; cursor: pointer; -webkit-tap-highlight-color: transparent; }
+.pc-r:active { background: var(--press-fill); }
+.pc-r:focus-visible, .pc-back:focus-visible { outline: 2px solid var(--blue-fill, #0a6cff); outline-offset: -2px; border-radius: var(--r-inner, 12px); }
+.pc-bd { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.pc-top { display: flex; align-items: center; gap: 8px; }
+.pc-n { font: 600 15px/20px var(--font-ui); color: var(--ink); text-wrap: pretty; }
+.pc-top .ny-st { margin-left: auto; }
+.pc-l { font: 400 14px/19px var(--font-ui); color: var(--ink-2); text-wrap: pretty; }
+.pc-meta { font: 400 13px/18px var(--font-ui); color: var(--text-2); font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+.pc-meta .pw-code, .pc-bd > .pw-code { white-space: normal; overflow-wrap: anywhere; }
+.pc-r .ny-chev { flex: none; margin-top: 3px; }
+
+/* the marks: a soft wash and ring in the status colours, as v47's checklists */
+.pc-m { flex: none; width: 20px; height: 20px; border-radius: 50%; display: grid; place-items: center; margin-top: 0; }
+.pc-m svg { width: 12px; height: 12px; }
+.pc-m.ok { background: var(--status-ok-wash); color: var(--status-ok); box-shadow: inset 0 0 0 1.5px var(--status-ok-arc); }
+.pc-m.run { background: var(--status-wait-wash); color: var(--status-wait-tag); box-shadow: inset 0 0 0 1.5px var(--status-wait-arc); }
+.pc-m.bad { background: var(--status-bad-wash); color: var(--status-bad); box-shadow: inset 0 0 0 1.5px var(--status-bad-arc); }
+.ny-sheet ul.ck li > .pc-m { margin-top: 0; }
+
+/* the readers: Back to the pull request */
+.pc-back { all: unset; box-sizing: border-box; display: inline-flex; align-items: center; gap: 2px; min-height: 44px; margin: -6px 0 2px -6px; padding: 0 8px 0 2px; cursor: pointer;
+  font: 600 15px/20px var(--font-ui); color: var(--ink); }
+.pc-back svg { width: 16px; height: 16px; }
+.ny-sheet .row .pc-meta { margin-left: 2px; }
+.ny-sheet .pc-q { font-size: 15px; line-height: 21px; }
+/* a long code line under a reader's title wraps rather than scrolling sideways */
+.ny-sheet p.pw-sub { white-space: normal; overflow-wrap: anywhere; }
+/* the Passed word on its wash: status-ok darkened a fifth in light, so it reads at 4.5:1 or better (status-ok on its wash is 4.0:1) */
+:root:not([data-theme="dark"]) .ny-sheet .ny-st.ok { color: color-mix(in srgb, var(--status-ok) 80%, #000); }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .ny-sheet .ny-st.ok { color: var(--status-ok); } }
+.ny-sheet ul.ck small.pw-code, .ny-sheet ul.ck li .pw-code { white-space: normal; overflow-wrap: anywhere; }

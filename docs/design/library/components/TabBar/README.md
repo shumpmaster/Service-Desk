@@ -8,3 +8,4 @@ The main sections as icons only, in a floating 62-high glass capsule, with the r
 - Tap a tab here to try it. Icons: Phosphor (MIT), regular for rows, bold for controls and menus, fill for anything selected; Craft's own are Apple's SF Symbols, which a web page cannot use.
 - **v37 (look item 4A):** glass (surface-floating, a 24-point blur, glass-edge along the top and a faint shine); the selected tab keeps the blue.
 - **v42 (round 8, answer 25):** clearer glass, as TopPills: 38% (44%), blur 30, saturate 2.4, the glass rim.
+- **v48 (round 9, answer 3):** the Needs-you tab opens the NeedsTab view (one list of what is the owner's), its icon lit and its badge the waiting count, the same number as home's PriorityList (only what really waits; examples never count) (a small ink disc, 18 high, ringed in the bar's colour); Desk returns home with its PriorityList. Plan is off while the view shows.

@@ -1114,10 +1114,8 @@ def wl_item(ico, t, holds, w, since, ans=True):
     return (f'<li><span class="ic">{ic(ico)}</span><span class="bd"><span class="t">{t}</span><span class="s">Holds up {holds} · <span class="w">{w}</span> · since {since}</span>'
             f'<span class="acts"><span class="dk-wbtn main">Answer</span><span class="dk-wbtn">Go to it</span></span></span></li>')
 comp("WaitSheet", "Desk", 640, '<div class="dk-stage col" style="max-width:393px"><div class="dk-ksheet"><div class="grab"></div><span class="x" aria-label="Close">' + ic("x", "bold") + '</span>'
-  + '<div class="kd">Waiting on you</div><h2>4 things wait on you in The timeline</h2><p class="ex">The longest first among the same kind; each says what it holds up and how long it has waited.</p><ul class="dk-wl">'
+  + '<div class="kd">Waiting on you</div><h2>1 thing waits on you in The timeline</h2><p class="ex">The longest first among the same kind; each says what it holds up and how long it has waited.</p><ul class="dk-wl">'
   + wl_item("hand-palm", "Stop card 5: S-011 failed three plan reviews. What happens next?", "M6, M7, M8", "1 h 43 min", "9:42 am")
-  + wl_item("question", "Which phone widths must the timeline fit?", "M7, M8", "2 h 39 min", "8:46 am")
-  + wl_item("question", "Is the spec’s reading of “each thing reaches my phone” enough for M8?", "M8", "2 h 39 min", "8:46 am")
   + '</ul><p class="ex">A question’s Answer is an example: no record says the desk can record it.</p></div></div>',
  """# WaitSheet
 
@@ -1298,6 +1296,35 @@ V42 = {
  "DeskHome": "- **v42 (round 8, answer 25):** no empty strip at the top on a phone or in the Claude app (safe-top); the ground's fields a little stronger; the project cards clearer glass (40% white, 44% grey in dark, blur 34, saturate 2.6, the glass rim).",
 }
 for _k, _v in V42.items():
+    _h, _r = C[_k]; C[_k] = (_h, _r.rstrip() + '\n' + _v + '\n')
+
+# round 8, answers 24 and 26 (decisions/questions/P-005-design-round-8.md): home as one priority list of the owner's actions (v43)
+def prl_row(n, proj, ev, q, why, wait):
+    return (f'<div class="dk-prl-row"><span class="n">{n}</span><div class="b"><span class="chip">{proj}</span><span class="ev">{ev}</span>'
+            f'<span class="q">{q}</span><span class="why"><b>{why}</b> · waiting {wait}</span>'
+            '<span class="acts"><span class="dk-wbtn main">Answer</span><span class="dk-wbtn">Go to it</span></span></div></div>')
+comp("PriorityList", "Desk", 640, '<div class="dk-stage col" style="max-width:393px"><p class="dk-prl-sum"><b>2 things need you</b>, in 2 projects. Start at the top.</p>'
+  + '<div class="dk-prl-h">Your actions, most important first<small>2</small></div><div class="dk-prl">'
+  + prl_row(1, "Home-screen widget", "<b>Review 1.8.1.2</b> · Readiness check failed · The brief", "The widget failed its readiness check: resubmit or stop?", "Holds up the Discovery phase", "9 days")
+  + prl_row(2, "The timeline", "<b>Stop 2.2.2.10</b> · Stop card 5 · S-011", "S-011 failed three plan reviews: what happens next?", "Holds up 3 milestones (M6, M7, M8)", "1 h 43 min")
+  + '</div><div class="dk-prl-h">Projects</div><p class="dk-note">The projects follow, each with its strip and ProjectLine, without their waiting rows.</p></div>',
+ """# PriorityList
+
+Home as one list of what the owner is needed on, most important first, across every project. Chosen by the owner on 27 November 2026 (decisions/questions/P-005-design-round-8.md, answer 24: "I need the structure to be aimed at events that I'm needed on. Like a priority list for my actions"; answer 26: "This option A is the one"; option A on docs/design/mockups/options-r8-priority/).
+
+- **One numbered list** under the sentence ("2 things need you, in 2 projects. Start at the top."), headed "Your actions, most important first" with the count.
+- **Each row**: its number; the project as a small chip; the event it is (kind, number, title, where it sits); what is asked; why it ranks there in a few words ("Holds up the Discovery phase", "Holds up 3 milestones (M6, M7, M8)") and how long it has waited; **Answer** (the card's choices, as a home tap) and **Go to it** (opens the project with that event at the pointer).
+- **The order**, from what the records carry: what it holds up (a whole phase, then the most milestones); then a gate or stop before a question (a stop halts the work); then the longest wait. No record ranks the owner's actions or gives due dates.
+- **Each question its own row**, named by its own subject, never grouped under the pull request that filed it (answer 26).
+- **The projects follow** under "Projects", each with its strip and ProjectLine, without their waiting rows. This sets aside R4 answer 11's grouping by project for what waits; R4 answer 12's longest wait first is the third key.
+- On the same glass as WaitGroup. Answer stays an example until the desk can record it (docs/design/requests/2026-11-26-timeline-records.md).
+""")
+V43 = {
+ "DeskHome": "- **v43 (round 8, answers 24 and 26):** what waits on the owner is one PriorityList across projects, above the projects; the project groups keep their strip and ProjectLine but no waiting rows. The three questions of PR #446, answered at 8:47 am on 14 November, wait nowhere.",
+ "WaitGroup": "- **v43 (round 8, answer 24):** the group no longer lists its waiting rows on home; they are PriorityList's rows. The group keeps its head, strip and ProjectLine.",
+ "WaitSheet": "- **v43 (round 8, answer 26):** counts from what really waits: in The timeline, 1 thing (Stop card 5). The three questions of PR #446 were three independent questions, each with its own ruling (decisions/questions/P-005-s011-widths.md, P-005-s011-m8-reading.md, P-005-definer-pack.md), answered at 8:47 am; a question that waits is its own row, named by its subject.",
+}
+for _k, _v in V43.items():
     _h, _r = C[_k]; C[_k] = (_h, _r.rstrip() + '\n' + _v + '\n')
 
 for name, (html, md) in C.items():

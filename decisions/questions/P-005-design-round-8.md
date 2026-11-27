@@ -150,3 +150,8 @@ A comment on v40 (thread c2ec6965), on home's waiting row "Longest wait · The w
 21. "Can we make this Liquid Glass style too?"
 
 Read by the Chief of Staff as: home's project groups (the white cards holding each project's line and its waiting rows) become glass like the map card, catching the ground's colours, distinct from the full-width title band; text kept at 4.5:1, solid under reduced transparency. To be built into v41 with answer 20; the reading is confirmed in the thread.
+
+A comment on v40 (thread 3636f587), on home's waiting row "S-011 failed three plan reviews: what happens next?", sent to Claude:
+22. "Can you add the title of the “event” or step that is waiting on me on the main page?"
+
+Read by the Chief of Staff as: each waiting row on home names the event or step on the timeline that waits on the owner (its kind, number and title, e.g. "Stop · 2.2.2.10 Stop card 5", and where it sits, e.g. "in S-011, M6"), above or beside the question, so home says which thing it is, not only what is asked. To be built into v41.

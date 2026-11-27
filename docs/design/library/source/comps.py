@@ -1441,6 +1441,30 @@ for _k, _v in V45.items():
     if _k in C:
         _h, _r = C[_k]; C[_k] = (_h, _r.rstrip() + '\n' + _v + '\n')
 
+# round 8, answers 31 and 32 (decisions/questions/P-005-design-round-8.md): one line at the head of the map card, opening "About this project" (v46)
+comp("ProjectSummary", "Desk", 840, '<div class="dk-stage col" style="max-width:393px">'
+  + '<div class="dk-mapcard"><div class="mc"><button type="button" class="dk-psl"><i class="d bad"></i><span class="t">Design · the records plan stopped · your call</span><span class="c" aria-hidden="true">›</span></button><div class="in in2"><span>the branch map</span></div><i class="hd"></i></div></div>'
+  + '<div class="dk-pss"><div class="k">About this project</div><h4>The timeline</h4><p class="pu">One timeline of everything the AI team does, on your phone. <span class="ex">Example</span></p>'
+  + '<h5>Where it stands</h5><p>It is in Design, the second of four phases: 1 of its 7 milestones is reached. That plan failed its third check, so the work has stopped and waits on your decision.</p>'
+  + '<h5>Its phases</h5><ul><li><i class="m ok"></i>Discovery<small>Done 13 Nov · 3 of 8 milestones reached</small></li><li><i class="m bad"></i>Design<small>Now · 1 of 7 reached · stopped, your decision</small></li><li><i class="m"></i>Build<small>Planned · 9 milestones</small></li><li><i class="m"></i>Launch<small>Planned · it goes live</small></li></ul>'
+  + '<h5>What waits on you</h5><button type="button" class="go">Choose what happens next</button></div>'
+  + '<p class="dk-note">The line sits at the head of MapCard; a tap opens the sheet.</p></div>',
+ """# ProjectSummary
+
+One line at the head of the map card saying where the project stands, opening "About this project": what the project is for and a snapshot of the bigger picture (v46; the owner's round 8, answer 31: "Is there any room to put a quick summary of what the project is about, and a kind of snapshot text summary of the bigger picture we are working on"; answer 32: "Option C please").
+
+- **The line**: the first row inside MapCard's inner box, 36 high with a hairline under it: a dot in the project's state colour (stopped red, waiting yellow, moving green), the line in ink ("Design · the records plan stopped · your call"; "Discovery · the brief failed · your call"), a chevron. Below 380 points wide it takes its short form ("Design · plan stopped · your call"), never cut. The gate lines, their captions and MapFilter's button start below it. It folds away with the map (MapFold).
+- **The sheet** ("About this project"): the project's name; its purpose in one sentence; "Where it stands", two to four sentences (the phase, what is being worked on and toward what, what waits on you, what comes next); "Its phases", the four at a glance; "What waits on you" with "Choose what happens next", which opens the same choices sheet as the stop or card itself (KindSheet).
+- **The words are examples.** No record holds a project's purpose or a snapshot yet (docs/design/requests/2026-11-26-timeline-records.md, item 17): the purpose written once when the project starts; the line by the pipeline at each change of state; the snapshot by the Chief of Staff at each session's end and by the pipeline at each gate or stop.
+- Contrast: the line 14.9:1 in light and 13.5:1 in dark at its most tinted point; the sheet's smallest words 4.8:1 or better.
+""")
+V46 = {
+ "MapCard": "- **v46 (round 8, answers 31 and 32):** its first row is ProjectSummary's line (where the project stands, opening \"About this project\"); the gate lines, their captions and MapFilter's button start below it; the card is 40 points taller while open, and folds as before.",
+}
+for _k, _v in V46.items():
+    if _k in C:
+        _h, _r = C[_k]; C[_k] = (_h, _r.rstrip() + '\n' + _v + '\n')
+
 for name, (html, md) in C.items():
     d = os.path.join(OUT, "components", name); os.makedirs(d, exist_ok=True)
     open(os.path.join(d, "preview.html"), "w").write(html)

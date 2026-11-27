@@ -9,3 +9,4 @@ The branch map as a raised glass card, with room around it and the whole map ins
 - **Folded** (MapFold), the card becomes a slim glass card with the same edge and shadow, the handle inside its foot.
 - **Reduced transparency or more contrast**: a solid card with no blur. **More contrast**: a darker edge.
 - **v42 (round 8, answer 25: "can we please increase the glass look as well?"):** 34% white (42% grey in dark), blur 34 and saturate 2.6, a brighter sheen and the glass rim (a bright top edge, a fainter left edge, a soft glow inside the top, the hairline); its words one shade further from the glass (map-card-word).
+- **v46 (round 8, answers 31 and 32):** its first row is ProjectSummary's line (where the project stands, opening "About this project"); the gate lines, their captions and MapFilter's button start below it; the card is 40 points taller while open, and folds as before.

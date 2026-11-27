@@ -1,0 +1,8 @@
+# ProjectSummary
+
+One line at the head of the map card saying where the project stands, opening "About this project": what the project is for and a snapshot of the bigger picture (v46; the owner's round 8, answer 31: "Is there any room to put a quick summary of what the project is about, and a kind of snapshot text summary of the bigger picture we are working on"; answer 32: "Option C please").
+
+- **The line**: the first row inside MapCard's inner box, 36 high with a hairline under it: a dot in the project's state colour (stopped red, waiting yellow, moving green), the line in ink ("Design · the records plan stopped · your call"; "Discovery · the brief failed · your call"), a chevron. Below 380 points wide it takes its short form ("Design · plan stopped · your call"), never cut. The gate lines, their captions and MapFilter's button start below it. It folds away with the map (MapFold).
+- **The sheet** ("About this project"): the project's name; its purpose in one sentence; "Where it stands", two to four sentences (the phase, what is being worked on and toward what, what waits on you, what comes next); "Its phases", the four at a glance; "What waits on you" with "Choose what happens next", which opens the same choices sheet as the stop or card itself (KindSheet).
+- **The words are examples.** No record holds a project's purpose or a snapshot yet (docs/design/requests/2026-11-26-timeline-records.md, item 17): the purpose written once when the project starts; the line by the pipeline at each change of state; the snapshot by the Chief of Staff at each session's end and by the pipeline at each gate or stop.
+- Contrast: the line 14.9:1 in light and 13.5:1 in dark at its most tinted point; the sheet's smallest words 4.8:1 or better.

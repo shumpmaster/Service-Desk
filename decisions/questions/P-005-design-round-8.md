@@ -237,3 +237,8 @@ Carried out, to be built into the library and mockup v46: one line at the head o
 Carried out: mockup v46 (https://claude.ai/artifact/NTBCigkbdJkUPujwtoBu6w) and the library's content files (version 61): one line at the head of the map card, "Design · the records plan stopped · your call" (the widget: "Discovery · the brief failed · your call"), shortened below 380 points, opening "About this project" (purpose, where it stands, its phases, what waits, with Choose what happens next); 40 points while the card is open. The library index's change note for v46 was not published: the session's permission check refused that publish.
 
 The session ends with the handoff, docs/handoff/2026-11-27-chief-of-staff-p005-19.md.
+
+Asked in chat, after the handoff was written:
+33. "Okay the last thing I want is a fable 5.2 review designed to identify any other screens or pages that might be beneficial to add then put it into the handoff"
+
+Read by the Chief of Staff as: the design reviewer, on the model the owner named, reviews v46 for screens or pages the desk lacks that would help the owner; its findings are recorded verbatim and added to the handoff as an open item for the next session, without building anything.

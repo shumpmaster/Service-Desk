@@ -28,3 +28,10 @@ A comment on the Needs-you options page (https://claude.ai/artifact/Em83dGzLKTf7
 Read by the Chief of Staff as: the Needs-you tab is option A (one list: waiting, being recorded, kicked back, with the AI team, answered), as recommended. On the sheet for a pull request to merge, the single line "Its checks passed" becomes the actual checks: each one named, with its result. How they are shown is drawn as options first, starting from the sheet as it is.
 
 Shown live: https://claude.ai/artifact/8HLnfTGGtUbkAA1rZAnRP2 (docs/design/mockups/options-r9-pr-checks/): the pull-request sheet as it is ("Its checks passed"), then A, every check named in two groups, the automatic checks (the pull request's form, the rules, the build and tests, the signal to the desk; each with its result, time and code, tapping through to its run) and the AI reviews (each verdict with one line from its record), running or yours first, recommended; B, two summary lines unfolding into A's rows, the rules unfolding again into all 47 in plain words; C, the checks as a story in time order from the push to ready for you. Found in the records: the leak scan does not run on pull requests; the rules number 47; a change to the rules needs the owner's own verdict, so its rules check shows "46 of 47 passed, the last is yours". To be asked, with whether that last line should show.
+
+Asked in chat: "1. A, B or C? 2. The last rule. Should "the last is yours" show, or fold into the Merge answer? ..."
+4. "A and no"
+
+Read by the Chief of Staff as: the pull-request sheet shows every check named, in two groups, option A. The rule that waits on the owner's own verdict does not show as a check waiting on the owner: the rules show as passed, and the Merge answer says that merging gives the owner's own say the rules ask for.
+
+To be built, library first, then mockup v48 as a layer over v47: the Needs-you tab, option A (answer 3); the four sheets for the other kinds of ask, with the pull request's checks as option A (answers 3 and 4); and the fault found on the way (home's priority list lost on coming back from a project).

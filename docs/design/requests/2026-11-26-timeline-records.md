@@ -71,6 +71,11 @@ The timeline you have ruled on draws some things the records do not hold yet. In
     - Used for: the branch toggle in the map's filter (v44, round 8, answer 28): main and each branch in the phase, named plainly, each with a switch.
     - Today: commits and merges carry their branch (`br`), but no record says which branch a sprint or a pull request lives on. The mockup takes the map's lanes as the branches and marks the names as examples.
 
+17. **A project's purpose and a snapshot of where it stands.**
+    - Used for: the project summary (round 8, answer 31; options in docs/design/mockups/options-r8-summary/): one sentence on what the project is for, a one-line "where it stands", and a short snapshot (where it stands, what is being worked on and toward what, what waits on the owner, what comes next).
+    - Today: no record holds any of them; the mockup writes them from the page and status/P-005.toml and marks them as examples.
+    - Proposed: the purpose written once when the project starts, from its brief; the one line written by the pipeline with each change of state (stage, gate, stop, the spec in work); the snapshot written by the Chief of Staff at the end of each session and by the pipeline at each gate or stop.
+
 ## Open for the building session to settle
 - Which of these the pipeline should keep, and where each lives so the desk can read it.
 - Which need a ruling from the owner first: an answer recorded from the desk (6) changes how rulings reach the repository; when the owner last looked (8) may belong only on the phone.

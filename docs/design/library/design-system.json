@@ -18,8 +18,8 @@
  },
  "lastChange": {
   "by": "Claude",
-  "at": "2026-11-27T03:58:14Z",
+  "at": "2026-11-27T04:09:15Z",
   "via": "Claude Code",
-  "note": "Round 8, v42: the top inset counted once and capped (safe-top), and stronger glass on the cards, the title band, the map card, the floating controls and the sheets, with the ground's fields a little stronger in light. decisions/questions/P-005-design-round-8.md, answer 25."
+  "note": "Round 8, v43: home as one priority list of the owner's actions (PriorityList), each with its project, event, reason and wait; the projects below without their waiting rows. decisions/questions/P-005-design-round-8.md, answers 24 and 26."
  }
 }

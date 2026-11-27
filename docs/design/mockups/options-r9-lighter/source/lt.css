@@ -1,0 +1,9 @@
+/* ================= round 9, answer 1: "maybe just lighten the background up a tad?" Options over v46, light only; dark is unchanged.
+   v46 in light: the ground #f2f3f7 under three colour fields (blue .22, lavender .21, mint .15, from v42).
+   A: the ground one step lighter (#f7f8fb), the fields as they are. B: the ground as it is, the fields about a third softer
+   (.15, .14, .10). C (recommended): a little of each (#f6f7fa; .18, .17, .12). ================= */
+html:root.lt-A.lt-A:not([data-theme="dark"]) { --ground: #f7f8fb; }
+html:root.lt-B.lt-B:not([data-theme="dark"]) { --gr-a: rgba(10, 108, 255, .15); --gr-b: rgba(140, 110, 255, .14); --gr-c: rgba(30, 180, 150, .10); }
+html:root.lt-C.lt-C:not([data-theme="dark"]) { --ground: #f6f7fa; --gr-a: rgba(10, 108, 255, .18); --gr-b: rgba(140, 110, 255, .17); --gr-c: rgba(30, 180, 150, .12); }
+/* D: lighter still, for range: the ground near white (#fafbfd), the fields about half (.12, .11, .08). */
+html:root.lt-D.lt-D:not([data-theme="dark"]) { --ground: #fafbfd; --gr-a: rgba(10, 108, 255, .12); --gr-b: rgba(140, 110, 255, .11); --gr-c: rgba(30, 180, 150, .08); }

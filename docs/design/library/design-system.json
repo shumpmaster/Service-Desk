@@ -18,8 +18,8 @@
  },
  "lastChange": {
   "by": "Claude",
-  "at": "2026-11-27T13:45:50Z",
+  "at": "2026-11-27T16:24:32Z",
   "via": "Claude Code",
-  "note": "Round 8, v44: plain words (PlainTitle, Glossary, plain answer labels, the cast as AI sessions), BranchToggle in the map filter, SessionName and HandoverFlag. decisions/questions/P-005-design-round-8.md, answers 27 and 28."
+  "note": "Round 8, v45: PhaseSeries on home's projects in place of the ring, the wait drawn on each project's strip, and v44's leftovers (plain main labels, one hidden count, the pill at 360, gate captions kept clear). decisions/questions/P-005-design-round-8.md, answer 30."
  }
 }

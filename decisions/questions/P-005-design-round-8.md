@@ -140,3 +140,8 @@ Go with the recommendations on the others"
 Carried out, to be built into the library and mockup v40: the map filter A (a glass filter button on the card, six cuts with counts, the list quieted too); home search A (a magnifier in the capsule opening a field over the bar, with Cancel); more on home B (one line per project: who is at work and how much is new since the owner last looked, examples until the records request is met). Home's title combines A, B and C so it no longer looks like the cards: not a rounded card but a glass band running the full width of the screen with no card shadow (A's glass), the ground's blue and lavender gathered behind it (B's glow), and the live line as a small-caps label above a heavier title with a short accent mark (C); all of it condensing into the slim bar as you scroll. Shown in v40 for the owner's word.
 
 Shown in chat: the library (version 50) and mockup v40 (https://claude.ai/artifact/5j4dpvLNkHNta9LoKfLy5m): the map filter, search in the capsule, a line per project, and the title band combining A, B and C, for the owner's word.
+
+A comment on v40 (https://claude.ai/artifact/5j4dpvLNkHNta9LoKfLy5m, thread f4c255df), on home's title band at its top, sent to Claude:
+20. "Why so much empty space here?"
+
+Found: at the top of home, the slim bar's place (22 to 78 points, hidden until you scroll) sits empty to the left of the capsule, so the live label and the title start below it, about 50 points lower than they need to. Read by the Chief of Staff as: close the gap, to be built into v41: the live label on the capsule's row, the title right under it, the band shorter by the empty space, the condensing into the slim bar kept.

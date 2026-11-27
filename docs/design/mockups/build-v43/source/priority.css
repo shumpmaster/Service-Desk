@@ -1,0 +1,35 @@
+/* ================= round 8, answer 24: home as a priority list of the owner's actions (options over v41) ================= */
+html.pr-on #view .sg-grp[data-sgg] .need { display: none; }
+html.pr-on #view .sg-grp[data-sgg] { margin-top: 8px; }
+.pr-h { margin: 18px 6px 4px; font: 600 13px/18px var(--font-ui); letter-spacing: .04em; text-transform: uppercase; color: var(--ink-2); display: flex; justify-content: space-between; align-items: baseline; }
+.pr-h small { font: 400 13px/18px var(--font-ui); letter-spacing: 0; text-transform: none; color: var(--ink-2); }
+html #view section.sg-grp.pr-card { padding: 4px 14px; }
+.pr-row { position: relative; display: flex; gap: 12px; padding: 12px 0; }
+.pr-row + .pr-row { border-top: 1px solid var(--sep, rgba(60,60,67,.18)); }
+.pr-n { flex: none; width: 26px; height: 26px; border-radius: 13px; display: grid; place-items: center; font: 700 14px/1 var(--font-ui); font-variant-numeric: tabular-nums;
+  background: var(--lk-inkbtn, #1c1d21); color: var(--lk-inkbtn-t, #fff); margin-top: 1px; }
+.pr-b { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 3px; text-align: left; background: none; border: 0; padding: 0; color: inherit; cursor: pointer; font: inherit; }
+.pr-top { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+.pr-chip { font: 600 12px/20px var(--font-ui); padding: 0 8px; border-radius: 10px; background: rgba(120,120,128,.14); color: var(--ink-2); white-space: nowrap; }
+.pr-b .ev41 { margin: 0; font-size: 13px; line-height: 18px; }
+.pr-q { font: 500 16px/21px var(--font-ui); color: var(--ink); }
+.pr-why { font: 400 13px/18px var(--font-ui); color: var(--ink-2); }
+.pr-why b { font-weight: 600; color: var(--ink); }
+.pr-why span { white-space: nowrap; }
+.pr-acts { display: flex; gap: 8px; margin-top: 6px; }
+.pr-acts button { font: 600 14px/32px var(--font-ui); padding: 0 14px; border-radius: 16px; border: 0; cursor: pointer; min-height: 32px; }
+.pr-ans { background: var(--lk-inkbtn, #1c1d21); color: var(--lk-inkbtn-t, #fff); }
+.pr-goto { background: rgba(120,120,128,.16); color: var(--ink); }
+.pr-acts button::after { content: ''; position: absolute; inset: -6px 0; }
+.pr-acts button { position: relative; }
+/* B: do this first */
+.pr-first .pr-eyebrow { font: 700 12px/16px var(--font-ui); letter-spacing: .08em; text-transform: uppercase; color: var(--ink-2); margin: 12px 0 6px; }
+.pr-first .pr-q { font: 600 21px/26px var(--font-ui); }
+.pr-first .pr-whyfirst { font: 400 14px/20px var(--font-ui); color: var(--ink-2); margin-top: 6px; }
+.pr-first .pr-acts { margin: 12px 0 14px; }
+.pr-first .pr-acts button { line-height: 40px; min-height: 40px; padding: 0 18px; border-radius: 20px; font-size: 15px; }
+.pr-compact .pr-q { font: 500 15px/20px var(--font-ui); }
+.pr-compact .pr-row { padding: 10px 0; }
+/* C: tiers */
+.pr-tier .pr-empty { padding: 12px 0; font: 400 14px/20px var(--font-ui); color: var(--ink-2); }
+.pr-note { margin: 8px 6px 0; font: 400 12px/17px var(--font-ui); color: var(--ink-2); }

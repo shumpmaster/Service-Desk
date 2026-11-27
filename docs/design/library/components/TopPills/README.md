@@ -14,3 +14,4 @@ A project page's top: one row, and every phase kept in the list below it. Chosen
 - **v36 (round 8, answer 12):** the count on the project pill opens WaitSheet; the rest of the pill still opens the projects (item 4).
 - **v37 (look items 2A and 4A):** the count on the project pill is ink (ink-button); the pills, Back, the bell and More are glass (surface-floating, glass-edge); the bell's dot is ink.
 - **v42 (round 8, answer 25):** the top row's controls are clearer glass: 38% white (44% grey in dark), blur 30 and saturate 2.4, the sheen and the glass rim; the row starts at safe-top, counted once.
+- **v45:** below 370 points wide the phase pill shows its ring and number alone, so the project pill keeps its name.

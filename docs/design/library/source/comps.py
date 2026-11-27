@@ -1410,6 +1410,37 @@ for _k, _v in V44.items():
     if _k in C:
         _h, _r = C[_k]; C[_k] = (_h, _r.rstrip() + '\n' + _v + '\n')
 
+# round 8, answer 30 (decisions/questions/P-005-design-round-8.md): a small series of the phases in place of the ring; the wait on the line (v45)
+comp("PhaseSeries", "Desk", 330, '<div class="dk-stage col" style="max-width:393px">'
+  + '<div class="dk-ps" role="img" aria-label="Phase 1 of 4, Discovery, waiting on you"><span class="bar"><i class="s wait cur"></i><b class="g"></b><i class="s "></i><b class="g"></b><i class="s "></i><b class="g"></b><i class="s "></i></span><span class="l"><b>Discovery</b> · waiting on you</span></div>'
+  + '<div class="dk-ps" role="img" aria-label="Phase 2 of 4, Design, stopped, your call"><span class="bar"><i class="s ok"></i><b class="g ok"></b><i class="s bad cur"></i><b class="g"></b><i class="s "></i><b class="g"></b><i class="s "></i></span><span class="l"><b>Design</b> · stopped, your call</span></div>'
+  + '<div class="dk-ps none" role="img" aria-label="No phases on record for this project"><span class="bar"><i class="s "></i><b class="g"></b><i class="s "></i><b class="g"></b><i class="s "></i><b class="g"></b><i class="s "></i></span><span class="l">No phases on record</span></div>'
+  + '<div class="dk-psw"><svg viewBox="0 0 300 20" width="300" height="20"><line class="ln" x1="4" x2="292" y1="14" y2="14"/><line class="w" x1="50" x2="292" y1="14" y2="14"/><circle class="bad" cx="50" cy="14" r="4.5"/><circle class="now" cx="292" cy="14" r="3"/><text class="ax" x="4" y="4">31 Oct</text><text class="wt" x="171" y="4" text-anchor="middle">waiting 9 days</text><text class="ax" x="292" y="4" text-anchor="end">now</text></svg></div>'
+  + '<p class="dk-note">The series sits under the project’s name on home; the stretch sits on the project’s strip.</p></div>',
+ """# PhaseSeries
+
+A small series of a project's four phases, in place of the single ring that held the current phase's number (v45; the owner's round 8, answer 30: "Could we maybe concert this single phase indicator to a smaller series of the phases? Or something of the sort. And then put the waiting time on the line").
+
+- **Four segments**, Discovery, Design, Build and Launch, with a small tick for each gate between them. Done: green (its gate tick green once passed). The current phase: wider, in its state's colour (yellow waiting on you, red stopped, green moving), and named beside the series with its state ("Design · stopped, your call"). Not started: grey.
+- **Where**: under each project's name on home, in the Projects section and in the quiet projects' list. A project with no plan on record shows four dashed outlines and "No phases on record".
+- **Accessible**: the series is one image with a label ("Phase 2 of 4, Design, stopped, your call").
+- **The wait on the line**: the project's strip (31 October to now) carries a stretch in the waiting colour from when the waiting thing began to wait to now, labelled above the line with how long ("waiting 9 days", "waiting 1 h 43 min"); a project with nothing waiting has no stretch. The times are the records' (stop card 5 at 9:42 am on 14 November; the widget's readiness card at 2:53 pm on 4 November).
+- Words 5.7:1 or better, the wait's label 4.8:1 or better, in light and dark at their most tinted points (build-v45/README.md).
+""")
+V45 = {
+ "WaitGroup": "- **v45 (round 8, answer 30):** the project's ring gives way to PhaseSeries under its name; its strip carries the wait as a stretch on the line, labelled (\"waiting 9 days\"); the strip starts at the card's left with room above it; the project line keeps the session's name on one line and wraps the count of what is new below it when a HandoverFlag is shown.",
+ "DeskHome": "- **v45 (round 8, answer 30):** each project in the Projects section and the quiet list carries PhaseSeries in place of its ring, and the wait on its strip; the slim bar's title sits at the left once condensed, clear of the four buttons.",
+ "ProjectCard": "- **v45:** where a project's phase is shown on home it is now PhaseSeries, not a ring.",
+ "BranchMap": "- **v45:** main's words plain first, the pull request's number under them in grey (Notes #443, Answer #444, Mockup #445, Questions #446), at least 9 points apart and kept left of the right-hand gate's line; the gate captions are kept 8 points clear of every station and word, moved along their line or shortened to the gate's name (the full caption in their title).",
+ "MapFilter": "- **v45:** the count of hidden rows is said once, on the nearest heading that holds them (a heading folded away passes its count up).",
+ "TopPills": "- **v45:** below 370 points wide the phase pill shows its ring and number alone, so the project pill keeps its name.",
+ "HandoverFlag": "- **v45:** its words take the waiting tag's colour in dark (they were the light colour in both, too dark on dark); 7.0:1 in light, 7.4:1 in dark.",
+ "PriorityList": "- **v45:** the two buttons fit one line at 393 (\"Decide what’s next\", \"Show on timeline\"; 14 points, 10 of padding).",
+}
+for _k, _v in V45.items():
+    if _k in C:
+        _h, _r = C[_k]; C[_k] = (_h, _r.rstrip() + '\n' + _v + '\n')
+
 for name, (html, md) in C.items():
     d = os.path.join(OUT, "components", name); os.makedirs(d, exist_ok=True)
     open(os.path.join(d, "preview.html"), "w").write(html)

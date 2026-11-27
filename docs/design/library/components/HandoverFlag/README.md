@@ -7,3 +7,4 @@ A yellow **"Handover needed"** tag on a session that must pass its work to a new
 - **Home's priority list** takes a handover only when it needs you: once the session has ended and written its handover, starting the next session is yours ("Start the next session"). A session still at work is flagged but not listed.
 - The waiting colours (StatusMark); a 20-point tag like the others.
 - An example in the mockup: one session is flagged; no record carries the flag yet. The proposal: each session writes its context use and a `handover_required` flag with its reason in its session lines (docs/design/requests/2026-11-27-session-names-and-handover.md).
+- **v45:** its words take the waiting tag's colour in dark (they were the light colour in both, too dark on dark); 7.0:1 in light, 7.4:1 in dark.

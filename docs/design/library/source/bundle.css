@@ -761,3 +761,16 @@ button:focus-visible { outline: 2px solid var(--accent-select); outline-offset: 
 .dk-sn .w { font: 400 13px/18px var(--font-ui, system-ui); color: var(--text-2, #5a5c60); }
 .dk-sn .ho { display: inline-flex; height: 20px; padding: 0 7px; margin-left: 6px; border-radius: 6px; font: 600 12px/20px var(--font-ui, system-ui); color: #6e4806; background: #f5ead6; vertical-align: middle; }
 @media (prefers-color-scheme: dark) { .dk-pt, .dk-gl, .dk-br, .dk-sn { background: rgba(44, 44, 48, .7); } .dk-sn .ho { color: #fcca6f; background: #403626; } }
+/* PhaseSeries (v45) */
+.dk-ps { display: flex; align-items: center; gap: 8px; padding: 6px 0; }
+.dk-ps .bar { display: inline-flex; align-items: center; gap: 3px; }
+.dk-ps .s { display: block; width: 22px; height: 6px; border-radius: 3px; background: #e3e4e8; }
+.dk-ps .s.ok { background: #83bf9d; } .dk-ps .s.wait { background: #d3a147; } .dk-ps .s.bad { background: #d56b5e; }
+.dk-ps .s.cur { width: 34px; height: 8px; border-radius: 4px; box-shadow: 0 0 0 2px #fff; }
+.dk-ps .g { display: block; width: 2px; height: 10px; border-radius: 1px; background: #c7c7cc; } .dk-ps .g.ok { background: #83bf9d; }
+.dk-ps.none .s { background: transparent; outline: 1px dashed #c7c7cc; outline-offset: -1px; }
+.dk-ps .l { font: 500 13px/16px var(--font-ui, system-ui); color: #5a5c60; } .dk-ps .l b { font-weight: 600; color: #1c1d21; }
+.dk-psw svg { display: block; width: 100%; height: auto; overflow: visible; }
+.dk-psw .ln { stroke: #e3e4e8; stroke-width: 3; stroke-linecap: round; } .dk-psw .w { stroke: #d3a147; stroke-width: 5; stroke-linecap: round; }
+.dk-psw .bad { fill: #d56b5e; } .dk-psw .now { fill: #0a6cff; } .dk-psw .ax { font: 600 11px system-ui; fill: #6b6d71; } .dk-psw .wt { font: 600 11px system-ui; fill: #90600a; }
+@media (prefers-color-scheme: dark) { .dk-ps .s { background: #3a3a3e; } .dk-ps .s.cur { box-shadow: 0 0 0 2px #1c1c1e; } .dk-ps .l { color: #a7a7ad; } .dk-ps .l b { color: #f2f2f7; } .dk-psw .ln { stroke: #3a3a3e; } .dk-psw .wt { fill: #fcca6f; } .dk-psw .ax { fill: #a7a7ad; } }

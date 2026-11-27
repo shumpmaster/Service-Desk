@@ -17,3 +17,7 @@ Asked in chat: "Which one: A, B, C or D? I'd go with C."
 2. "C"
 
 Carried out: the library first (version 62: Ground's tokens `ground` #f6f7fa and the fields at 18, 17 and 12% in light; the index's change note published with it), then mockup v47 (https://claude.ai/artifact/HxRB1vUVmJ5mZc6iRPV9Xe; docs/design/mockups/build-v47/), a layer over v46: in light the ground half a step lighter and its colour fields a little softer; dark unchanged.
+
+The open items, in the order of docs/design/audit-2026-11-27-v46-screens.md. First, the Needs-you tab.
+
+Shown live: https://claude.ai/artifact/Em83dGzLKTf7wJb3EahmEs (docs/design/mockups/options-r9-needs/): v47's Needs-you tab as it is (an older sheet for the first waiting thing only), light and dark; then A, one list: Waiting on you (home's rows), Sent, being recorded, Kicked back, one line for what is with the AI team, and Answered (last 24 hours open, older folded) in words, recommended; B, A with an In order / By project switch; C, the board's three lanes (Yours, With the team, Done); and sheets for the other kinds of ask: a question, a pull request to merge, a deploy to approve, and Start the next session (examples). The answered rows are real rulings from the mockup's days (13 and 14 November), not rounds 8 and 9, to keep the mockup's clock. Found on the way: since v45 (v43's priority list), coming back from a project page to home loses home's priority list (it falls back to the older grouped cards); to be fixed in the next layer. To be asked.

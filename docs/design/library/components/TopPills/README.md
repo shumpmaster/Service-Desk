@@ -13,3 +13,4 @@ A project page's top: one row, and every phase kept in the list below it. Chosen
 - **v34 (round 8, answer 6):** Back, both pills and the bell capsule are 38 high, the same as home's capsule (item 1; it sets aside R7 answers 21 and 22's 34). A long project name such as Home-screen widget is still cut at 393: the phase pill would have to give up its name for it.
 - **v36 (round 8, answer 12):** the count on the project pill opens WaitSheet; the rest of the pill still opens the projects (item 4).
 - **v37 (look items 2A and 4A):** the count on the project pill is ink (ink-button); the pills, Back, the bell and More are glass (surface-floating, glass-edge); the bell's dot is ink.
+- **v42 (round 8, answer 25):** the top row's controls are clearer glass: 38% white (44% grey in dark), blur 30 and saturate 2.4, the sheen and the glass rim; the row starts at safe-top, counted once.

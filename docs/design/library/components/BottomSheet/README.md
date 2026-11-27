@@ -9,3 +9,4 @@ Tools and settings that rise from the bottom. From refs 13, 15, 16 and 17.
 - **v33 (round 8):** opens on the spring in 450, closes in 280; the drag follows the finger with its speed, a flick or a third of the height puts it away, dragging up gives a little, the scrim fades with the drag (M5, M7).
 - **v35 (round 8, answers 8 and 9):** gates, decisions, research and stops open as sheets of one shape (KindSheet).
 - **v37 (look item 4A):** sheets are glass (surface-sheet, 80%, a 30-point blur); solid with reduced transparency.
+- **v42 (round 8, answer 25):** sheets and menus at 66% (70% in dark), blur 40 and saturate 2.2, the glass rim along the top.

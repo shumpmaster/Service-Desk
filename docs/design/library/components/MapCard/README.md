@@ -8,3 +8,4 @@ The branch map as a raised glass card, with room around it and the whole map ins
 - **Words** on the glass use `map-card-word` (5.3:1 or better at the most tinted point, light and dark); lane names keep clear of the right gate's line.
 - **Folded** (MapFold), the card becomes a slim glass card with the same edge and shadow, the handle inside its foot.
 - **Reduced transparency or more contrast**: a solid card with no blur. **More contrast**: a darker edge.
+- **v42 (round 8, answer 25: "can we please increase the glass look as well?"):** 34% white (42% grey in dark), blur 34 and saturate 2.6, a brighter sheen and the glass rim (a bright top edge, a fainter left edge, a soft glow inside the top, the hairline); its words one shade further from the glass (map-card-word).

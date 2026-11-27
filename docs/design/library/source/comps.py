@@ -1289,6 +1289,17 @@ V41 = {
 for _k, _v in V41.items():
     _h, _r = C[_k]; C[_k] = (_h, _r.rstrip() + '\n' + _v + '\n')
 
+V42 = {
+ "HomeHeader": "- **v42 (round 8, answer 25: \"empty space is definitely not gone\", with a screenshot from the Claude app):** the top inset is counted once and capped at 100 (safe-top); the page had an 18-point margin from a class clash and 4 more above the band. The band is thinner glass (14% to 30% white), the glow behind it as before.",
+ "MapCard": "- **v42 (round 8, answer 25: \"can we please increase the glass look as well?\"):** 34% white (42% grey in dark), blur 34 and saturate 2.6, a brighter sheen and the glass rim (a bright top edge, a fainter left edge, a soft glow inside the top, the hairline); its words one shade further from the glass (map-card-word).",
+ "TopPills": "- **v42 (round 8, answer 25):** the top row's controls are clearer glass: 38% white (44% grey in dark), blur 30 and saturate 2.4, the sheen and the glass rim; the row starts at safe-top, counted once.",
+ "TabBar": "- **v42 (round 8, answer 25):** clearer glass, as TopPills: 38% (44%), blur 30, saturate 2.4, the glass rim.",
+ "BottomSheet": "- **v42 (round 8, answer 25):** sheets and menus at 66% (70% in dark), blur 40 and saturate 2.2, the glass rim along the top.",
+ "DeskHome": "- **v42 (round 8, answer 25):** no empty strip at the top on a phone or in the Claude app (safe-top); the ground's fields a little stronger; the project cards clearer glass (40% white, 44% grey in dark, blur 34, saturate 2.6, the glass rim).",
+}
+for _k, _v in V42.items():
+    _h, _r = C[_k]; C[_k] = (_h, _r.rstrip() + '\n' + _v + '\n')
+
 for name, (html, md) in C.items():
     d = os.path.join(OUT, "components", name); os.makedirs(d, exist_ok=True)
     open(os.path.join(d, "preview.html"), "w").write(html)

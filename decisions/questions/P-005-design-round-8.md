@@ -155,3 +155,8 @@ A comment on v40 (thread 3636f587), on home's waiting row "S-011 failed three pl
 22. "Can you add the title of the “event” or step that is waiting on me on the main page?"
 
 Read by the Chief of Staff as: each waiting row on home names the event or step on the timeline that waits on the owner (its kind, number and title, e.g. "Stop · 2.2.2.10 Stop card 5", and where it sits, e.g. "in S-011, M6"), above or beside the question, so home says which thing it is, not only what is asked. To be built into v41.
+
+A comment on v40 (thread 9840c38e), on the map card's filter button, sent to Claude:
+23. "When things are filtered I would like the table to adjust and show me only that filtered view."
+
+Read by the Chief of Staff as: when a filter is on, the list shows only what matches, not everything with the rest quieted: rows that do not match are hidden, and the phase, milestone and sprint headings that hold matches stay as context (with a count of what is hidden), headings with no match folded away; the pointer and the map arrow keep working on what is shown; clearing the filter brings back the full list in place. To be built into v41.

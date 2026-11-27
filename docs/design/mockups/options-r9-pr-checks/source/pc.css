@@ -1,0 +1,76 @@
+/* ================= round 9, answer 3: the pull-request sheet's actual checks (pc.js). Dressed by v47's sheet (.kn-sheet ul.ck, .ny-st, .pw-code).
+   Colour: the soft status colours (ok, wait for running and for yours), the one blue for Now in C, and the ground. ================= */
+.ny-sheet h3 .pc-c { font-weight: 400; color: var(--text-2); margin-left: 4px; }
+.ny-sheet ul.pc-list > li.pc-li { display: block; padding: 0; }
+.pc-r { all: unset; box-sizing: border-box; display: flex; gap: 10px; align-items: flex-start; width: 100%; padding: 10px 12px; cursor: pointer; -webkit-tap-highlight-color: transparent; }
+.pc-r:active, .pc-gh:active, .pc-sr:is(button):active, .pc-link:active { background: var(--press-fill); }
+.pc-r:focus-visible, .pc-gh:focus-visible, .pc-sr:focus-visible, .pc-link:focus-visible, .pc-back:focus-visible { outline: 2px solid var(--blue-fill, #0a6cff); outline-offset: -2px; border-radius: var(--r-inner, 12px); }
+.pc-bd { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.pc-top { display: flex; align-items: center; gap: 8px; }
+.pc-n { font: 600 15px/20px var(--font-ui); color: var(--ink); text-wrap: pretty; }
+.pc-top .ny-st { margin-left: auto; }
+.pc-l { font: 400 14px/19px var(--font-ui); color: var(--ink-2); text-wrap: pretty; }
+.pc-meta { font: 400 13px/18px var(--font-ui); color: var(--text-2); font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+.pc-meta .pw-code, .pc-bd > .pw-code { white-space: normal; overflow-wrap: anywhere; }
+.pc-r .ny-chev, .pc-gh .ny-chev, .pc-sr .ny-chev, .pc-link .ny-chev { flex: none; margin-top: 3px; }
+.pc-r[aria-expanded="true"] > .ny-chev, .pc-gh[aria-expanded="true"] > .ny-chev { transform: rotate(90deg); }
+
+/* the marks: a soft wash and ring in the status colours, as v47's checklists */
+.pc-m { flex: none; width: 20px; height: 20px; border-radius: 50%; display: grid; place-items: center; margin-top: 0; }
+.pc-m svg { width: 12px; height: 12px; }
+.pc-m.ok { background: var(--status-ok-wash); color: var(--status-ok); box-shadow: inset 0 0 0 1.5px var(--status-ok-arc); }
+.pc-m.run, .pc-m.you { background: var(--status-wait-wash); color: var(--status-wait-tag); box-shadow: inset 0 0 0 1.5px var(--status-wait-arc); }
+.pc-m.bad { background: var(--status-bad-wash); color: var(--status-bad); box-shadow: inset 0 0 0 1.5px var(--status-bad-arc); }
+.pc-m.push { background: rgba(120, 120, 128, .12); color: var(--ink-2); }
+.pc-m.now { box-shadow: inset 0 0 0 1.5px var(--blue-fill, #0a6cff); }
+.pc-m.now i { width: 8px; height: 8px; border-radius: 50%; background: var(--blue-fill, #0a6cff); }
+.ny-sheet ul.ck li > .pc-m { margin-top: 0; }
+.pc-note { margin: 10px 2px 0 !important; font: 400 13px/18px var(--font-ui) !important; color: var(--ink-2) !important; }
+.pc-note .pw-code { white-space: normal; }
+
+/* B: the summaries unfold into A's rows, the rules row into its groups */
+.ny-sheet ul.pc-in { margin: 0 8px 8px 30px; background: var(--surface); }
+.ny-sheet ul.pc-in > li.pc-li:first-child { border-top: 0; }
+.pc-s .pc-n { font-weight: 600; }
+.pc-rules { margin: 0 10px 10px 42px; display: flex; flex-direction: column; }
+.pc-g + .pc-g { border-top: var(--hair, 1px) solid var(--sep); }
+.pc-gh { all: unset; box-sizing: border-box; display: flex; align-items: center; gap: 8px; width: 100%; min-height: 44px; padding: 6px 2px; cursor: pointer; }
+.pc-gh .pc-m { align-self: flex-start; margin-top: 2px; width: 16px; height: 16px; } .pc-gh .pc-m svg { width: 10px; height: 10px; }
+.pc-gn { flex: 1; min-width: 0; display: flex; flex-direction: column; font: 600 14px/19px var(--font-ui); color: var(--ink); }
+.pc-gc { font: 400 13px/18px var(--font-ui); color: var(--text-2); font-variant-numeric: tabular-nums; }
+.pc-gh .ny-chev { align-self: flex-start; margin-top: 3px; }
+.pc-rl { list-style: none; margin: 0 0 6px; padding: 0 0 0 4px; display: flex; flex-direction: column; gap: 8px; }
+.ny-sheet ul.ck .pc-rl li { display: flex; gap: 8px; align-items: flex-start; padding: 0; border-top: 0; }
+.pc-rl li .pc-m { width: 14px; height: 14px; margin-top: 2px; } .pc-rl li .pc-m svg { width: 9px; height: 9px; }
+.pc-rl li > span:last-child { display: flex; flex-direction: column; min-width: 0; }
+.pc-rt { font: 400 14px/19px var(--font-ui); color: var(--ink); }
+.pc-rl .pw-code { white-space: normal; overflow-wrap: anywhere; }
+.pc-yw { font: 600 12px/16px var(--font-ui); color: var(--status-wait-tag); }
+.pc-link { all: unset; box-sizing: border-box; display: flex; align-items: center; gap: 6px; min-height: 44px; padding: 6px 2px; cursor: pointer; border-top: var(--hair, 1px) solid var(--sep);
+  font: 600 14px/19px var(--font-ui); color: var(--ink); }
+.pc-link .ny-chev { margin: 0 0 0 auto; }
+
+/* C: the story, in time order, a thin line joining the marks; Now in the one blue */
+.pc-story { list-style: none; margin: 0; padding: 4px 0; border-radius: var(--r-inner, 12px); background: var(--fill, rgba(120,120,128,.08)); }
+.pc-story li { position: relative; }
+.pc-story li:not(:last-child)::after { content: ''; position: absolute; left: 89px; top: 31px; bottom: -7px; width: 1.5px; background: var(--ink-5, #c7c7cc); }
+.pc-sr { all: unset; box-sizing: border-box; display: flex; gap: 10px; align-items: flex-start; width: 100%; padding: 9px 12px; }
+button.pc-sr { cursor: pointer; }
+.pc-tm { flex: none; width: 58px; font: 400 13px/20px var(--font-ui); color: var(--text-2); font-variant-numeric: tabular-nums; text-align: right; white-space: nowrap; }
+.pc-sr .pc-m { position: relative; z-index: 1; background-color: var(--surface); }
+.pc-sr .pc-m.ok { background: var(--status-ok-wash); }
+.pc-sr.now .pc-n, .pc-sr.now .pc-tm { color: var(--blue-text, #0759bd); }
+.pc-sr .pc-bd > .pw-code { margin-top: 1px; }
+
+/* the readers: Back to the pull request */
+.pc-back { all: unset; box-sizing: border-box; display: inline-flex; align-items: center; gap: 2px; min-height: 44px; margin: -6px 0 2px -6px; padding: 0 8px 0 2px; cursor: pointer;
+  font: 600 15px/20px var(--font-ui); color: var(--ink); }
+.pc-back svg { width: 16px; height: 16px; }
+.ny-sheet .row .pc-meta { margin-left: 2px; }
+.ny-sheet .pc-q { font-size: 15px; line-height: 21px; }
+/* a long code line under a reader's title wraps rather than scrolling sideways */
+.ny-sheet p.pw-sub { white-space: normal; overflow-wrap: anywhere; }
+/* the Passed word on its wash: status-ok darkened a fifth in light, so it reads at 4.5:1 or better (status-ok on its wash is 4.0:1) */
+:root:not([data-theme="dark"]) .ny-sheet .ny-st.ok { color: color-mix(in srgb, var(--status-ok) 80%, #000); }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .ny-sheet .ny-st.ok { color: var(--status-ok); } }
+.ny-sheet ul.ck small.pw-code, .ny-sheet ul.ck li .pw-code { white-space: normal; overflow-wrap: anywhere; }

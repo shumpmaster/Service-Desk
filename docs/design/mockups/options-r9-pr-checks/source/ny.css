@@ -1,0 +1,93 @@
+
+/* ================= round 9: the Needs-you tab, options over v47 (ny.js). The tab is a view of its own inside #view, so home's glass
+   cards, rows, chips, tags and sheets dress it as they dress home. Colour: the soft status colours, the one blue for the selected
+   segment only, and the ground. ================= */
+html.ny-open #view > :not(.ny-view) { display: none !important; }
+html.ny-open :is(#roundbtn, .ct-mark, .ct-map) { display: none !important; }
+.ny-view { position: relative; padding-top: env(safe-area-inset-top, 0px); }
+
+/* the slim bar: the title, once the large title has scrolled away */
+.ny-bar { position: sticky; top: 0; z-index: 20; height: 44px; margin: 0 -20px -44px; display: flex; align-items: center; justify-content: center;
+  font: 600 17px/22px var(--font-ui); color: var(--ink); opacity: 0; pointer-events: none; transition: opacity var(--d-small, 200ms) var(--ease);
+  background: var(--g42-band, transparent), var(--glass); -webkit-backdrop-filter: blur(30px) saturate(2.4); backdrop-filter: blur(30px) saturate(2.4); box-shadow: inset 0 -1px 0 var(--sep); }
+html.ny-scrolled .ny-bar { opacity: 1; }
+
+/* the large title, as home's */
+.ny-lt { display: flex; flex-direction: column; padding: 18px 4px 6px; }
+.ny-lt .asof { display: flex; align-items: center; gap: 6px; margin: 0 0 4px; font: 600 12px/15px var(--font-ui); letter-spacing: .08em; text-transform: uppercase; color: #4f5156; }
+.ny-lt .asof i { width: 7px; height: 7px; border-radius: 50%; background: var(--status-moving-dot, #34a853); }
+.ny-lt h1 { margin: 0; font: 800 34px/1.12 var(--font-ui); letter-spacing: -.01em; color: var(--ink); }
+.ny-lt .tt-mark { display: block; width: 36px; height: 4px; border-radius: 2px; margin-top: 8px; background: linear-gradient(90deg, #3d73f5, #8b6cf2); }
+:root[data-theme="dark"] .ny-lt .asof { color: #b4b4ba; }
+:root[data-theme="dark"] .ny-lt .tt-mark { background: linear-gradient(90deg, #6ea2ff, #b09cff); }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .ny-lt .asof { color: #b4b4ba; } :root:not([data-theme="light"]) .ny-lt .tt-mark { background: linear-gradient(90deg, #6ea2ff, #b09cff); } }
+.ny-sum { margin: 10px 4px 2px; font: 400 17px/23px var(--font-ui); color: var(--ink); }
+.ny-sum b { font-weight: 600; }
+
+/* the switch (B) and the lanes (C): a segmented control; the selected segment is the one blue */
+.ny-seg { display: flex; gap: 2px; margin: 14px 0 2px; padding: 3px; border-radius: 12px; background: rgba(120, 120, 128, .14); }
+.ny-seg button { flex: 1 1 0; min-width: 0; min-height: 34px; border: 0; border-radius: 9px; background: none; cursor: pointer; font: 600 14px/18px var(--font-ui); color: var(--ink-2); padding: 0 6px; white-space: nowrap; }
+.ny-seg button small { font: 500 13px/18px var(--font-ui); color: var(--text-2); font-variant-numeric: tabular-nums; }
+.ny-seg button[aria-selected="true"] { background: var(--surface); color: var(--now-word); box-shadow: 0 1px 3px rgba(28, 29, 33, .10), 0 0 0 .5px rgba(28, 29, 33, .06); }
+.ny-seg button[aria-selected="true"] small { color: var(--now-word); }
+:root[data-theme="dark"] .ny-seg { background: rgba(118, 118, 128, .24); }
+:root[data-theme="dark"] .ny-seg button[aria-selected="true"] { background: #3a3a3c; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .ny-seg { background: rgba(118, 118, 128, .24); } :root:not([data-theme="light"]) .ny-seg button[aria-selected="true"] { background: #3a3a3c; } }
+
+/* rows that are not waiting: sent, kicked back, at work, answered */
+html #view section.sg-grp.ny-card { padding: 2px 14px; }
+.ny-note { margin: 2px 6px 0; font: 400 13px/18px var(--font-ui); color: var(--ink-2); }
+.ny-row { all: unset; box-sizing: border-box; position: relative; display: flex; gap: 12px; align-items: flex-start; width: 100%; padding: 12px 0; cursor: default; -webkit-tap-highlight-color: transparent; }
+button.ny-row { cursor: pointer; }
+button.ny-row:active { background: var(--press-fill); border-radius: var(--r-inner, 12px); }
+.ny-card > * + .ny-row, .ny-card > .ny-row + *, .ny-card > .pr-row + .ny-row, .ny-card > .ny-row + .pr-row { border-top: 1px solid var(--sep, rgba(60, 60, 67, .18)); }
+.ny-m { flex: none; width: 26px; height: 26px; border-radius: 13px; display: grid; place-items: center; margin-top: 1px; }
+.ny-m svg { width: 15px; height: 15px; }
+.ny-m.ok { background: var(--status-ok-wash); color: var(--status-ok); box-shadow: inset 0 0 0 1.5px var(--status-ok-arc); }
+.ny-m.wait { background: var(--status-wait-wash); color: var(--status-wait-tag); box-shadow: inset 0 0 0 1.5px var(--status-wait-arc); }
+.ny-m.bad { background: var(--status-bad-wash); color: var(--status-bad); box-shadow: inset 0 0 0 1.5px var(--status-bad-arc); }
+.ny-m.team { background: rgba(120, 120, 128, .12); color: var(--ink-2); }
+.ny-bd { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 3px; }
+.ny-top { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+.ny-tm { font: 400 13px/18px var(--font-ui); color: var(--ink-2); font-variant-numeric: tabular-nums; margin-left: auto; white-space: nowrap; }
+.ny-t { font: 400 15px/20px var(--font-ui); color: var(--ink); text-wrap: pretty; }
+.ny-t b { font-weight: 600; }
+.ny-t .pw-code { margin-left: 2px; }
+.ny-meta { font: 400 13px/18px var(--font-ui); color: var(--ink-2); }
+.ny-st { font: 600 12px/20px var(--font-ui); padding: 0 8px; border-radius: 10px; white-space: nowrap; }
+.ny-st.ok { color: var(--status-ok); background: var(--status-ok-wash); }
+.ny-st.wait { color: var(--status-wait-tag); background: var(--status-wait-tag-bg); }
+.ny-st.bad { color: var(--status-bad-tag); background: var(--status-bad-tag-bg); }
+.ny-chev { flex: none; width: 14px; height: 14px; margin-top: 6px; color: var(--icon, #8e8e93); transition: transform var(--d-small, 200ms) var(--ease); }
+.ny-said .done { display: block; margin-top: 8px; padding: 8px 10px; border-radius: var(--r-inner, 12px); background: var(--status-ok-wash); font: 400 13px/17px var(--font-ui); color: var(--ink); }
+
+/* Earlier, folded; With the AI team, one quiet line */
+.ny-fold { all: unset; box-sizing: border-box; display: flex; align-items: center; gap: 6px; width: 100%; min-height: 44px; padding: 10px 0; cursor: pointer; border-top: 1px solid var(--sep, rgba(60, 60, 67, .18));
+  font: 600 15px/20px var(--font-ui); color: var(--ink); }
+.ny-fold small { font: 400 13px/18px var(--font-ui); color: var(--ink-2); }
+.ny-fold .ny-chev { margin: 0 0 0 auto; }
+.ny-fold[aria-expanded="true"] .ny-chev, .ny-quiet[aria-expanded="true"] .ny-chev { transform: rotate(90deg); }
+.ny-quiet { all: unset; box-sizing: border-box; display: flex; align-items: center; gap: 10px; width: 100%; min-height: 44px; margin-top: 14px; padding: 8px 6px; cursor: pointer;
+  font: 400 15px/20px var(--font-ui); color: var(--ink-2); }
+.ny-quiet b { font-weight: 600; color: var(--ink); }
+.ny-quiet .ny-chev { margin: 0 0 0 auto; }
+.ny-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--ink-4, #8e8e93); flex: none; }
+.ny-foot { margin: 22px 6px 0; font: 400 13px/18px var(--font-ui); color: var(--ink-2); }
+
+/* the tab's badge: the waiting count, in the bell dot's ink */
+#tabbar .tab[data-tab="needs"] { position: relative; }
+.ny-badge { position: absolute; top: 3px; right: 9px; min-width: 18px; height: 18px; padding: 0 5px; box-sizing: border-box; border-radius: 9px; display: grid; place-items: center;
+  font: 700 11px/18px var(--font-ui); font-variant-numeric: tabular-nums; color: #fff; background: var(--lk-ink-dot, #3a3b40); box-shadow: 0 0 0 2px var(--float, #fff); pointer-events: none; }
+.tab[aria-current="true"] .ny-badge { right: 17px; }
+:root[data-theme="dark"] .ny-badge { color: #1c1c1e; background: #e5e5ea; box-shadow: 0 0 0 2px #2c2c2e; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .ny-badge { color: #1c1c1e; background: #e5e5ea; box-shadow: 0 0 0 2px #2c2c2e; } }
+
+/* the sheets for the other kinds of ask: v35's sheet, its choices saying what follows */
+.ny-sheet .ny-own { box-sizing: border-box; display: block; width: 100%; padding: 10px 12px; border: 0; border-radius: var(--r-inner, 12px); background: var(--fill, rgba(120,120,128,.08));
+  font: 400 16px/21px var(--font-ui); color: var(--ink); resize: vertical; }
+.ny-sheet .ny-own::placeholder { color: var(--text-2); }
+.ny-sheet .ny-acts { display: flex; gap: 8px; margin-top: 10px; }
+.ny-sheet .ny-main { border: 0; cursor: pointer; min-height: 44px; padding: 0 18px; border-radius: 22px; font: 600 15px/44px var(--font-ui); background: var(--lk-inkbtn, #1c1d21); color: var(--lk-inkbtn-t, #fff); }
+.ny-sheet .ny-ho { font-size: 15px; line-height: 21px; -webkit-mask-image: linear-gradient(#000 55%, transparent); mask-image: linear-gradient(#000 55%, transparent); max-height: 84px; overflow: hidden; }
+.ny-sheet .sn-hrow { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; font: 400 15px/20px var(--font-ui); color: var(--ink); }
+.ny-sheet .kd svg { width: 13px; height: 13px; }

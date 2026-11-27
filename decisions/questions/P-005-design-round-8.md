@@ -162,3 +162,8 @@ A comment on v40 (thread 9840c38e), on the map card's filter button, sent to Cla
 Read by the Chief of Staff as: when a filter is on, the list shows only what matches, not everything with the rest quieted: rows that do not match are hidden, and the phase, milestone and sprint headings that hold matches stay as context (with a count of what is hidden), headings with no match folded away; the pointer and the map arrow keep working on what is shown; clearing the filter brings back the full list in place. To be built into v41.
 
 Carried out: mockup v41 (https://claude.ai/artifact/YEYBhoHJiCwaMtWUAMA1zZ) and the library (version 52), answers 20 to 23: home's header 48 points shorter, the live label on the capsule's row; each project line on one line at 393; home's groups in glass, text 4.70:1 or better; each waiting row naming its event ("Stop 2.2.2.10 · Stop card 5 · S-011"); a filter showing only the rows that match, headings with matches kept with a count of what is hidden. Answered in each comment thread on v40.
+
+A comment on v41 (https://claude.ai/artifact/YEYBhoHJiCwaMtWUAMA1zZ, thread d67dfc78), on home's waiting row "Merge 2.2.2.5 · PR #446's questions · S-011", sent to Claude:
+24. "I need the structure to be aimed at events that I’m needed on. Like a priority list for my actions o."
+
+Read by the Chief of Staff as: home is to be built around what the owner is needed on: one list of his actions in priority order, rather than groups by project. This touches R4 answer 11 (home grouped by project, "C is where I'm leaning") and R4 answer 12 (the longest wait first). How the priority is set and how the projects still show are not said, so drawn as options on v41, home as it is first, with a recommendation.

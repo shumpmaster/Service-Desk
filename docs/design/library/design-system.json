@@ -18,8 +18,8 @@
  },
  "lastChange": {
   "by": "Claude",
-  "at": "2026-11-27T04:09:15Z",
+  "at": "2026-11-27T13:45:50Z",
   "via": "Claude Code",
-  "note": "Round 8, v43: home as one priority list of the owner's actions (PriorityList), each with its project, event, reason and wait; the projects below without their waiting rows. decisions/questions/P-005-design-round-8.md, answers 24 and 26."
+  "note": "Round 8, v44: plain words (PlainTitle, Glossary, plain answer labels, the cast as AI sessions), BranchToggle in the map filter, SessionName and HandoverFlag. decisions/questions/P-005-design-round-8.md, answers 27 and 28."
  }
 }

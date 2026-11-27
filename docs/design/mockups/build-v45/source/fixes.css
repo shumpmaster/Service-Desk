@@ -1,0 +1,15 @@
+/* v45: v44's leftovers */
+.pr-acts { gap: 6px; }
+.pr-acts .pr-ans, .pr-acts .pr-goto { font-size: 14px; padding: 0 10px; }
+@media (max-width: 370px) { .pr-acts .pr-ans, .pr-acts .pr-goto { font-size: 13px; padding: 0 10px; } }
+.fl.ml45 .ml45n { fill: var(--text-2); font-weight: 500; }
+.fl.ml45 tspan:first-child { fill: var(--ink); }
+@media (max-width: 370px) { .tp-pill.ph .t { display: none; } .tp-pill.ph { padding: 0 6px 0 8px; } .tp-pill.pj { max-width: 70%; } }
+.sn-ho { color: #6e4806; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .sn-ho { color: var(--status-wait-tag); } }
+:root[data-theme="dark"] .sn-ho { color: var(--status-wait-tag); }
+/* the slim bar on home, once the title has condensed: the title and its live line sit at the left, clear of the four buttons ("?" joined them in v44) */
+#view .hm-band .hd-bar .hd-tx { justify-content: center; align-items: flex-start; padding: 0 0 0 20px; right: auto; max-width: calc(100% - 190px); }
+#view .hm-band .hd-bar .hd-tx h1, #view .hm-band .hd-bar .hd-tx .asof { text-align: left; justify-content: flex-start; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
+.ps45-on #view .sg-grp .fh-pline:has(.sn-ho) > span:nth-child(2) { flex: 1 1 0%; min-width: calc(100% - 24px); }
+.ps45-on #view .sg-grp .fh-pline:not(:has(.sn-ho)) > span:nth-child(2) { min-width: 0; flex: 1 1 auto; }

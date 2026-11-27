@@ -233,3 +233,7 @@ Asked in chat: "Do you want C, as recommended, for v46? After that I'd write the
 32. "Option C please"
 
 Carried out, to be built into the library and mockup v46: one line at the head of the map card ("Design · the records plan stopped · your call", a dot in the state's colour), opening an "About this project" sheet with the purpose, the snapshot, the four phases at a glance and what waits; the words are examples until records request item 17 is met.
+
+Carried out: mockup v46 (https://claude.ai/artifact/NTBCigkbdJkUPujwtoBu6w) and the library's content files (version 61): one line at the head of the map card, "Design · the records plan stopped · your call" (the widget: "Discovery · the brief failed · your call"), shortened below 380 points, opening "About this project" (purpose, where it stands, its phases, what waits, with Choose what happens next); 40 points while the card is open. The library index's change note for v46 was not published: the session's permission check refused that publish.
+
+The session ends with the handoff, docs/handoff/2026-11-27-chief-of-staff-p005-19.md.

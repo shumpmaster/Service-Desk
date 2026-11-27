@@ -1,0 +1,6 @@
+/* ================= v47, round 9 answers 1 and 2: "It looks great so far, maybe just lighten the background up a tad?"; "C"
+   (options-r9-lighter/, option C). In light only: the plain ground half a step lighter (#f6f7fa, was #f2f3f7) and the three fields a
+   little softer (blue .18, lavender .17, mint .12; were .22, .21, .15 from v42). Dark is unchanged. ================= */
+@media (prefers-color-scheme: light), (prefers-color-scheme: no-preference) {
+  :root:not([data-theme="dark"]) { --ground: #f6f7fa; --gr-a: rgba(10, 108, 255, .18); --gr-b: rgba(140, 110, 255, .17); --gr-c: rgba(30, 180, 150, .12); } }
+:root[data-theme="light"] { --ground: #f6f7fa; --gr-a: rgba(10, 108, 255, .18); --gr-b: rgba(140, 110, 255, .17); --gr-c: rgba(30, 180, 150, .12); }

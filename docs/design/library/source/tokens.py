@@ -2,7 +2,7 @@ import json
 
 C = [
  # name, light, dark, usage
- ("ground", "#f2f3f7", "#000000", "Page background behind everything (refs 11, 12)."),
+ ("ground", "#f6f7fa", "#000000", "Page background behind everything (refs 11, 12); in light half a step lighter since v47 (round 9, answer 2)."),
  ("ground-document", "#fefefe", "#0b0b0c", "Background of a document or plan page (refs 13, 16)."),
  ("surface", "#ffffff", "#1c1c1e", "Cards, tiles, fields and rows set on the ground (refs 12, 15, 17)."),
  ("surface-floating", "#ffffff61", "#2c2c3270", "Glass on what floats over content (v42, round 8 answer 25, \"can we please increase the glass look as well?\"): 38% white (44% grey in dark), a 30-point blur with saturation 2.4, the sheen and the glass rim (glass-edge on top, a fainter left edge, a soft glow inside the top); the top row's controls, the tab bar, the round button and the menus. Solid with reduced transparency or more contrast. Earlier: 60% and 66% with a 24-point blur (v37)."),
@@ -52,9 +52,9 @@ C = [
  ("ink-button", "#1c1d21", "#f2f2f7", "Blue only for now or selected (v37, look item 2A): the Answer buttons and the counts, in ink; text on it is ink-button-text."),
  ("ink-button-text", "#ffffff", "#000000", "Words on ink-button (v37, look item 2A)."),
  ("ink-dot", "#3a3b40", "#d1d1d6", "The bell's dot and the new-since dots (v37, look item 2A), in ink, not blue."),
- ("ground-field-a", "#0a6cff38", "#0a84ff3d", "The ground (v38, option A; stronger in v42 so the glass has colour to catch): the blue field, from the top left corner, fading out by 60%. Fixed behind everything."),
- ("ground-field-b", "#8c6eff36", "#8c6eff36", "The ground's lavender field, from the right a third of the way down (v38; stronger in v42)."),
- ("ground-field-c", "#1eb49626", "#1eb49624", "The ground's touch of mint, from the bottom (v38; stronger in v42). Over all three, the plain ground; with reduced transparency or more contrast, the plain ground alone."),
+ ("ground-field-a", "#0a6cff2e", "#0a84ff3d", "The ground (v38, option A; stronger in v42 so the glass has colour to catch): the blue field, from the top left corner, fading out by 60%. Fixed behind everything. A little softer in light since v47 (18%; round 9, answer 2)."),
+ ("ground-field-b", "#8c6eff2b", "#8c6eff36", "The ground's lavender field, from the right a third of the way down (v38; stronger in v42; 17% in light since v47)."),
+ ("ground-field-c", "#1eb4961f", "#1eb49624", "The ground's touch of mint, from the bottom (v38; stronger in v42; 12% in light since v47). Over all three, the plain ground; with reduced transparency or more contrast, the plain ground alone."),
  ("text-2-on-field", "#5a5c60", "#98989f", "Secondary words on the coloured ground (v38): one shade darker than text-2 in light, so words keep 4.5:1 at the field's most tinted point (4.93:1 measured)."),
  ("map-card", "#ffffff57", "#282e2e6b", "The branch map's card as glass (v42, round 8 answer 25): 34% white (42% grey in dark) over the ground's field, a 34-point blur with saturation 2.6, the sheen and the glass rim; inset 16 from the screen, 14 under the top row, 20 above the list, radius 20; solid with reduced transparency or more contrast. Home's cards take the same glass at 40% (44% in dark)."),
  ("map-card-edge", "#3c3c4324", "#ffffff1f", "The map card's hairline edge (v38, v39); a light top edge (glass-edge) above it."),

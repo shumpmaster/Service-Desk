@@ -1,0 +1,24 @@
+/* ================= v46: the project's one line at the head of the map card, and "About this project" (round 8, answers 31 and 32) ================= */
+.sm-ex { display: inline-block; font: 600 10px/14px var(--font-ui); letter-spacing: .06em; text-transform: uppercase; color: var(--text-2);
+  border: 1px solid currentColor; border-radius: 6px; padding: 0 5px; vertical-align: 2px; margin-left: 4px; }
+.sm-line { all: unset; box-sizing: border-box; display: flex; align-items: center; gap: 8px; width: 100%; min-height: 36px; padding: 0 2px 8px;
+  margin-bottom: 4px; border-bottom: 1px solid var(--g42-edge, var(--rule)); cursor: pointer; position: relative; z-index: 3; }
+.sm-dot { flex: none; width: 8px; height: 8px; border-radius: 50%; background: var(--status-bad-dot, #d6453d); }
+.sm-dot.wait { background: var(--status-wait-dot, #d9a63a); }
+.sm-dot.ok { background: var(--status-ok-arc, #34a853); }
+.sm-lt { flex: 1; min-width: 0; font: 600 14px/18px var(--font-ui); color: var(--ink); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.sm-short { display: none; }
+@media (max-width: 380px) { .sm-long { display: none; } .sm-short { display: inline; } }
+.sm-chev { flex: none; font: 600 20px/18px var(--font-ui); color: var(--text-2); }
+.sm-sheet .sm-pur { font: 600 17px/22px var(--font-ui); color: var(--ink); margin: 0 0 4px; text-wrap: pretty; }
+.sm-sheet .sm-acts { margin-top: 12px; }
+.sm-go { all: unset; box-sizing: border-box; display: inline-flex; align-items: center; min-height: 44px; padding: 0 18px; border-radius: 22px; cursor: pointer;
+  font: 600 15px/20px var(--font-ui); background: var(--ink-button, #1c1d21); color: var(--ink-button-text, #fff); }
+.sm-sheet ul.ck li small { display: block; }
+/* the map card's top-anchored parts (the gate lines and captions, the filter button) start below the line; they keep their bottom */
+html.sm46-on #v13band .v13vp .kn-mgate { top: 56px; }
+html.sm46-on #v13band .v13vp .fh-fbtn { top: 52px; }
+/* the folded card keeps only its handle: the line goes with the map */
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .sm-ex, :root:not([data-theme="light"]) .sm-sheet h3,
+  :root:not([data-theme="light"]) .sm-sheet .ex, :root:not([data-theme="light"]) .sm-sheet small { color: #a7a7ad; } }
+:root[data-theme="dark"] .sm-ex, :root[data-theme="dark"] .sm-sheet h3, :root[data-theme="dark"] .sm-sheet .ex, :root[data-theme="dark"] .sm-sheet small { color: #a7a7ad; }

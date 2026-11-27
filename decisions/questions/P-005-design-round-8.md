@@ -206,3 +206,8 @@ Carried out, to be built into the library and mockup v44: the plain-words pass a
 - automated session naming: every session carries a plain name made from what it set out to do (e.g. "Chief of Staff · Stop card 5 follow-up"), shown wherever the desk names a session, in place of a date;
 - a handover-required flag: a session that must hand over (its context near its limit, or ending with work open) shows "Handover needed" on its at-work row, its link bubble and home's project line, with why.
 The names and the flag are examples in the mockup: no record carries them. They need operating-model changes (a session writes its plain name at start; it writes its context use and a handover-required flag in its session lines), to be added to the records request and raised with the operating model, as the owner expects.
+
+Asked in chat, while v44 builds:
+29. "Awesome, and the one other thing I want to check - as far as plain English, are you only using what is already written today or are you proposing additions to what we have as far as what agents record?"
+
+Answered in chat: both. In the mockup, the plain wording is made only from words already on the page; but much of that text is itself an example (the Why sentences, the project and sprint lines), and for the real desk the plain words are additions to what agents record, listed in docs/design/requests/2026-11-26-timeline-records.md and the session-names proposal; the phase lines, the glossary and the cast are fixed copy needing no new record.

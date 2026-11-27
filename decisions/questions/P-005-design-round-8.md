@@ -160,3 +160,5 @@ A comment on v40 (thread 9840c38e), on the map card's filter button, sent to Cla
 23. "When things are filtered I would like the table to adjust and show me only that filtered view."
 
 Read by the Chief of Staff as: when a filter is on, the list shows only what matches, not everything with the rest quieted: rows that do not match are hidden, and the phase, milestone and sprint headings that hold matches stay as context (with a count of what is hidden), headings with no match folded away; the pointer and the map arrow keep working on what is shown; clearing the filter brings back the full list in place. To be built into v41.
+
+Carried out: mockup v41 (https://claude.ai/artifact/YEYBhoHJiCwaMtWUAMA1zZ) and the library (version 52), answers 20 to 23: home's header 48 points shorter, the live label on the capsule's row; each project line on one line at 393; home's groups in glass, text 4.70:1 or better; each waiting row naming its event ("Stop 2.2.2.10 · Stop card 5 · S-011"); a filter showing only the rows that match, headings with matches kept with a count of what is hidden. Answered in each comment thread on v40.

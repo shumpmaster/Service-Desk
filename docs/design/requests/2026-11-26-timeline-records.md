@@ -3,7 +3,7 @@
 *Written by the Chief of Staff's design session (session_01QBwHGLabYiZK6jrjfzcfBm) on 26 November 2026, for the session that owns the pipeline, the records and the operating model. The design session changes no spec, status, governance or pipeline file. This note lists what the timeline mockups (v17 to v36) draw from records that do not exist yet, so the building session can decide how, and whether, to keep them. It sits beside docs/design/requests/2026-11-15-agent-action-records.md (each agent's actions in plain English), which still stands.*
 
 ## What this means for the owner
-The timeline you have ruled on draws some things the records do not hold yet. In the mockups they are examples, marked so. For the desk to show them for real, the pipeline has to start keeping ten kinds of record. Some need nothing more than a field filled in. Others are new: an answer you give from the desk, the run under way right now, and when you last looked. Each item below says what it is, where the design uses it, what exists today and what is missing. Nothing here is decided until the building session takes it up and puts any ruling it needs to you.
+The timeline you have ruled on draws some things the records do not hold yet. In the mockups they are examples, marked so. For the desk to show them for real, the pipeline has to start keeping ten kinds of record (sixteen with the plain-words and session items added on 27 November). Some need nothing more than a field filled in. Others are new: an answer you give from the desk, the run under way right now, and when you last looked. Each item below says what it is, where the design uses it, what exists today and what is missing. Nothing here is decided until the building session takes it up and puts any ruling it needs to you.
 
 ## The records
 
@@ -46,6 +46,30 @@ The timeline you have ruled on draws some things the records do not hold yet. In
 10. **A pipeline run's tokens.**
     - Used for: the same bubble, for an event a pipeline run did (v36, item 8).
     - Today: a run keeps only its model and turn limit (reviews/*/_control/*.json), not its tokens.
+
+11. **A plain title and a plain outcome for each event.** *(added 27 November, v44)*
+    - Used for: every event's title, plain first ("Check 2 of the plan failed: two wordings still clashed"), its codes after it in grey (round 8, answers 27 and 28; the plain-words test, docs/design/audit-2026-11-27-v43-plain-words.md, section 5). Reviews: the one-line reason for a pass or a fail. Merges: what the merge brought. Checks: which checks.
+    - Today: titles come from commit and pull request subjects ("First draft", "Merged PR #445"). The mockup's plain titles are written from words already on the page, not from a record.
+
+12. **A plain name and a one-line purpose for each project and sprint.**
+    - Used for: the "what this is" line under each project (home and its page) and each sprint (v44, approach B).
+    - Today: no record carries either. The lines drawn are examples. A phase's line is fixed copy from the operating model and needs no record.
+
+13. **Plain labels for a card's choices, and what each costs.**
+    - Used for: a stop card's or a gate's choices as actions ("Start a fresh plan"), with the system's key beneath; a decision shown as "You chose: …" with the option beneath (v44, approach E and question 2).
+    - Today: the cards hold keys and one line each, in the system's words (criteria-wrong, re-specify). Nothing records what a strike costs, how re-scope differs from drop, or a line for the Launch gate's Hold, Recycle and Kill.
+
+14. **One kind and one name for each thing that waits.**
+    - Used for: home's priority list, the wait sheet and the project row naming the same thing (v44 fixed the widget's waiting item, which had three names).
+    - Today: the widget's card is filed as a gate in the plan, a review on home and a card in its file; the mockup now calls it the Readiness card (1.8.1.3) everywhere.
+
+15. **A session's plain name, its context use and whether it must hand over.**
+    - Used for: the session's name wherever the desk names a session, in place of "CoS 14 Nov" (SessionName), and the "Handover needed" flag with why (HandoverFlag) (v44, round 8, answer 28).
+    - Today: none is recorded; the session lines hold a working note ("doing") and blank context fields. Proposed in docs/design/requests/2026-11-27-session-names-and-handover.md.
+
+16. **Each sprint's or pull request's branch.**
+    - Used for: the branch toggle in the map's filter (v44, round 8, answer 28): main and each branch in the phase, named plainly, each with a switch.
+    - Today: commits and merges carry their branch (`br`), but no record says which branch a sprint or a pull request lives on. The mockup takes the map's lanes as the branches and marks the names as examples.
 
 ## Open for the building session to settle
 - Which of these the pipeline should keep, and where each lives so the desk can read it.

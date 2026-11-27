@@ -726,3 +726,38 @@ button:focus-visible { outline: 2px solid var(--accent-select); outline-offset: 
   .dk-prl-row .n { background: #f2f2f7; color: #1c1d21; }
 }
 @media (prefers-reduced-transparency: reduce) { .dk-prl { -webkit-backdrop-filter: none; backdrop-filter: none; background: var(--surface, #fff); } }
+
+/* v44: PlainTitle, Glossary, BranchToggle, SessionName, HandoverFlag (round 8, answers 27 and 28) */
+.dk-pt { padding: 10px 12px; border-radius: 16px; background: rgba(255, 255, 255, .6); margin: 4px 0; }
+.dk-pt .no { font: 600 13px/18px var(--font-ui, system-ui); color: var(--ink-2, #5a5c60); }
+.dk-pt .t { font: 600 17px/22px var(--font-ui, system-ui); color: var(--ink, #1c1d21); margin-top: 2px; }
+.dk-pt .s, .dk-pt .w { font: 400 13px/18px var(--font-ui, system-ui); color: var(--text-2, #5a5c60); margin-top: 2px; }
+.dk-pt .cd { font: 500 12px/16px var(--font-ui, system-ui); color: var(--text-2, #5a5c60); }
+.dk-pt .ex, .dk-br .ex { font: 600 10px/14px var(--font-ui, system-ui); text-transform: uppercase; letter-spacing: .04em; padding: 0 5px; border-radius: 5px; box-shadow: inset 0 0 0 1px currentColor; color: var(--text-2, #5a5c60); font-style: normal; }
+.dk-gl { padding: 14px; border-radius: 22px; background: rgba(255, 255, 255, .7); }
+.dk-gl .kd { font: 600 12px/16px var(--font-ui, system-ui); letter-spacing: .04em; text-transform: uppercase; color: var(--text-2, #5a5c60); }
+.dk-gl h4 { margin: 4px 0 8px; font: 700 20px/26px var(--font-ui, system-ui); color: var(--ink, #1c1d21); }
+.dk-gl dl { margin: 0; display: flex; flex-direction: column; gap: 8px; }
+.dk-gl dl div { padding: 8px 10px; border-radius: 12px; background: rgba(120, 120, 128, .08); }
+.dk-gl dt { font: 600 15px/20px var(--font-ui, system-ui); color: var(--ink, #1c1d21); }
+.dk-gl dd { margin: 2px 0 0; font: 400 14px/19px var(--font-ui, system-ui); color: var(--ink-2, #3c3d42); }
+.dk-br { padding: 12px; border-radius: 22px; background: rgba(255, 255, 255, .8); display: flex; flex-direction: column; gap: 4px; }
+.dk-br .h { display: flex; justify-content: space-between; font: 600 13px/18px var(--font-ui, system-ui); color: var(--text-2, #5a5c60); }
+.dk-br .h span { color: var(--now-word, #0860c8); }
+.dk-br .r { display: flex; align-items: center; gap: 10px; min-height: 40px; }
+.dk-br .r > span { flex: 1; display: flex; flex-direction: column; }
+.dk-br .r b { font: 600 14px/18px var(--font-ui, system-ui); color: var(--ink, #1c1d21); }
+.dk-br .r small { font: 500 11px/14px var(--font-ui, system-ui); color: var(--text-2, #5a5c60); }
+.dk-br .sw { position: relative; width: 44px; height: 26px; border-radius: 13px; background: #34a853; }
+.dk-br .sw::after { content: ""; position: absolute; top: 2px; left: 20px; width: 22px; height: 22px; border-radius: 50%; background: #fff; box-shadow: 0 1px 3px rgba(0, 0, 0, .25); }
+.dk-br .sw.off { background: rgba(120, 120, 128, .32); }
+.dk-br .sw.off::after { left: 2px; }
+.dk-br p { margin: 4px 0 0; font: 400 12px/16px var(--font-ui, system-ui); color: var(--text-2, #5a5c60); }
+.dk-sn { padding: 12px; border-radius: 16px; background: rgba(255, 255, 255, .7); display: flex; flex-direction: column; gap: 6px; }
+.dk-sn .tag { align-self: flex-start; display: inline-flex; align-items: center; gap: 4px; height: 20px; padding: 0 7px; border-radius: 6px; background: rgba(120, 120, 128, .08); font: 400 12px/20px var(--font-ui, system-ui); color: var(--ink-3, #3c3d42); }
+.dk-sn .tag i { width: 6px; height: 6px; border-radius: 50%; background: var(--ink, #1c1d21); }
+.dk-sn small { font-size: 11px; color: var(--text-2, #5a5c60); }
+.dk-sn .k { font: 600 15px/20px var(--font-ui, system-ui); color: var(--ink, #1c1d21); }
+.dk-sn .w { font: 400 13px/18px var(--font-ui, system-ui); color: var(--text-2, #5a5c60); }
+.dk-sn .ho { display: inline-flex; height: 20px; padding: 0 7px; margin-left: 6px; border-radius: 6px; font: 600 12px/20px var(--font-ui, system-ui); color: #6e4806; background: #f5ead6; vertical-align: middle; }
+@media (prefers-color-scheme: dark) { .dk-pt, .dk-gl, .dk-br, .dk-sn { background: rgba(44, 44, 48, .7); } .dk-sn .ho { color: #fcca6f; background: #403626; } }

@@ -9,3 +9,4 @@ A gate is the owner's ruling on a whole phase, so it is a row of its own, closin
 - **Tapped**, it opens its sheet (KindSheet): what it decides, what it waits for (each milestone and its state), what the owner will get, and the four choices: proceed, hold, recycle, kill.
 - Times in Chicago time, as everywhere (round 8, answer 6, item 12).
 - Records: OPERATING_MODEL.md §3 and §4 (phase gates, S-024); docs/gates/P-005/; decisions/P-005/dor-2.md, dor-3.md.
+- **v44:** each project's gates are its own: the widget's Design gate is not reached, its decision yours, after its brief is ready.

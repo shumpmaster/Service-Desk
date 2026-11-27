@@ -14,3 +14,4 @@ How a project's list tells its levels apart: rails, a label for each level, one 
 - **v34 (round 8, answer 6):** a milestone's label and number (MILESTONE 3.6) sit on a small line above, as fourth numbers do, and its name takes the full width on up to two lines (item 10). Times are in Chicago time, with a date on anything older than today, such as "13 Nov, 3:32 pm" (item 12).
 - **v35 (round 8, answers 8 and 9):** a gate is a row of its own closing its phase (GateRow); research takes RESEARCH in place of SPRINT, with a Memo tag (KindRows).
 - **v36 (round 8, answer 12):** each count is said once (item 1, see Gauge); a row that happened since the owner last looked wears NewMark's dot (item 6).
+- **v44:** a line on what each phase (operating-model words) and sprint (an example) is under its heading; a sprint's name plain, its code after it in grey; a milestone's own id after its name in grey, a standard milestone's hidden.

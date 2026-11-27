@@ -1327,6 +1327,89 @@ V43 = {
 for _k, _v in V43.items():
     _h, _r = C[_k]; C[_k] = (_h, _r.rstrip() + '\n' + _v + '\n')
 
+# round 8, answers 27 and 28 (decisions/questions/P-005-design-round-8.md): plain words, the branch toggle, session names, the handover flag (v44)
+comp("PlainTitle", "Desk", 300, '<div class="dk-stage col" style="max-width:393px"><div class="dk-pt">'
+  + '<div class="no">Stop · 9:42 am · <span class="cd">2.2.2.10</span></div><div class="t">Work stopped: the plan failed its third check. Your call. <span class="cd">Stop card 5</span></div>'
+  + '<div class="s">Three checks failed · holds up the records, one timeline, what needs you first</div></div>'
+  + '<div class="dk-pt"><div class="no">Sprint · <span class="cd">2.2.2 · S-011</span></div><div class="t">Second plan for the records work</div><div class="w">The written plan for changing the records so the timeline can be drawn from them. <i class="ex">example</i></div></div></div>',
+ """# PlainTitle
+
+The rule every title on the desk follows (v44; the owner's round 8, answers 27 and 28, the plain-words test at docs/design/audit-2026-11-27-v43-plain-words.md, approaches A, B and E):
+
+- **Plain name first, code after it in grey.** A title says who did what to what, in a sentence ("Check 2 of the plan failed: two wordings still clashed"); its number, the spec's or pull request's code and the card's name follow in grey (`2.2.2.6`, `S-011`, `PR #446`, `Stop card 5`). A milestone's own id (M6) follows its name in grey; a standard milestone's id stays hidden (R6 answers 13 and 14).
+- **A line on what each thing is**, under each project, phase and sprint: the phase's in the operating model's words, the project's and the sprint's marked as an example until a record carries one.
+- **Answers in plain words, the option beneath.** A stop card's or a gate's choices read as actions ("Start a fresh plan"), the system's key small beneath ("criteria-wrong"); a decision reads "You chose: start a fresh plan" with "The option you tapped: criteria-wrong (Recommended)" beneath.
+- **Plain role names**: the scheduler (the Orchestrator), the plan reviewer, the readiness reviewer; a stop or decision that is done reads "Answered"; "Yours" reads "Your decision".
+- **One clock**: Chicago, am or pm, with a date when it is not today.
+- Why stays a tag that opens its bubble (R5 answer 10, R8 answer 6).
+- The rewritten titles are made from words already on the page; for the real desk, each record needs to carry its plain text (docs/design/requests/2026-11-26-timeline-records.md).
+""")
+comp("Glossary", "Desk", 420, '<div class="dk-stage col" style="max-width:393px"><div class="dk-gl"><div class="kd">Words and who does the work</div><h4>What the words mean</h4>'
+  + '<dl><div><dt>The workers are AI</dt><dd>Everyone named below is an AI assistant (a Claude session), not a person. You make the calls; they do the rest.</dd></div>'
+  + '<div><dt>Chief of Staff</dt><dd>Your lead AI assistant. It talks with you and runs the projects.</dd></div><div><dt>Spec</dt><dd>The written plan for a piece of work.</dd></div></dl>'
+  + '<p class="dk-note">Opened from the <b>?</b> in home’s capsule, or from any word with a dotted underline (that entry is lit).</p></div></div>',
+ """# Glossary
+
+One sheet of what the desk's words mean and who does the work (v44; plain-words approach D and question 5, the owner's round 8, answer 28).
+
+- **Opens** from a **?** in home's capsule (the project's top row has no room), and from any word drawn with a dotted underline the first time it appears (spec, check, stop card, readiness card, spec writer); that entry is lit and scrolled to.
+- **Who does the work** first, and it says plainly that **the workers are AI** sessions, not people: the Chief of Staff (your lead AI assistant), the scheduler (the Orchestrator), the spec writer, the plan reviewer, Triage, the Critic, helpers; what a session's name is, and what "Handover needed" means.
+- **Words**: spec, plan review and round, stop card, readiness card, strike, freeze, gate, milestone, sprint, checks, branch, pull request, main.
+- **Codes**: M6, S-011, and how a position number reads (2.2.2.10: phase, milestone, sprint, event).
+- A bottom sheet like BottomSheet; closes on its cross, Escape or a tap outside.
+""")
+comp("BranchToggle", "Desk", 360, '<div class="dk-stage col" style="max-width:300px"><div class="dk-br"><div class="h">Branches <span>Show all</span></div>'
+  + ''.join(f'<div class="r"><span><b>{n}</b><small>{c}</small></span><i class="sw{" off" if o else ""}"></i></div>' for n, c, o in [("Main", "where merged work lands", 0), ("First plan", "2.2.1 · S-010", 0), ("Second plan", "2.2.2 · S-011", 1), ("First mockup", "2.3.1 · PR #445", 0)])
+  + '<p>A branch is a separate line of work; once merged, it joins main. <i class="ex">names are examples</i></p></div></div>',
+ """# BranchToggle
+
+Switches for the map's branches, in MapFilter's panel below its six cuts (v44; the owner's round 8, answer 28: "a branch toggle in the filters").
+
+- **Main and each lane** the map draws in the phase in view (each sprint's or pull request's line), named plainly with its number and code after it in grey, each with a switch (on: green).
+- **Switching one off** hides that branch: its stations go nearly blank and its name is struck through on the map; its rows leave the list, the headings above keeping a count of what is hidden (as MapFilter's cuts do, v41). Combines with a cut.
+- **"Show all"** brings every branch back; the filter button's cross and "Everything" do too.
+- The filter button says what is hidden: "1 branch hidden", or "Your decisions · 2 branches hidden".
+- The pointer, the arrow and the landing carry on. The branch names are examples: no record yet lists each sprint's or pull request's branch (docs/design/requests/2026-11-26-timeline-records.md).
+""")
+comp("SessionName", "Desk", 260, '<div class="dk-stage col" style="max-width:393px"><div class="dk-sn"><span class="tag"><i></i>Plan checks <small>14 Nov</small></span>'
+  + '<div class="k">Chief of Staff · Following the second plan through its checks <small>14 Nov</small></div><div class="w">An AI session (a Claude conversation); its name is made from what it set out to do.</div></div></div>',
+ """# SessionName
+
+Every AI session is named after what it set out to do (v44; the owner's round 8, answer 28: "an automated session naming").
+
+- **The name** is made from the session's first "doing" line: "Following the second plan through its checks". **A short form** goes on the link tag on each row ("Plan checks"), with the day it began small after it ("14 Nov"); the full name in the link bubble, the at-work row and its sheet, home's project line and the Context view.
+- It replaces "CoS 14 Nov": the tag now says what the conversation was about, and the Glossary says what a session is.
+- A pipeline run keeps its "Run" tag; the session at work on the project when it ran is named in its bubble.
+- An example in the mockup: no record carries a plain name yet. The proposal: each session writes its plain name at start and sets its session title to it (docs/design/requests/2026-11-27-session-names-and-handover.md).
+""")
+comp("HandoverFlag", "Desk", 220, '<div class="dk-stage col" style="max-width:393px"><div class="dk-sn"><div class="k">At work now · Following the second plan through its checks <span class="ho">Handover needed</span></div>'
+  + '<div class="w">The Chief of Staff, your lead AI assistant · since 7:52 am · ending with work open: the second plan waits on your stop-card answer</div></div></div>',
+ """# HandoverFlag
+
+A yellow **"Handover needed"** tag on a session that must pass its work to a new one, with why (v44; the owner's round 8, answer 28: "handover required flags").
+
+- **Why** is said beside it: its context (memory) nearly full ("context 91% used"), or ending with work open ("ending with work open: the second plan waits on your stop-card answer").
+- **Where**: the session's at-work row and its sheet, its link bubble, and home's project line.
+- **Home's priority list** takes a handover only when it needs you: once the session has ended and written its handover, starting the next session is yours ("Start the next session"). A session still at work is flagged but not listed.
+- The waiting colours (StatusMark); a 20-point tag like the others.
+- An example in the mockup: one session is flagged; no record carries the flag yet. The proposal: each session writes its context use and a `handover_required` flag with its reason in its session lines (docs/design/requests/2026-11-27-session-names-and-handover.md).
+""")
+V44 = {
+ "MapFilter": "- **v44 (round 8, answers 27 and 28):** the cuts read plainly (Your decisions, Big moments, Only what was merged); BranchToggle sits below them; the note says what is left out is hidden from the list and faint on the map.",
+ "PriorityList": "- **v44 (round 8, answers 27 and 28):** PlainTitle's rule: the event line plain first (\"Work stopped\"), its codes after in grey (\"Stop card 5 · 2.2.2.10 · S-011\"); the question plain; a line on what the project is (an example); **Decide what’s next** opens the same choices sheet as the project page; **Show on the timeline** opens the project at that event. The widget's item is its Readiness card (1.8.1.3) everywhere.",
+ "WaitSheet": "- **v44:** the count on each project's pill opens that project's own wait sheet (the widget's count opened the timeline's).",
+ "SessionLink": "- **v44 (round 8, answer 28):** the tag reads the session's short name and the day it began (SessionName); the bubble names the session in full and shows HandoverFlag when it is set.",
+ "AtWork": "- **v44 (round 8, answer 28):** the row names the session (SessionName) and carries HandoverFlag with why; the Chief of Staff is called your lead AI assistant.",
+ "ProjectLine": "- **v44 (round 8, answer 28):** the line names the session at work by its short name (SessionName), with HandoverFlag when set.",
+ "KindSheet": "- **v44 (round 8, answers 27 and 28):** a line on what each kind is at the top (a gate, a stop, a readiness card); choices in plain words with the key beneath; \"You chose\" in place of \"Your words\"; the widget's Readiness card has its own sheet (resubmit or stop); each project's gates are its own (the widget's page showed the timeline's Design gate).",
+ "GateRow": "- **v44:** each project's gates are its own: the widget's Design gate is not reached, its decision yours, after its brief is ready.",
+ "EventWeight": "- **v44 (round 8, answers 27 and 28):** PlainTitle's rule on every row; the usual actor named plainly when shown (the scheduler, the plan reviewer); a stop or decision that is done reads \"Answered\".",
+ "LevelRails": "- **v44:** a line on what each phase (operating-model words) and sprint (an example) is under its heading; a sprint's name plain, its code after it in grey; a milestone's own id after its name in grey, a standard milestone's hidden.",
+}
+for _k, _v in V44.items():
+    if _k in C:
+        _h, _r = C[_k]; C[_k] = (_h, _r.rstrip() + '\n' + _v + '\n')
+
 for name, (html, md) in C.items():
     d = os.path.join(OUT, "components", name); os.makedirs(d, exist_ok=True)
     open(os.path.join(d, "preview.html"), "w").write(html)

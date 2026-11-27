@@ -6,3 +6,4 @@ One line in each project's group on home: who is at work and how much is new sin
 - On the right, an ink dot and how many things are new, or "nothing new".
 - **Examples** until the records request is met (docs/design/requests/2026-11-26-timeline-records.md: the pipeline at work now; when the owner last looked); home says so under its groups.
 - **v41 (round 8, answer 20):** worded to read on one line at 393 ("Chief of Staff · since 7:52 am", "Nothing at work"), starting under the strip; at 360 the at-work line wraps cleanly, its count kept whole. On the glass cards (answer 21) it sits on a light chip with a hairline.
+- **v44 (round 8, answer 28):** the line names the session at work by its short name (SessionName), with HandoverFlag when set.

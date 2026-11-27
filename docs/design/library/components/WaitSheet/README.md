@@ -9,3 +9,4 @@ Everything that waits on the owner in a project, one tap away. Chosen by the own
 - Records: status/P-005.toml (what waits); decisions/P-005/stop-5-notes.md; PR #446 (the three questions). A question's Answer is an example until the desk can record it (docs/design/requests/2026-11-26-timeline-records.md).
 - **v37 (look item 2A):** Answer is an ink button (ink-button); blue is left to now and the selection.
 - **v43 (round 8, answer 26):** counts from what really waits: in The timeline, 1 thing (Stop card 5). The three questions of PR #446 were three independent questions, each with its own ruling (decisions/questions/P-005-s011-widths.md, P-005-s011-m8-reading.md, P-005-definer-pack.md), answered at 8:47 am; a question that waits is its own row, named by its subject.
+- **v44:** the count on each project's pill opens that project's own wait sheet (the widget's count opened the timeline's).

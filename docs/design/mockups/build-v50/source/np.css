@@ -1,0 +1,102 @@
+/* ================= v50: every project on the same page (round 9, answer 6). Option A's list and the four states of
+   options-r9-states/source/st.css; the page, its top row, its map card and its summary line are the planned projects' own.
+   Colour: the soft status colours only (bad for can't read and failed), the one blue for now, and the ground. ================= */
+
+/* a project with no plan: no phase row under the map; the phase pill says No phases yet */
+html.np-on #v13band .v13phases { display: none !important; }
+.tp-pill.ph.np-ph .t { color: var(--ink-2); font-weight: 500; }
+.np-ring { flex: none; width: 18px; height: 18px; border-radius: 50%; box-shadow: inset 0 0 0 1.5px var(--ink-4); background-image: repeating-conic-gradient(var(--ground) 0 12deg, transparent 12deg 30deg); }
+.np-mtx { margin: 0; padding: 4px 16px 12px; font: 400 15px/21px var(--font-ui); color: var(--ink-2); max-width: 250px; }
+html.np-on #v13list { padding-left: 20px; padding-right: 20px; }
+#v13band .sm-line .sm-dot.np-quiet { background: var(--ink-4); }
+.v13map .fl.ml.np-no { fill: var(--text-2); font-weight: 500; }   /* a number alone on main is a code: grey, as under a word */
+html.np-on #v13band .pl-row .tp-pill.pj { flex: 0 0 auto; max-width: none; }
+html.np-on #v13band .pl-row .tp-pill.ph { flex: 0 1 auto; min-width: 0; }
+html.np-on #v13band .pl-row .tp-pill.ph .t { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+@media (max-width: 400px) { .tp-pill.ph.np-ph .np-ring { display: none; } }
+/* below 370 a planned project's phase pill keeps its number alone (v45); this one has no number, so it keeps its words */
+@media (max-width: 400px) { html.np-on #v13band .pl-row .tp-pill.ph.np-ph { padding: 0 6px 0 9px; gap: 4px; } }
+.tp-pill.ph.np-ph.np-tight .np-y { display: none; }
+@media (max-width: 370px) { .tp-pill.ph.np-ph .t { display: inline; } .tp-pill.ph.np-ph .np-y, .tp-pill.ph.np-ph .cv { display: none; } html.np-on #v13band .pl-row .tp-pill.ph.np-ph { padding: 0 10px; } }
+#v13band .sm-line .sm-dot.run { background: var(--ink-4); animation: qp-pulse 1.1s ease-in-out infinite; }
+.qp-hdot.run { background: var(--ink-4); animation: qp-pulse 1.1s ease-in-out infinite; }
+@keyframes qp-pulse { 50% { opacity: .25; } }
+#v13in.qp-shim svg { opacity: .55; }
+#tabbar .qp-nobadge .ny-badge { display: none !important; }
+.qp-ev.fh-out { opacity: .35; }
+
+/* the body: the list, top down */
+.qp-lh { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; margin: 14px 0 2px; }
+.qp-lh h2 { margin: 0; font: 600 13px/18px var(--font-ui); letter-spacing: .06em; text-transform: uppercase; color: var(--text-2); }
+.qp-lh span { font: 400 13px/18px var(--font-ui); color: var(--text-2); }
+.qp-earlier { margin: 4px 0 6px; font: 400 14px/19px var(--font-ui); color: var(--text-2); }
+.qp-day { margin: 14px 0 4px; font: 600 13px/18px var(--font-ui); color: var(--ink-2); }
+.qp-ev { display: flex; gap: 10px; padding: 8px 0; border-top: var(--hair, 1px) solid var(--sep); }
+.qp-ev:not(.main) { padding-left: 18px; }
+.qp-ev .v13ico { margin-top: 1px; }
+.qp-tx { flex: 1; min-width: 0; }
+.qp-meta { font: 400 13px/18px var(--font-ui); color: var(--text-2); }
+.qp-t { font: 400 15px/20px var(--font-ui); color: var(--ink); text-wrap: pretty; overflow-wrap: anywhere; }
+.qp-t b { font-weight: 600; }
+.qp-t .pw-code { white-space: normal; }
+.qp-by { margin-top: 3px; font: 400 13px/18px var(--font-ui); color: var(--text-2); }
+.qp-st { display: inline-block; font: 600 12px/18px var(--font-ui); padding: 0 7px; border-radius: var(--r-tag, 6px); margin-right: 4px; vertical-align: 0; }
+.qp-st.ok { color: var(--ink-2); background: var(--fill); }
+.qp-st.bad { color: var(--status-bad-tag); background: var(--status-bad-tag-bg); }
+.qp-end { display: flex; align-items: center; flex-wrap: wrap; gap: 6px; margin-top: 10px; padding: 12px 0 0; border-top: var(--hair, 1px) solid var(--sep); font: 400 14px/19px var(--font-ui); color: var(--text-2); }
+.qp-end b { color: var(--blue-text); font-weight: 600; }
+.qp-nowdot { width: 8px; height: 8px; border-radius: 50%; background: var(--blue-fill); }
+.qp-spin { width: 12px; height: 12px; border-radius: 50%; border: 2px solid var(--ink-5, rgba(0,0,0,.12)); border-top-color: var(--ink-3); animation: qp-rot 1s linear infinite; }
+@keyframes qp-rot { to { transform: rotate(360deg); } }
+
+/* checking: a quiet shimmer over what was last read */
+.qp-shim { position: relative; }
+.qp-shim .v13ico, .qp-shim .qp-st { opacity: .55; }
+.qp-shim .qp-t, .qp-shim .qp-t b, .qp-shim .qp-day { color: var(--text-2); }
+.qp-shim::after { content: ''; position: absolute; inset: 0; pointer-events: none; border-radius: 10px;
+  background: linear-gradient(100deg, transparent 30%, var(--qp-sheen, rgba(255,255,255,.55)) 50%, transparent 70%); background-size: 250% 100%; animation: qp-sheen 1.8s ease-in-out infinite; }
+@keyframes qp-sheen { from { background-position: 120% 0; } to { background-position: -120% 0; } }
+
+/* can't read: the block, its two actions */
+.qp-cant, .qp-hcant { border-radius: var(--r-inner, 12px); background: var(--status-bad-wash); padding: 12px 14px; margin: 12px 0 4px; }
+.qp-cant p { margin: 0; font: 400 15px/21px var(--font-ui); color: var(--ink); text-wrap: pretty; }
+.qp-acts { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
+.qp-btn { all: unset; box-sizing: border-box; display: inline-flex; align-items: center; gap: 6px; min-height: 44px; padding: 0 16px; border-radius: 22px; cursor: pointer;
+  font: 600 15px/20px var(--font-ui); color: var(--ink); background: var(--fill); text-decoration: none; }
+.qp-btn svg { width: 16px; height: 16px; flex: none; }
+.qp-btn.main { background: var(--ink); color: var(--ground); }
+.qp-btn.busy svg { animation: qp-rot 1s linear infinite; }
+.qp-btn:focus-visible, .qp-back:focus-visible { outline: 2px solid var(--blue-fill); outline-offset: 2px; }
+.qp-said { margin: 8px 0 0 !important; font: 400 14px/19px var(--font-ui) !important; color: var(--ink-2) !important; }
+.qp-said:empty { display: none; }
+
+/* the sheet */
+.qp-sheet .m.qp-none { background: none; box-shadow: inset 0 0 0 1.5px var(--ink-4); border-radius: 50%; }
+.qp-sheet .qp-acts { margin: 4px 0 6px; }
+.qp-mtx { margin: 0; padding: 4px 16px 12px; font: 400 15px/21px var(--font-ui); color: var(--ink-2); max-width: 250px; }
+
+/* home: nothing waiting; the first open; a project the desk can't read */
+.qp-calm { display: flex; gap: 12px; align-items: flex-start; margin: 6px 0 18px; padding: 16px; border-radius: var(--r-card, 20px); background: var(--glass, rgba(255,255,255,.4));
+  box-shadow: inset 0 0 0 1px var(--glass-edge, rgba(60,60,67,.12)); }
+.qp-calm-dot { flex: none; width: 10px; height: 10px; margin-top: 8px; border-radius: 50%; background: var(--status-ok-mark, #2f9e5b); }
+.qp-calm-1 { margin: 0; font: 600 20px/26px var(--font-ui); color: var(--ink); }
+.qp-calm-2 { margin: 4px 0 0; font: 400 15px/21px var(--font-ui); color: var(--ink-2); }
+html.qp-s-calm #view .sg-sum, html.qp-s-calm #view .pr-wrap > .pr-h:first-child, html.qp-s-calm #view .pr-list,
+html.qp-s-calm #view .sg-grp .need, html.qp-s-calm #view .sg-grp .sg-badge, html.qp-s-calm #view .sg-grp[data-sgg="tl"] .sg-strip, html.qp-s-calm #view .sg-grp[data-sgg="wd"] .sg-strip { display: none !important; }
+html.qp-s-calm #tabbar .tab[data-tab="needs"] .n, html.qp-s-calm #tabbar .tab[data-tab="needs"] [class*="badge"], html.qp-s-calm .cbtn .bdot { display: none !important; }
+.qp-welcome { margin: 6px 0 14px; font: 400 16px/22px var(--font-ui); color: var(--ink-2); text-wrap: pretty; }
+.qp-welcome b { color: var(--ink); }
+.qp-gone { display: none !important; }
+.qp-hcant { margin: 10px 0 4px; }
+.qp-hcant .sg-row { background: none !important; }
+.qp-hcant .l2 { color: var(--status-bad-tag) !important; font-weight: 600; }
+.qp-hdot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: var(--status-bad-dot, #d84a3a); margin-right: 6px; vertical-align: 1px; }
+.qp-hsub { margin: 2px 0 0; font: 400 14px/19px var(--font-ui); color: var(--ink-2); }
+
+@media (prefers-color-scheme: dark) {
+  .qp-shim { --qp-sheen: rgba(255,255,255,.10); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .qp-shim::after, .qp-spin, #v13band .sm-line .sm-dot.run, .qp-hdot.run, .qp-btn.busy svg { animation: none; }
+}
+html.qp-s-calm .ps45-bar .s.qp-cur { background: var(--ink-4); }

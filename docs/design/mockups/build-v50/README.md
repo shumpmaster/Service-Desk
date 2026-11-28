@@ -1,0 +1,47 @@
+# Mockup v50 build layer
+
+v50 is v49 plus this layer. It carries out the owner's round 9, answer 6 (decisions/questions/P-005-design-round-9.md): "I agree, only caveat is the branch map you drew up looks very different than the others", read as option A of docs/design/mockups/options-r9-states/ for a project with no plan, and the four states as drawn there; the caveat: a project with no plan has the same branch map as every other project, drawn by the mockup's own map code, not by a drawing of its own.
+
+    python3 v50.py ../timeline-v49-craft.html ../timeline-v50-craft.html
+
+The code is `source/np.js` and `source/np.css`: option A's list and the four states of `../options-r9-states/source/` st.js and st.css, without the hash switching, the theme-by-hash script, option A's page of its own and its map of its own (`qpMap`). Elements are found by data attributes and classes, not words. The library's card is ProjectStates, with notes on BranchMap, MapCard, ProjectSummary, PriorityList and DeskHome.
+
+## What it does
+- **"undefined" fixed at its source.** v30's layer declared `var SL = 'A';` in the same scope as the table of state words `SL`, so every `SL[x.s]` read undefined from then on (the quiet projects' old rows, and any other row that used the table). `v50.py` renames v30's option to `SLV` at each of its uses, asserted one by one, and asserts no `SL` option test is left.
+- **A project with no plan opens through the planned projects' own page.** Operating model, Model-Lab and portfolio are fed to the same `renderProject` as The timeline and the widget, as a phase-less plan made from their real events: one block (not shown as a phase), one branch per recent branch, the merges on main. The plan exists only while the page is open, so home's phase strips read as before ("No phases yet" on the quiet line).
+- **The top row**: back, the project's pill (in the projects menu with the other four), and the phase pill **No phases yet** with a hollow ring (no ring below 400 wide; "No phases" where the name leaves too little room: operating model at 393, all three below 370; never cut); its menu says none is on record yet.
+- **The map card is the renderer's**: the summary line first (v46's own line, "No plan yet · 20 merged · nothing for you", below 380 "No plan yet · nothing waits on you", never cut; a grey dot), then the same fitted map (`v13map fit`): main's groove, a lane per branch, the same stations, icons, lane labels, main's words under each merge with the pull request's number in grey, the window over the rows in view, card padding, filter button and fold handle. No phase row, no milestone selection and no gate lines. Lane names are the branch's name alone (a planned project's carry a sprint number). Where main is crowded (Model-Lab's six merges, portfolio's seven) the rest carry the number alone, in grey, as v25's labels shorten to it.
+- **The one change to the renderer**: a merge into a branch (operating model's build joining the fix's branch) stays on its branch. Five `merge` tests in `mapSVG`, `fitSVG` and v25's main labels read `x.into`; no planned project's event has it, so their maps are drawn exactly as in v49.
+- **The list is option A's**: "What happened lately", top down, oldest first, the month's earlier work in one line, a day heading, each row with its icon and mark, kind · time · lane, the plain title and its code in grey, a real state word (Done, Merged, Passed, Answered, Failed) and who; it ends with Now · 11:25 am. Each row carries its station's `data-k`, so the map's window follows the scroll, and the map filter fades rows as on a planned project. It opens at the top (a planned project opens on its Now; this one has none).
+- **The summary line** opens About this project for a project with no plan: purpose (example), where it stands, Its phases: none on record, this month, what waits on you.
+- **The four states, behind More's "Mockup only" menu** (under "preview the feed": "preview a state", Nothing waiting, Checking, Can't read, First open; a tick on the one shown; tapping it again goes back). Nothing waiting: one calm line in place of the priority list, no badge. Checking: portfolio's line "Checking portfolio…", its map and list greyed with a sheen, "Checking for anything newer…". Can't read: Model-Lab's line "Can't read since 9:14 am · tap for what to do", the block with Try again (Checking…, then what happened; the mockup sends nothing) and Open on GitHub, "Can't read" at the list's end; on home its own line with the same two buttons. First open: no new-since marks, one line of welcome. Their words and the 9:14 am time are examples and say so.
+
+## Checks
+Runs: 393×852 and 360×740, light and dark; 393 with reduced motion; simulated top insets 0, 59 and 200 (copies with `env(safe-area-inset-top…)` replaced; every run above at 59). Script: Playwright, chromium. Every row below held in all 7 runs.
+
+| Check | Result |
+|---|---|
+| Console errors, sideways scroll (home, The timeline, each quiet project's page and sheet, each state on home and on its page) | none |
+| Each quiet project opens the new page (operating model, Model-Lab, portfolio, from home's quiet group) | the planned projects' page: top row with the project's pill and "No phases yet" ("No phases" for operating model at 393 and all three below 370; never cut), the map card, option A's list (17, 6 and 7 rows; operating model's state words Done, Merged, Failed, Passed, Answered); "undefined" absent from the page text; opens at the top (back button at 65; 6 and 106 with insets 0 and 200) |
+| Its map is The timeline's renderer | same SVG (`svg.v13map.fit`), same part classes (path.g, path.g.main, g.st, circle.dot, g.ic/circle.disc, text.lb, text.fl.ml, path.ml-lead, rect.win), main 4px and lanes 3px, lane labels 11px 600, main's words 11px, dots r 4, discs r 10.5, card padding 12px and radius 20px, the summary line, filter button and fold handle: identical to The timeline's in every run. The only part classes The timeline has and these lack: rect.sl-band / sl-edge (the selected milestone). Lanes 4, 3 and 4; no now station, no gate lines, no phase row. Side by side: `side-light-tl-vs-om.png`, `side-dark-tl-vs-om.png` |
+| The map follows the list | scrolling 400 moves the window: stations in view 0,1 → 2,3,4,5,6 (operating model at 393) |
+| The summary line | "No plan yet · 20 merged · nothing for you" (393), "No plan yet · nothing waits on you" (360), never cut (measured, every project and state); opens "About this project": Where it stands, Its phases, This month, What waits on you |
+| Phase pill, projects menu | "None on record yet. When the AI team files a plan for this project, its phases and gates show here."; Projects: The timeline 2, Home-screen widget 1, operating model, Model-Lab, portfolio |
+| Map filter on a quiet project | Reviews and checks: 17 → 6 rows, 11 stations faint; the cross brings all back; Your decisions: 17 → 0 (nothing waits on the owner) |
+| Back | home with the priority list (rows 1 gate, 2, 3) after each project |
+| More, Mockup only: Nothing waiting | the calm line, no priority list, no badge; again: gone, home 3 rows, badge 3 |
+| First open | welcome line, 0 new-since marks; again: no welcome, the 2 marks back |
+| Can't read | home: Model-Lab's own line "Can't read since 9:14 am", Try again / Open on GitHub; Try again: "Tried again at 11:25 am: still can't read it … the mockup sends nothing"; Model-Lab's page: line "Can't read since 9:14 am · tap for what to do", the block, "Can't read" at the list's end, no "undefined"; again: Model-Lab back in the quiet group |
+| Checking | portfolio's line "Checking portfolio…", map and list greyed with the sheen, list aria-busy; again (from its page): back to "No plan yet …", no sheen |
+| Counts unchanged from v49 | home "3 things need you", heading 3, rows 1 (gate), 2, 3; badge 3; tab 3; The timeline's pill 2 |
+| v49 still works | v49's whole check script run on v50: every value identical to v49's own run, all 7 runs (gate sheet and its choices, the reader from Records rows and back, Needs-you tab and its sheets, the pull request's checks, Decide what's next (5 choices), Show on timeline, map filter 13 → 3, session tag "Plan checks 14 Nov", Back / Desk / tab returns with 3 rows, insets 42/6, 102/65, 143/106) |
+| Smallest contrast, new text | 4.70 light, 6.16 dark (the Failed tag); the list's grey lines 6.25 light, 7.33 dark; can't-read line on home 5.27 / 6.70 |
+| Library check.js | errors [] in light and dark; ProjectStates within its height; every other card's preview unchanged |
+
+Screenshots (scratchpad, not in the repository): before/after of the quiet project's map, options-r9-states q=A against v50 (`beforeafter-light-om.png`, `-ml`, `-pf`, `beforeafter-dark-om.png`); each page, sheet and state per run under `run/`.
+
+## Short
+- Model-Lab's and portfolio's branches hold only their merges (the records give pull requests, not their commits), so the renderer draws each as a lane that rises and drops straight back to main at each merge; nothing is added to fill them.
+- Where main is crowded, merges carry their number alone (Model-Lab #114, #116, #117; portfolio #8 to #11).
+- With nothing waiting there is no now station on a quiet project's map; Now is the list's last line.
+- The four states are previews over the mockup's 14 November records; their words and the 9:14 am time are examples.

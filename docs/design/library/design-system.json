@@ -18,8 +18,8 @@
  },
  "lastChange": {
   "by": "Claude",
-  "at": "2026-11-28T02:47:27Z",
+  "at": "2026-11-28T04:22:04Z",
   "via": "Claude Code",
-  "note": "Round 9, v49: GateOpen (a gate open for your ruling: the sheet, the list row, home's row 1 with its choices) and RecordReader (one plain page for any record, Records as rows); GateRow, KindSheet, NeedsTab and PriorityList notes. decisions/questions/P-005-design-round-9.md, answer 5."
+  "note": "Round 9, v50: ProjectStates (a project with no plan on the same page as every other, its map drawn by BranchMap itself; nothing waiting, checking, can't read, first open); BranchMap, MapCard, ProjectSummary, PriorityList and DeskHome notes. decisions/questions/P-005-design-round-9.md, answer 6."
  }
 }

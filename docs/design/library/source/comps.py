@@ -538,13 +538,16 @@ MAP_SP = [("2.7.1 S-010", [(13, "21:32", "commit", ""), (13, "21:44", "review", 
           ("2.5.1 PR #445", [(14, "12:05", "commit", ""), (14, "12:12", "check", ""), (14, "13:54", "merge", "")]),
           ("2.7.2 S-011", [(14, "12:07", "decision", ""), (14, "12:16", "commit", ""), (14, "12:29", "review", "bad"), (14, "12:37", "commit", ""), (14, "14:46", "merge", "wait"), (14, "15:14", "review", "bad"), (14, "15:23", "commit", ""), (14, "15:36", "review", "bad"), (14, "15:42", "stop", "now")]),
           ("2.5.2 Mockups v2 to v4", [(14, "14:56", "commit", ""), (14, "15:26", "commit", ""), (14, "15:52", "commit", ""), (14, "16:00", "commit", ""), (14, "16:14", "commit", "")])]
-def branch_map(view=("15:14", "15:23", "15:36", "15:42"), vw=393):
+def branch_map(view=("15:14", "15:23", "15:36", "15:42"), vw=393, data=None, vis_sp=2, aria="Branch map of the Design phase"):
+    # data: a list of (lane label, [(day, "hh:mm", kind, state)]); by default the Design phase's sprints. v50: a project with no plan passes its
+    # recent branches, each labelled by its name alone; the state "into" keeps a merge into a branch on its branch (operating model's build).
+    data = data or MAP_SP
     DX, PAD, LANE = 30, 26, 32
-    evs = [dict(sp=si, t=_t(d, hm), hm=hm, k=k, st=st) for si, (_, es) in enumerate(MAP_SP) for d, hm, k, st in es]
+    evs = [dict(sp=si, t=_t(d, hm), hm=hm, k=k, st=st) for si, (_, es) in enumerate(data) for d, hm, k, st in es]
     order = sorted(range(len(evs)), key=lambda i: evs[i]["t"])
     for n, i in enumerate(order): evs[i]["x"] = PAD + n * DX
     sps = []
-    for si, (lab, _) in enumerate(MAP_SP):
+    for si, (lab, _) in enumerate(data):
         es = sorted([e for e in evs if e["sp"] == si], key=lambda e: e["t"]); sps.append(dict(lab=lab, evs=es, a=es[0]["t"], b=es[-1]["t"]))
     busy = {}
     for s in sorted(sps, key=lambda s: s["a"]):
@@ -552,20 +555,20 @@ def branch_map(view=("15:14", "15:23", "15:36", "15:42"), vw=393):
         while busy.get(l, -1) >= s["a"]: l += 1
         s["lane"] = l; busy[l] = s["b"]
     lanes = max(s["lane"] for s in sps); YM = 22 + LANE * lanes; W = PAD * 2 + (len(evs) - 1) * DX; H = YM + 24
-    vis = [e for e in evs if e["sp"] == 2 and e["hm"] in view]
+    vis = [e for e in evs if e["sp"] == vis_sp and e["hm"] in view]
     a, b = min(e["x"] for e in vis) - 14, max(e["x"] for e in vis) + 14
     pan = max(0, min(W - vw, (a + b) / 2 - vw / 2))
     p = f'<path class="g main" d="M0 {YM} H{W}"/>'; st_ = ""; lb = ""
     for s in sps:
-        y = YM - LANE * s["lane"]; on = [e for e in s["evs"] if e["k"] != "merge"]
+        y = YM - LANE * s["lane"]; on = [e for e in s["evs"] if e["k"] != "merge" or e["st"] == "into"]
         x0 = s["evs"][0]["x"]; x1 = on[-1]["x"] if on else x0
         p += f'<path class="g" d="M{x0 - 16} {YM} C{x0 - 8} {YM} {x0 - 8} {y} {x0} {y} H{x1}"/>'
         for j, e in enumerate(s["evs"]):
-            main = e["k"] == "merge"; cy = YM if main else y
+            main = e["k"] == "merge" and e["st"] != "into"; cy = YM if main else y
             if main:
                 px = s["evs"][j - 1]["x"] if j else e["x"] - 16
                 p += f'<path class="g" d="M{px} {y} C{(px + e["x"]) / 2} {y} {(px + e["x"]) / 2} {YM} {e["x"]} {YM}"/>'
-            cls = " ".join(c for c in ["main" if main else "", e["st"]] if c)
+            cls = " ".join(c for c in ["main" if main else "", e["st"] if e["st"] != "into" else ""] if c)
             if e in vis or e["st"] == "now":
                 svg = ic(EVI[e["k"]], cls="ic " + cls).replace('<svg class', f'<svg x="{e["x"] - 6}" y="{cy - 6}" width="12" height="12" class', 1)
                 st_ += f'<circle class="disc {cls}" cx="{e["x"]}" cy="{cy}" r="10.5"/>{svg}'
@@ -573,7 +576,7 @@ def branch_map(view=("15:14", "15:23", "15:36", "15:42"), vw=393):
                 st_ += f'<circle class="dot {cls}" cx="{e["x"]}" cy="{cy}" r="4"/>'
         lb += f'<text class="lb" x="{x0}" y="{y - 9}">{s["lab"]}</text>'
     win = f'<rect class="win" x="{a}" y="{YM - LANE * lanes - 12}" width="{b - a}" height="{LANE * lanes + 24}" rx="10"/>'
-    return (f'<div class="dk-mapbar"><div class="dk-mapvp"><div class="dk-mapin" style="transform:translateX({-pan:.0f}px)"><svg class="dk-map" width="{W}" height="{H}" viewBox="0 0 {W} {H}" role="img" aria-label="Branch map of the Design phase">'
+    return (f'<div class="dk-mapbar"><div class="dk-mapvp"><div class="dk-mapin" style="transform:translateX({-pan:.0f}px)"><svg class="dk-map" width="{W}" height="{H}" viewBox="0 0 {W} {H}" role="img" aria-label="{aria}">'
             f'{win}{p}{st_}{lb}<text class="lb main" x="{pan + 6:.0f}" y="{YM + 19}">main</text></svg></div></div></div>')
 
 comp("BranchMap", "Desk", 330,
@@ -1679,6 +1682,70 @@ V49 = {
  "NeedsTab": "- **v49 (round 9, answer 5, " + R9A5 + "; options-r9-gate/, A):** Waiting on you lists the open gate too, first, as home does; the badge, the heading and the sentence say 3, the same as home. Its rows' Records open RecordReader. " + LINKED,
 }
 for _k, _v in V49.items():
+    _h, _r = C[_k]; C[_k] = (_h, _r.rstrip() + '\n' + _v + '\n')
+
+# round 9, answer 6 (decisions/questions/P-005-design-round-9.md): every project on the same page, its map drawn like the others; the empty and can't-read states (v50)
+R9A6 = "“I agree, only caveat is the branch map you drew up looks very different than the others”"
+R9A6W = ("Chosen by the owner on 28 November 2026 (decisions/questions/P-005-design-round-9.md, answer 6: " + R9A6
+         + "; option A of docs/design/mockups/options-r9-states/, and the four states as drawn there; the caveat read as: the map of a project with no plan is BranchMap's own drawing, not one of its own). Mockup v50.")
+OM_SP = [("Four lessons", [(13, "10:00", "commit", ""), (13, "11:04", "commit", ""), (13, "11:22", "merge", "")]),
+         ("The spec-number fix", [(13, "17:36", "commit", ""), (13, "18:05", "review", "bad"), (13, "18:26", "review", ""), (13, "18:53", "decision", ""), (13, "19:19", "review", ""),
+                                  (13, "19:57", "review", "bad"), (13, "20:08", "review", ""), (13, "20:24", "check", ""), (13, "20:55", "merge", "")]),
+         ("Its build", [(13, "18:56", "commit", ""), (13, "19:07", "commit", ""), (13, "19:16", "merge", "into")]),
+         ("Two lessons", [(13, "21:40", "commit", ""), (13, "22:56", "merge", "")])]
+def np_row(k, st, meta, title, code, word, who, main=False):
+    return (f'<div class="dk-npr{" main" if main else ""}"><span class="dk-ev-ico{" main" if main else ""}">{ic(EVI[k])}<span class="dk-mark {st}">{MK[st]}</span></span>'
+            f'<div class="tx"><div class="m">{meta}</div><div class="t"><b>{title}</b> <span class="code">{code}</span></div><div class="by"><span class="dk-kst {st}">{word}</span> by {who}</div></div></div>')
+def np_line(dot, words):
+    return f'<button type="button" class="dk-psl"><i class="d {dot}"></i><span class="t">{words}</span><span class="c" aria-hidden="true">›</span></button>'
+NP_TOP = ('<div class="dk-tp"><span class="bk" aria-label="All projects">‹</span><span class="pill">operating model<span class="cv">▾</span></span>'
+          '<span class="pill dk-npph"><span class="rg0" aria-hidden="true"></span>No phases yet<span class="cv">▾</span></span><span class="sp"></span><span class="ic" aria-label="Needs you">•</span><span class="ic" aria-label="More">⋯</span></div>')
+NP_BTNS = ('<div class="dk-npacts"><span class="dk-npbtn main">' + ic("arrow-clockwise", "bold") + 'Try again</span><span class="dk-npbtn">' + ic("arrow-square-out", "bold") + 'Open on GitHub</span></div>')
+comp("ProjectStates", "Desk", 2200, '<div class="dk-stage col" style="max-width:393px">'
+  + '<div class="dk-prl-h">A project with no plan</div>' + NP_TOP
+  + '<div class="dk-mapcard dk-npcard"><div class="mc">' + np_line("np", "No plan yet · 20 merged · nothing for you")
+  + branch_map(view=("10:00", "11:04", "11:22"), vw=341, data=OM_SP, vis_sp=0, aria="Branch map of operating model: main and its four recent branches") + '<i class="hd"></i></div></div>'
+  + '<div class="dk-npl"><div class="lh"><b>What happened lately</b><span>top down, oldest first</span></div><p class="er">Earlier this month: 17 more pull requests merged, 4 to 11 Nov</p><div class="dy">13 Nov</div>'
+  + np_row("commit", "ok", "Commit · 10:00 am · Four lessons", "Three lessons from the timeline work written", "LL-050 to LL-052", "Done", "the Chief of Staff")
+  + np_row("commit", "ok", "Commit · 11:04 am · Four lessons", "A lesson: a new spec was given a number another spec held", "LL-053", "Done", "the Chief of Staff")
+  + np_row("merge", "ok", "Merge · 11:22 am · main", "Four lessons from the timeline work merged", "PR #57", "Merged", "you", True)
+  + np_row("review", "bad", "Review · 6:05 pm · The spec-number fix", "Its plan check failed, round 1", "S-038 · B1", "Failed", "the plan reviewer")
+  + '<div class="end"><i class="nw"></i><b>Now · 11:25 am</b> Nothing newer. Read 1 min ago.</div></div>'
+  + '<div class="dk-prl-h">Home, nothing waiting</div>'
+  + '<div class="dk-npcalm" role="status"><i class="d"></i><div><p class="a">Nothing needs you.</p><p class="b">The AI team is at work on 1 project; the other 4 are quiet. Read 1 min ago. ' + EXM + '</p></div></div>'
+  + '<div class="dk-prl-h">Being read</div>'
+  + '<div class="dk-mapcard dk-npcard"><div class="mc short">' + np_line("run", "Checking portfolio…") + '<div class="dk-npshim">the map and the list as last read, greyed, a slow sheen across them</div></div></div>'
+  + '<div class="dk-npl"><div class="end"><i class="spin"></i>Checking for anything newer…</div></div>'
+  + '<div class="dk-prl-h">The desk can’t read it</div>'
+  + '<div class="dk-mapcard dk-npcard"><div class="mc short">' + np_line("bad", "Can’t read since 9:14 am · tap for what to do") + '</div></div>'
+  + '<div class="dk-npcant"><p><b>The desk can’t read Model-Lab since 9:14 am.</b> What shows here is from then; anything newer, even something waiting on you, would not show. ' + EXM + '</p>' + NP_BTNS + '</div>'
+  + '<div class="dk-npl"><div class="end bad"><span class="dk-kst bad">Can’t read</span> Nothing newer can be shown: the desk last read Model-Lab at 9:14 am.</div></div>'
+  + '<div class="dk-npcant home"><div class="hr"><b>Model-Lab</b><span class="l"><i class="d"></i>Can’t read since 9:14 am</span> ' + EXM + '</div><p class="s">So nothing from Model-Lab after 9:14 am shows, even something that waits on you.</p>' + NP_BTNS + '</div>'
+  + '<div class="dk-prl-h">The first open</div>'
+  + '<p class="dk-npwel"><b>Welcome.</b> This is all your projects at once. From your next visit, anything new since this one is marked. ' + EXM + '</p>'
+  + '<p class="dk-note">No “new since you last looked” marks on the first open: there is no last look to count from.</p></div>',
+ f"""# ProjectStates
+
+A project with no plan on the same page as every planned project, and the four states the desk was missing: nothing waiting, being read, can't read, the first open. {R9A6W}
+
+- **A project with no plan** (operating model, Model-Lab, portfolio: none has a status file with a phase) opens on the planned project's page, not a page of its own (option A). **The top row** (TopPills): back, the project's pill, and the phase pill saying **No phases yet** with a hollow ring (below 400 points wide, no ring; where the project's name leaves too little room, as operating model's at 393 and every quiet project's below 370, it says "No phases", never cut); its menu says none is on record yet and that a plan's phases and gates will show there.
+- **The map card** (MapCard): its first row is ProjectSummary's line, a grey dot and **No plan yet · 20 merged · nothing for you** (below 380: "No plan yet · nothing waits on you"; never cut, so the month's count is said briefly and in full in the sheet), opening About this project (its purpose, where it stands, Its phases: none on record, this month's count, what waits on you: nothing). Inside it, **BranchMap's own drawing** (the owner's caveat): main along the bottom and the project's recent branches as lanes above it, named by the branch alone (a planned project's lanes carry a sprint number; a branch has none), the same grooves, stations and icons, label style, window over the rows in view, card padding, filter button and fold handle. No phase row, no milestone selection, no gate lines. Main's words under each merge as on the timeline (plain word first, the pull request's number under it in grey); where main is crowded (six or seven merges) the rest carry the number alone. A merge into a branch (operating model's build joining the fix's branch) stays on its branch. With nothing waiting on the owner there is no now station on the map; the list ends with Now.
+- **The list**: "What happened lately", top down, oldest first; one line for the month's earlier work; a day heading; each row its kind's icon and mark, kind · time · lane in grey, the plain title in ink and its code in grey, a **real state word** (Done, Merged, Passed, Answered, Failed) and who; it ends with **Now · 11:25 am**, Nothing newer, Read 1 min ago. Each row carries its station, so the window on the map follows the scroll.
+- **Home, nothing waiting**: one calm line in place of the priority list ("Nothing needs you.", what the AI team is at work on and how many are quiet, when the desk last read); the Needs-you badge and the bell's dot go; the projects stay below.
+- **Being read**: the summary line reads **Checking portfolio…** with a pulsing grey dot; the map and the list show what was last read, greyed, with a slow sheen (none with reduced motion); the list ends "Checking for anything newer…". Never "Quiet" while unread (design pack, checklist 4).
+- **Can't read**: the line reads **Can't read since 9:14 am · tap for what to do** with the bad dot; a block above the list says what that means (anything newer, even something waiting on you, would not show) with **Try again** (it shows Checking…, then what happened; the mockup sends nothing) and **Open on GitHub**; the list ends "Can't read". On home the project leaves the quiet group for a line of its own with the same words and the same two buttons. What waits on you reads "Unknown while the desk can't read it", never Nothing.
+- **The first open**: no "new since you last looked" marks (there is no last look), and one line of welcome above the projects.
+- The events, counts and branches are real (each repository's history as of the mockup's 14 Nov, 11:25 am); the purposes, the 9:14 am time, the calm, checking, can't-read and first-open words are examples and say so: no record carries a read failure, a last-looked time or a welcome yet. In the mockup the four states are previews behind More's "Mockup only" menu, each on and off again.
+- Colour: the ground, the soft status colours only (bad for can't read and failed; ok's grey tag for done), the one blue for Now. Text 4.5:1 or better. Milestone and sprint shapes untouched. {SRC}
+""")
+V50 = {
+ "BranchMap": "- **v50 (round 9, answer 6, " + R9A6 + "; options-r9-states/, A):** a project with no plan: main and its recent branches, no phase or milestone lanes, same drawing. Its lanes are named by the branch alone, a merge into a branch stays on its branch, and with nothing waiting there is no now station (ProjectStates).",
+ "MapCard": "- **v50 (round 9, answer 6, " + R9A6 + "; options-r9-states/, A):** a project with no plan has the same card: the summary line first, BranchMap's own drawing of main and its recent branches, the filter button and the fold handle; no phase row under it, no gate lines (ProjectStates). While the desk reads it, the map is greyed with a slow sheen.",
+ "ProjectSummary": "- **v50 (round 9, answer 6, " + R9A6 + "; options-r9-states/, A):** for a project with no plan the line reads \"No plan yet · 20 merged · nothing for you\" with a grey dot (below 380, \"No plan yet · nothing waits on you\"; never cut); being read, \"Checking portfolio…\" with a pulsing grey dot; unreadable, \"Can't read since 9:14 am · tap for what to do\" with the bad dot. The sheet says no phases are on record, this month's count, and what waits on you (Nothing, or Unknown while the desk can't read it), with Try again and Open on GitHub when it can't (ProjectStates).",
+ "PriorityList": "- **v50 (round 9, answer 6, " + R9A6 + "; options-r9-states/):** with nothing waiting, home shows one calm line in place of the list (\"Nothing needs you.\", what the AI team is at work on, when the desk last read), and the badge and the bell's dot go; an example (ProjectStates).",
+ "DeskHome": "- **v50 (round 9, answer 6, " + R9A6 + "; options-r9-states/):** a project the desk can't read leaves the quiet group for a line of its own (\"Can't read since 9:14 am\", what that means, Try again, Open on GitHub); on the first open there are no \"new since you last looked\" marks and one line of welcome; the quiet projects' line reads \"No phases yet\" (ProjectStates).",
+}
+for _k, _v in V50.items():
     _h, _r = C[_k]; C[_k] = (_h, _r.rstrip() + '\n' + _v + '\n')
 
 for name, (html, md) in C.items():

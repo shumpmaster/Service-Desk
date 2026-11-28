@@ -76,6 +76,20 @@ The timeline you have ruled on draws some things the records do not hold yet. In
     - Today: no record holds any of them; the mockup writes them from the page and status/P-005.toml and marks them as examples.
     - Proposed: the purpose written once when the project starts, from its brief; the one line written by the pipeline with each change of state (stage, gate, stop, the spec in work); the snapshot written by the Chief of Staff at the end of each session and by the pipeline at each gate or stop.
 
+18. **Each project's plan, read from its own repository.**
+    - Used for: a project's page (round 9, answer 6; docs/design/mockups/options-r9-states/): the owner agreed the desk should read the plans inside each project's repository, so a project such as Model-Lab, whose plans live in its own records (P-002), shows them instead of "No plan yet".
+    - Today: the desk reads a phase only from a status file; none of the operating model, Model-Lab or portfolio has one with a phase (Model-Lab's status/ holds a README only).
+    - Proposed: each project keeps its plan where the desk can read it (a status file in the shared form, or a pointer to its own plan records).
+
+19. **A rule met by the owner's own merge.**
+    - Used for: the pull request's checks (round 9, answers 3 and 4; v48): the rules show as passed, and the Merge answer says merging gives the owner's own say.
+    - Today: the governance rule that wants the owner's verdict on a change to the rules (review_check.owner) fails until reviews/<PR>/owner.md exists, which is written after the merge, so the real run says 46 of 47.
+    - Proposed: the check result says the rule waits on the owner's merge, so the desk can read it as met by the merge rather than as a failure.
+
+20. **When the desk last read each project, and why it could not.**
+    - Used for: "Checking…" and "Can't read since …" (round 9, answer 6), with Try again.
+    - Today: no record keeps a read's time or its failure.
+
 ## Open for the building session to settle
 - Which of these the pipeline should keep, and where each lives so the desk can read it.
 - Which need a ruling from the owner first: an answer recorded from the desk (6) changes how rulings reach the repository; when the owner last looked (8) may belong only on the phone.

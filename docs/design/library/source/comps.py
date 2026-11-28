@@ -1589,6 +1589,98 @@ for _k, _v in V48.items():
     if _k in C:
         _h, _r = C[_k]; C[_k] = (_h, _r.rstrip() + '\n' + _v + '\n')
 
+# round 9, answer 5 (decisions/questions/P-005-design-round-9.md): a gate open for the owner's ruling, and a reader for any record (v49)
+R9A5 = "“I approve all of your recommendations”"
+R9A5W = ("Chosen by the owner on 28 November 2026 (decisions/questions/P-005-design-round-9.md, answer 5: " + R9A5
+         + "; option A of each on docs/design/mockups/options-r9-gate/, as recommended). Mockup v49.")
+LINKED = ("Records are read inside the desk, with GitHub one tap away: for the timeline design this sets aside P-001-design-lab-open answer 9 "
+          "(asked \"The gate document: shown inside the desk too, or only linked on GitHub?\", the owner answered \"Linked\"; decisions/questions/P-001-design-lab-open.md).")
+def irr(): return '<span class="dk-irr">Can’t be undone</span>'
+def grec(title, path):
+    return (f'<div class="dk-grec"><span class="ri">{ic("file-text")}</span><span class="rt"><b>{title}</b><small class="code">{path}</small></span>{ic("caret-right", "bold", "rc")}</div>')
+GRECS = ('<div class="dk-grecs">' + grec("The case for the Design gate, written a second time", "docs/gates/P-005/design-gate-2-case.md · the case")
+  + grec("Notes on case 2: proceed, and the Critic’s points left", "decisions/P-005/dor-3-notes.md")
+  + grec("Who the timeline is for", "docs/projects/P-005.md · section 9: the owner is the user")
+  + grec("Phase gates", "OPERATING_MODEL.md §4 · S-024") + '</div>')
+def gopt(b, f, key, rec=False, kill=False):
+    return (f'<span class="opt{" rec" if rec else ""}{" kill" if kill else ""}"><b>{b}</b>' + (irr() if kill else '') + f'<span class="f">{f}</span><span class="key">{key}</span></span>')
+comp("GateOpen", "Desk", 2200, '<div class="dk-stage col" style="max-width:393px">'
+  + '<div class="dk-ksheet dk-gopen"><div class="grab"></div><span class="x" aria-label="Close">' + ic("x", "bold") + '</span>'
+  + '<div class="kd">' + ic("flag") + 'Gate · open for your ruling</div><h2>May the timeline work go into Design?</h2>'
+  + '<p class="dk-nysub">Design gate · case 2 · The timeline · drawn open as it stood 13 Nov, before you said proceed ' + EXM + '</p>'
+  + '<div class="row"><span class="dk-kst wait">Waiting on you</span>' + you() + '</div>'
+  + '<p class="dk-gask">Should the timeline work go on from Discovery into Design? Proceeding starts Design: scenarios written, joins mapped, today’s waits measured and the records tested, ending with a reviewed plan, at no new cost. The case and the Critic both recommend proceed.</p>'
+  + '<h3>The case opens</h3><div class="dk-gcase"><p class="fade">The timeline shows the agents’ work, and your needs, in one view. Its brief passed its readiness check after one fail, resubmitted under your standing proxy. Proceeding starts Design. Two Discovery steps still read not reached, though their records exist…</p>'
+  + '<span class="dk-glink">Read the whole case' + ic("caret-right", "bold", "rc") + '</span></div>'
+  + '<h3>What the Critic says</h3><div class="dk-gev"><div class="top">' + ic("magnifying-glass") + '<b>The gate Critic</b><span class="dk-kst ok">Recommends proceed</span></div>'
+  + '<p>You have the ask, the plan, the risks including the copying job, the costs and the stop rule; none of the faults left is a reason to hold again.</p><span class="dk-glink">Its six points left' + ic("caret-right", "bold", "rc") + '</span></div>'
+  + '<h3>What the user representative says</h3><div class="dk-gev"><div class="top">' + ic("user") + '<b>The user representative</b><span class="dk-kst idle">Not needed</span></div>'
+  + '<p>You are the timeline’s own user, so no simulated user is asked. Where one runs, its verdict shows here: approve or reject, with a line why.</p></div>'
+  + '<h3>Your ruling</h3><div class="opts">'
+  + gopt("Proceed", "Design starts on the plan above. No new spend; each unknown has a test or comes back to you.", "proceed", rec=True)
+  + gopt("Hold", "Nothing moves. The case is written again, the Critic reads it again, and it comes back to you.", "hold")
+  + gopt("Recycle", "The work goes back into Discovery as its next round, with your reason; its steps run again.", "recycle")
+  + gopt("Kill", "The timeline work closes and leaves the desk.", "kill", kill=True) + '</div>'
+  + '<p class="ex">A gate is never answered for you by proxy. A tap only fills in your answer; you save it on GitHub.</p>'
+  + '<h3>Records</h3>' + GRECS + '</div>'
+  + '<div class="dk-prl-h">On the list</div>'
+  + gate_row(("wait", "Yours · open"), "Design gate", "The case and the Critic say proceed · waiting since 13 Nov", "wait", False).replace('class="dk-gate"', 'class="dk-gate open"', 1)
+  + '<div class="dk-ny" style="padding-bottom:0"><div class="dk-prl-h">On home, row 1</div><div class="dk-prl">'
+  + '<div class="dk-prl-row dk-gprow"><span class="n">1</span><div class="b"><span class="chip">The timeline</span><span class="ev"><b>A gate is open for your ruling</b> <span class="code">Design gate · case 2</span></span>'
+  + '<span class="q">May the timeline work go into Design?</span><span class="why"><b>Holds up the Design phase</b> · the case and the Critic say proceed · waiting 1 h 12 min ' + EXM + '</span>'
+  + '<span class="dk-ghch"><span class="hb rec">Proceed</span><span class="hb">Hold</span><span class="hb">Recycle</span><span class="hb">Kill</span></span>'
+  + '<span class="acts"><span class="dk-wbtn main">Read the case and rule</span><span class="dk-wbtn">Show on timeline</span></span></div></div></div></div>'
+  + '<p class="dk-note">The open state is an example: today no gate is open. Each choice says what follows; a tap says the mockup sends nothing.</p></div>',
+ f"""# GateOpen
+
+A gate open for the owner's ruling: its sheet, and its row on the timeline's list and on home. {R9A5W}
+
+- **The sheet** (KindSheet's shape): the kind, "Gate · open for your ruling"; the question as its title ("May the timeline work go into Design?"); the gate, its case and project in grey, and when it is drawn from (an example mark while no gate is open); Waiting on you and Yours.
+- **The ask** first, in the sheet's larger words: the question, what proceeding starts, and what the case and the Critic recommend.
+- **The case opens**: its opening paragraph, three lines fading out, then **Read the whole case**, which opens RecordReader on the case.
+- **What the Critic says**: the gate Critic's verdict as a tag (Recommends proceed, in the passed colour) and one line, with **Its six points left** opening the Chief of Staff's notes in RecordReader.
+- **What the user representative says**: its verdict where one runs (approve or reject, with a line why); here **Not needed**, since the owner is the timeline's own user (docs/projects/P-005.md, section 9; L-0008).
+- **Your ruling**: the four choices of OPERATING_MODEL §4, each saying what follows, its key beneath in grey: **Proceed** (edged in the one blue, recommended, never picked for you), **Hold**, **Recycle**, **Kill**, marked **Can’t be undone** in the bad tag's colour ("the project closes"). A gate is never answered by proxy (L-0049); a tap only fills in the answer, saved on GitHub (P-001-gate-buttons, A).
+- **Records last**, one row per record (RecordReader): its plain title, its file in grey, a chevron; each opens the reader.
+- **On the list** (GateRow): the gate row reads **Yours · open**, its ring and row in the wait colour, one line: what the case and the Critic say and how long it has waited.
+- **On home** (PriorityList): the open gate is row 1 (it holds up a whole phase), its number in the wait colour; its four choices as buttons under the question (Proceed edged in blue), then **Read the case and rule** (the sheet) and **Show on timeline**. Each button's tap says what follows; Kill's says it can't be undone. The count everywhere includes it: home's sentence, NeedsTab's badge and Waiting on you, the project's own count.
+- The gate drawn is the timeline's real Design gate as it stood on 13 November, after case 2 and before the owner said proceed: its words are from docs/gates/P-005/design-gate-2-case.md and decisions/P-005/dor-3-notes.md. Its open state, its place on home and its wait are examples and say so.
+- Colour: the soft status colours (wait for open, the passed colour for the Critic's verdict, bad for Can’t be undone, lifted in dark to read at 4.5:1 or better), the one blue for the recommended choice, the ground. Milestone and sprint shapes untouched. {LINKED} {SRC}
+""")
+
+comp("RecordReader", "Desk", 1250, '<div class="dk-stage col" style="max-width:393px">'
+  + '<div class="dk-reader"><div class="bar"><span class="dk-ckback">' + ic("caret-left", "bold") + 'Design gate</span></div>'
+  + '<div class="kd">' + ic("file-text") + 'Gate case</div><h1>The case for the Design gate, written a second time</h1>'
+  + '<p class="code">docs/gates/P-005/design-gate-2-case.md · the Chief of Staff · 13 Nov</p>'
+  + '<p class="open">The timeline shows the agents’ work, and your needs, in one view. Its brief passed its readiness check after one fail, resubmitted under your standing proxy. Proceeding starts Design.</p>'
+  + '<p class="code">docs/projects/P-005.md:73, :74, :95 · reviews/P-005/_critic-dor.md</p>'
+  + '<h2>The recommendation</h2><p>Proceed: Design needs no new spend, and each unknown has a test or comes back to you.</p><p class="code">docs/projects/P-005.md:119, :158</p>'
+  + '<h2>The risks</h2><ul><li>Halving waits may be out of reach.</li><li>A stopped view may look quiet; Design adds its check.</li></ul>'
+  + '<div class="foot"><span class="dk-wbtn main big">Open on GitHub</span></div></div>'
+  + '<div class="dk-prl-h">Records on any sheet</div>' + GRECS
+  + '<p class="dk-note">Every sheet\'s Records line is one row per record; each opens the reader, and back returns to the sheet.</p></div>',
+ f"""# RecordReader
+
+One plain page for any record the desk holds: a gate case, a stop card's notes, a research memo, a ruling, a handover, a review. {R9A5W}
+
+- **A page pushed from the right** over whatever opened it (a sheet, or another reader), on the ground; **‹ back** at the top names where it came from ("‹ Design gate", "‹ At work now") and returns there; Escape does the same. Reduced motion: no slide.
+- **Top**: the kind in small caps with a document mark ("Gate case", "Research memo · revision 3", "Your ruling", "Handover · part 11"); the record's **plain title**, 24 bold; the file, who wrote it and when, in grey.
+- **The opening paragraph first, in larger text** (19 on 28): every record written for the owner opens with one plain paragraph (AGENTS.md §4, Plain English first; in a gate case, the ask). Where a record has none, its summary goes first and a grey line says so. Its citations follow in grey.
+- **The rest in sections**: a heading (17 semibold over a hairline), paragraphs and lists at 16 on 24, each section's citations in grey after it.
+- **Open on GitHub** at the foot (the ink button): the file on GitHub at the version read. The mockup sends nothing.
+- **Records rows**: on every sheet (KindSheet, GateOpen, AskSheets, AtWork, the checks' review records) the Records line becomes one row per record: its plain title (or its kind, where the mockup holds only the name), its file in grey with a short note, a chevron; each row opens the reader. A record the mockup does not hold opens a short reader with its kind, name and file, saying so.
+- {LINKED}
+- Plain words first, codes after in grey (PlainTitle); text 4.5:1 or better; colour only the ground and the soft status colours. {SRC}
+""")
+V49 = {
+ "GateRow": "- **v49 (round 9, answer 5, " + R9A5 + "; options-r9-gate/, A):** an open gate's row reads **Yours · open**, its ring and row in the wait colour, with what the case and the Critic say and how long it has waited; tapped, it opens its open sheet (GateOpen). " + LINKED,
+ "KindSheet": "- **v49 (round 9, answer 5, " + R9A5 + "; options-r9-gate/, A):** a gate open for the owner's ruling has its own sheet (GateOpen); every sheet's Records line becomes one row per record, plain title first and file in grey, each opening RecordReader. " + LINKED,
+ "PriorityList": "- **v49 (round 9, answer 5, " + R9A5 + "; options-r9-gate/, A):** an open gate is row 1, its number in the wait colour, its four choices as buttons and **Read the case and rule** (GateOpen); with it home says 3 things need you. " + LINKED,
+ "NeedsTab": "- **v49 (round 9, answer 5, " + R9A5 + "; options-r9-gate/, A):** Waiting on you lists the open gate too, first, as home does; the badge, the heading and the sentence say 3, the same as home. Its rows' Records open RecordReader. " + LINKED,
+}
+for _k, _v in V49.items():
+    _h, _r = C[_k]; C[_k] = (_h, _r.rstrip() + '\n' + _v + '\n')
+
 for name, (html, md) in C.items():
     d = os.path.join(OUT, "components", name); os.makedirs(d, exist_ok=True)
     open(os.path.join(d, "preview.html"), "w").write(html)

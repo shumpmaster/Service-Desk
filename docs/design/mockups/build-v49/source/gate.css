@@ -1,0 +1,94 @@
+/* ================= v49: a gate open for your ruling, and a reader for any record (gate.js); option A of options-r9-gate/ (gr.css there).
+   Dressed by v35's sheet (.kn-sheet), v47's sheet words (.pw-code, .pw-ex, .opt, .kn-ans .done) and v48's run reader (‹ back, as .pc-back).
+   Colour: the soft status colours (wait for open and waiting, ok for passed and recommends, bad for Can't be undone), the one blue for the
+   recommended choice (as v35's .opt.rec), and the ground. ================= */
+
+/* the open gate's row on the list, and its ring: the wait colour */
+.kn-gico.gr-wait { color: var(--status-wait-tag); background: var(--status-wait-wash); box-shadow: inset 0 0 0 1.5px var(--status-wait-arc); border: 0; }
+html.kn-gA #v13list .ph-gate.gr-row { background: var(--status-wait-wash); border-radius: var(--r-inner, 12px); padding-left: 8px; margin-left: -8px; width: calc(100% + 8px); border-color: transparent; }
+#v13list .ph-gate.gr-row .kn-st.wait { font-weight: 600; }
+
+/* the sheet's own words */
+.kn-sheet .gr-ask { font: 400 16px/23px var(--font-ui); color: var(--ink); margin: 0 0 4px; text-wrap: pretty; }
+.kn-sheet .gr-case { border-radius: var(--r-inner, 12px); background: var(--fill, rgba(120,120,128,.08)); padding: 10px 14px 4px; }
+.kn-sheet .gr-fade, .gr-fade { margin: 0; font: 400 15px/21px var(--font-ui); color: var(--ink-2); display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden;
+  -webkit-mask-image: linear-gradient(180deg, #000 45%, rgba(0,0,0,.35)); mask-image: linear-gradient(180deg, #000 45%, rgba(0,0,0,.35)); }
+.gr-link { all: unset; box-sizing: border-box; display: inline-flex; align-items: center; gap: 2px; min-height: 44px; cursor: pointer; font: 600 15px/20px var(--font-ui); color: var(--ink); }
+.gr-link .kn-chev { width: 14px; height: 14px; color: var(--ink-3); }
+.gr-link:focus-visible, .gr-rrow:focus-visible, .gr-back:focus-visible, .gr-hb:focus-visible, .gr-main:focus-visible { outline: 2px solid var(--blue-fill, #0a6cff); outline-offset: 2px; border-radius: 10px; }
+.gr-ev { border-radius: var(--r-inner, 12px); background: var(--fill, rgba(120,120,128,.08)); padding: 10px 14px 2px; }
+.gr-ev p { margin: 4px 0 8px !important; font: 400 15px/21px var(--font-ui) !important; color: var(--ink) !important; text-wrap: pretty; }
+.gr-ev .gr-link { min-height: 36px; margin-top: -4px; }
+.gr-evtop { display: flex; align-items: center; gap: 7px; flex-wrap: wrap; font: 600 15px/20px var(--font-ui); color: var(--ink); }
+.gr-evtop > svg { width: 15px; height: 15px; color: var(--ink-3); flex: none; }
+.gr-evtop .kn-st { margin-left: auto; }
+.kn-st, .gr-irr { white-space: nowrap; }
+.kn-sheet .kn-st.ok, .gr-page .kn-st.ok { color: var(--ink-2); }
+.gr-irr { display: inline-block; font: 600 12px/18px var(--font-ui); color: var(--status-bad-tag); background: var(--status-bad-tag-bg); padding: 0 7px; border-radius: var(--r-tag, 6px); margin: 0 0 2px; vertical-align: 1px; }
+.kn-sheet .opt b + .gr-irr { margin: 2px 0 4px; }
+.kn-sheet .opt.gr-kill b { display: inline; margin-right: 6px; }
+.kn-sheet .opt.gr-kill b + .gr-irr { margin-bottom: 4px; }
+.kn-sheet .opt.gr-kill { line-height: 19px; }
+
+/* Records: one row per record, its plain name, then its file in grey */
+.gr-recs { list-style: none; margin: 0; padding: 0; border-radius: var(--r-inner, 12px); background: var(--fill, rgba(120,120,128,.08)); }
+.gr-recs li + li { border-top: var(--hair, 1px) solid var(--sep); }
+.gr-rrow { all: unset; box-sizing: border-box; display: flex; align-items: flex-start; gap: 10px; width: 100%; min-height: 44px; padding: 10px 12px; cursor: pointer; -webkit-tap-highlight-color: transparent; }
+.gr-rrow:active { background: var(--press-fill); }
+.gr-ri { flex: none; width: 20px; height: 20px; display: grid; place-items: center; color: var(--ink-3); margin-top: 1px; }
+.gr-ri svg { width: 16px; height: 16px; }
+.gr-rt { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.gr-rt b { font: 600 15px/20px var(--font-ui); color: var(--ink); text-wrap: pretty; }
+.gr-rt b .kn-st { margin-left: 4px; vertical-align: 1px; }
+.gr-rt small { font: 400 13px/18px var(--font-ui); color: var(--text-2); }
+.gr-rt small.pw-code { white-space: normal; overflow-wrap: anywhere; }
+.gr-rrow .kn-chev { flex: none; width: 14px; height: 14px; margin-top: 4px; color: var(--ink-3); }
+.kn-sheet .gr-rest { margin-top: 8px; }
+
+/* a page pushed from the right: the reader (A), and the gate's own page (option B) */
+.gr-page { position: fixed; inset: 0; z-index: 95; background: var(--ground); color: var(--ink); display: flex; flex-direction: column; transform: translateX(100%);
+  transition: transform var(--d-page, 450ms) var(--spring, ease); box-shadow: -8px 0 30px rgba(0,0,0,.10); }
+.gr-page.on { transform: none; }
+.gr-page:focus { outline: none; }
+.gr-bar { flex: none; display: flex; align-items: center; min-height: 52px; padding: calc(6px + min(env(safe-area-inset-top, 0px), 59px)) 12px 0 8px; background: var(--ground); }
+.gr-back { all: unset; box-sizing: border-box; display: inline-flex; align-items: center; gap: 2px; min-height: 44px; max-width: 100%; padding: 0 10px 0 4px; cursor: pointer; font: 600 16px/20px var(--font-ui); color: var(--ink); }
+.gr-back svg { width: 18px; height: 18px; flex: none; }
+.gr-back span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.gr-scroll { flex: 1; overflow: auto; overscroll-behavior: contain; padding: 4px 20px calc(32px + env(safe-area-inset-bottom, 0px)); }
+.gr-read { max-width: 620px; margin: 0 auto; }
+.gr-kd { display: flex; align-items: center; gap: 6px; font: 600 12px/16px var(--font-ui); letter-spacing: .06em; text-transform: uppercase; color: var(--text-2); }
+.gr-kd svg { width: 14px; height: 14px; }
+.gr-h { font: 700 24px/30px var(--font-ui); color: var(--ink); margin: 6px 0 4px; text-wrap: balance; }
+.gr-code { display: block; white-space: normal !important; overflow-wrap: anywhere; margin: 0 0 14px; }
+.gr-note { font: 400 14px/20px var(--font-ui); color: var(--text-2); margin: -6px 0 10px; }
+.gr-open { font: 400 19px/28px var(--font-ui); color: var(--ink); margin: 0 0 6px; text-wrap: pretty; }
+.gr-read p:not(.gr-open):not(.gr-code):not(.gr-cite):not(.gr-note):not(.gr-alt) { font: 400 16px/24px var(--font-ui); color: var(--ink); margin: 0 0 8px; text-wrap: pretty; }
+.gr-cite { display: block; white-space: normal !important; overflow-wrap: anywhere; margin: 2px 0 6px; }
+.gr-sh { font: 600 17px/22px var(--font-ui); color: var(--ink); margin: 22px 0 6px; padding-top: 16px; border-top: var(--hair, 1px) solid var(--sep); }
+.gr-ul { margin: 0 0 8px; padding-left: 20px; } .gr-ul li { font: 400 16px/24px var(--font-ui); color: var(--ink); margin: 0 0 4px; }
+.gr-alt { font: 400 14px/20px var(--font-ui); color: var(--text-2); margin: 6px 0 8px; }
+.gr-chain { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 4px; margin: 4px 0 2px; }
+.gr-chain span { font: 600 13px/18px var(--font-ui); padding: 3px 8px; border-radius: 8px; color: var(--ink-2); box-shadow: inset 0 0 0 1px var(--sep); }
+.gr-chain span.ok { background: var(--status-ok-wash); box-shadow: inset 0 0 0 1px var(--status-ok-arc); }
+.gr-chain span.wait { background: var(--status-wait-wash); box-shadow: inset 0 0 0 1px var(--status-wait-arc); color: var(--status-wait-tag); }
+.gr-chain i { font-style: normal; color: var(--ink-4); font-size: 13px; }
+.gr-foot { margin-top: 24px; padding-top: 16px; border-top: var(--hair, 1px) solid var(--sep); }
+.gr-main { border: 0; cursor: pointer; min-height: 44px; padding: 0 18px; border-radius: 22px; font: 600 15px/44px var(--font-ui); background: var(--lk-inkbtn, #1c1d21); color: var(--lk-inkbtn-t, #fff); }
+.gr-page .done { margin-top: 10px; padding: 10px 12px; border-radius: var(--r-inner, 12px); background: var(--status-ok-wash); font: 400 13px/18px var(--font-ui); color: var(--ink); }
+.gr-page .kn-st { display: inline-flex; align-items: center; font: 600 12px/18px var(--font-ui); padding: 0 7px; border-radius: var(--r-tag, 6px); }
+.gr-page .rec-l { font: 400 13px/17px var(--font-ui); color: var(--text-2); }
+
+/* home: the gate as row 1, its choices as buttons */
+.gr-prrow .pr-n { background: var(--status-wait-tag-bg); color: var(--status-wait-tag); }
+.gr-hch { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 8px; }
+.gr-hb { all: unset; box-sizing: border-box; min-height: 36px; padding: 0 12px; border-radius: 18px; font: 600 14px/36px var(--font-ui); color: var(--ink); background: rgba(120,120,128,.12); cursor: pointer; }
+.gr-hb.rec { box-shadow: inset 0 0 0 1.5px var(--blue-fill, #0a6cff); }
+.gr-hans .done { display: block; margin-top: 8px; padding: 8px 10px; border-radius: var(--r-inner, 12px); background: var(--status-ok-wash); font: 400 13px/18px var(--font-ui); color: var(--ink); }
+.gr-prrow .pw-ex { margin-left: 4px; }
+
+@media (prefers-reduced-motion: reduce) { .gr-page { transition: none; } }
+
+.kn-sheet .opt .gr-f { display: block; }
+/* Can't be undone on its dark wash: the bad tag lifted toward white, so it reads at 4.5:1 or better */
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .gr-irr { color: color-mix(in srgb, var(--status-bad-tag) 72%, #fff); } }
+:root[data-theme="dark"] .gr-irr { color: color-mix(in srgb, var(--status-bad-tag) 72%, #fff); }

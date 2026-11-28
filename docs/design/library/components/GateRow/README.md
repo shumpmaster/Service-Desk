@@ -10,3 +10,4 @@ A gate is the owner's ruling on a whole phase, so it is a row of its own, closin
 - Times in Chicago time, as everywhere (round 8, answer 6, item 12).
 - Records: OPERATING_MODEL.md §3 and §4 (phase gates, S-024); docs/gates/P-005/; decisions/P-005/dor-2.md, dor-3.md.
 - **v44:** each project's gates are its own: the widget's Design gate is not reached, its decision yours, after its brief is ready.
+- **v49 (round 9, answer 5, “I approve all of your recommendations”; options-r9-gate/, A):** an open gate's row reads **Yours · open**, its ring and row in the wait colour, with what the case and the Critic say and how long it has waited; tapped, it opens its open sheet (GateOpen). Records are read inside the desk, with GitHub one tap away: for the timeline design this sets aside P-001-design-lab-open answer 9 (asked "The gate document: shown inside the desk too, or only linked on GitHub?", the owner answered "Linked"; decisions/questions/P-001-design-lab-open.md).
